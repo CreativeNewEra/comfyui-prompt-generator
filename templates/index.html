@@ -347,8 +347,9 @@
         
         .output-area {
             display: none;
+            animation: slide-in 0.3s ease;
         }
-        
+
         .output-area.visible {
             display: block;
         }
@@ -988,6 +989,31 @@
             60%, 100% { content: '...'; }
         }
 
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 20px rgba(102, 126, 234, 0.6);
+            }
+        }
+
+        @keyframes blink-cursor {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        @keyframes slide-in {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .streaming-indicator {
             display: none;
             text-align: center;
@@ -998,10 +1024,12 @@
             border-radius: 8px;
             margin-bottom: 15px;
             transition: all var(--transition-speed) ease;
+            animation: pulse-glow 2s ease-in-out infinite;
         }
 
         .streaming-indicator.visible {
             display: block;
+            animation: slide-in 0.3s ease, pulse-glow 2s ease-in-out infinite;
         }
 
         .streaming-indicator::after {
@@ -1013,6 +1041,15 @@
         .output-content.streaming {
             border-left: 4px solid #667eea;
             background: var(--streaming-indicator-bg);
+            position: relative;
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        .output-content.streaming::after {
+            content: '▋';
+            color: #667eea;
+            animation: blink-cursor 1s infinite;
+            margin-left: 2px;
         }
 
         /* Quick Presets Section Styles */
@@ -1279,7 +1316,7 @@
                     <li><strong>Quick Generate:</strong> Describe your idea, get a prompt instantly</li>
                     <li><strong>Chat Mode:</strong> Have a conversation to refine and iterate on ideas</li>
                     <li><strong>Quick Presets:</strong> Click pill-shaped buttons for instant preset selection - faster than dropdowns! Click again to toggle off</li>
-                    <li><strong>Streaming:</strong> Enable streaming to see prompts generated in real-time! Watch tokens appear as they're created (defaults to OFF for reliability)</li>
+                    <li><strong>⚡ Streaming (NEW!):</strong> Enable streaming to watch prompts appear in real-time with smooth animations and a blinking cursor! Automatically falls back to normal mode if issues occur. Click "Stop" to cancel anytime.</li>
                     <li><strong>Favorites:</strong> Save your favorite preset combinations! Click "Save Current" to create one, then click any favorite to instantly apply it</li>
                     <li><strong>Presets:</strong> Use style, artist, composition, and lighting dropdowns for instant enhancements</li>
                     <li><strong>Flux:</strong> Best with natural language, very detailed descriptions</li>
@@ -1288,8 +1325,7 @@
                     <li>Quick presets and dropdowns stay in sync - use whichever you prefer!</li>
                     <li>Hover over favorites to rename or delete them</li>
                     <li>Presets are optional - leave them on "None" for full AI creativity</li>
-                    <li>Click "Stop" button during streaming to cancel generation</li>
-                    <li>Streaming automatically falls back to normal mode if connection issues occur</li>
+                    <li>Press 'H' to quickly open prompt history, ESC to close</li>
                     <li>Everything runs locally - no censorship, total privacy</li>
                 </ul>
             </div>
@@ -1737,12 +1773,7 @@
             showStreamingIndicator();
             showStopButton();
             document.getElementById('userInput').disabled = true;
-
-            // Create URL with query parameters for EventSource
-            const params = new URLSearchParams();
-            for (const key in payload) {
-                params.append(key, payload[key]);
-            }
+            hideError();
 
             let fullResponse = '';
             const outputDiv = document.getElementById('output');
@@ -1767,21 +1798,31 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
                 }
 
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
+                // Buffer is used to handle incomplete SSE messages that may be split across multiple chunks.
+                // This ensures that only complete lines are processed, and partial lines are kept for the next chunk.
+                let buffer = '';
 
                 while (isStreaming) {
                     const { done, value } = await reader.read();
 
                     if (done) break;
 
-                    const chunk = decoder.decode(value, { stream: true });
-                    const lines = chunk.split('\n');
+                    // Decode the chunk and add to buffer
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+
+                    // Keep the last incomplete line in the buffer
+                    buffer = lines.pop() || '';
 
                     for (const line of lines) {
+                        if (!line.trim()) continue;
+
                         if (line.startsWith('data: ')) {
                             try {
                                 const data = JSON.parse(line.slice(6));
@@ -1793,7 +1834,7 @@
                                 if (data.token) {
                                     fullResponse += data.token;
                                     outputDiv.textContent = fullResponse;
-                                    // Auto-scroll
+                                    // Auto-scroll to keep the latest content visible
                                     outputDiv.scrollTop = outputDiv.scrollHeight;
                                 }
 
@@ -1808,39 +1849,74 @@
                                     break;
                                 }
                             } catch (e) {
-                                console.error('Failed to parse SSE data:', e);
+                                console.error('Failed to parse SSE data:', e, 'Line:', line);
                             }
                         }
                     }
                 }
 
+                // If streaming was stopped manually, clean up
+                if (!fullResponse.trim()) {
+                    // No response received, handle fallback directly
+                    // Only fallback if we didn't get any response
+                    try {
+                        showError('Streaming failed. Trying non-streaming mode...');
+                        const fallbackEndpoint = currentMode === 'oneshot' ? '/generate' : '/chat';
+                        const fallbackResponse = await fetch(fallbackEndpoint, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const data = await fallbackResponse.json();
+                        if (fallbackResponse.ok) {
+                            hideError();
+                            if (currentMode === 'chat') {
+                                addChatMessage('assistant', data.result);
+                                document.getElementById('userInput').value = '';
+                            } else {
+                                showOutput(data.result);
+                            }
+                        } else {
+                            showError(data.error || 'Something went wrong!');
+                        }
+                    } catch (fallbackError) {
+                        showError('Failed to connect to server. Make sure Ollama is running!');
+                    }
+                }
+
             } catch (error) {
                 console.error('Streaming error:', error);
-                showError(error.message || 'Streaming failed. Falling back to normal mode.');
+                const errorMsg = error.message || 'Streaming failed. Falling back to normal mode.';
+                showError(errorMsg);
                 outputDiv.classList.remove('streaming');
 
-                // Fallback to non-streaming
-                try {
-                    const fallbackEndpoint = currentMode === 'oneshot' ? '/generate' : '/chat';
-                    const fallbackResponse = await fetch(fallbackEndpoint, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
+                // Only fallback if we didn't get any response
+                if (!fullResponse.trim()) {
+                    try {
+                        showError('Streaming failed. Trying non-streaming mode...');
+                        const fallbackEndpoint = currentMode === 'oneshot' ? '/generate' : '/chat';
+                        const fallbackResponse = await fetch(fallbackEndpoint, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
 
-                    const data = await fallbackResponse.json();
-                    if (fallbackResponse.ok) {
-                        if (currentMode === 'chat') {
-                            addChatMessage('assistant', data.result);
-                            document.getElementById('userInput').value = '';
+                        const data = await fallbackResponse.json();
+                        if (fallbackResponse.ok) {
+                            hideError();
+                            if (currentMode === 'chat') {
+                                addChatMessage('assistant', data.result);
+                                document.getElementById('userInput').value = '';
+                            } else {
+                                showOutput(data.result);
+                            }
                         } else {
-                            showOutput(data.result);
+                            showError(data.error || 'Something went wrong!');
                         }
-                    } else {
-                        showError(data.error || 'Something went wrong!');
+                    } catch (fallbackError) {
+                        showError('Failed to connect to server. Make sure Ollama is running!');
                     }
-                } catch (fallbackError) {
-                    showError('Failed to connect to server. Make sure Ollama is running!');
                 }
             } finally {
                 stopStreaming();
