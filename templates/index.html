@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ComfyUI Prompt Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+        
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .mode-btn {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .mode-btn:hover {
+            background: #f0f0f0;
+        }
+        
+        .mode-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .model-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .model-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #764ba2;
+            background: white;
+            color: #764ba2;
+            border-radius: 8px;
+            font-size: 0.95em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .model-btn:hover {
+            background: #f0f0f0;
+        }
+        
+        .model-btn.active {
+            background: #764ba2;
+            color: white;
+        }
+        
+        .presets-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .presets-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.1em;
+        }
+        
+        .presets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .preset-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .preset-group label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+            font-size: 0.9em;
+        }
+        
+        .preset-select {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.95em;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        
+        .preset-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .preset-select:hover {
+            border-color: #764ba2;
+        }
+        
+        .input-area {
+            margin-bottom: 20px;
+        }
+        
+        .input-area label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .input-area textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+        
+        .input-area textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .output-area {
+            display: none;
+        }
+        
+        .output-area.visible {
+            display: block;
+        }
+        
+        .output-box {
+            background: #f8f9fa;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+        
+        .output-box h3 {
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 1.1em;
+        }
+        
+        .output-content {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            line-height: 1.6;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 8px 15px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+        
+        .copy-btn:hover {
+            background: #218838;
+        }
+        
+        .copy-btn.copied {
+            background: #20c997;
+        }
+        
+        .chat-history {
+            max-height: 500px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .chat-history.visible {
+            display: block;
+        }
+        
+        .chat-message {
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .chat-message.user {
+            background: #e3f2fd;
+            margin-left: 50px;
+        }
+        
+        .chat-message.assistant {
+            background: #f3e5f5;
+            margin-right: 50px;
+        }
+        
+        .chat-message .role {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #666;
+        }
+        
+        .chat-message .content {
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-weight: bold;
+            display: none;
+        }
+        
+        .loading.visible {
+            display: block;
+        }
+        
+        .error {
+            background: #f8d7da;
+            border: 2px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .error.visible {
+            display: block;
+        }
+        
+        .tips {
+            background: #d1ecf1;
+            border: 2px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .tips h3 {
+            margin-bottom: 10px;
+        }
+        
+        .tips ul {
+            margin-left: 20px;
+        }
+        
+        .tips li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 ComfyUI Prompt Generator</h1>
+            <p>Powered by local Ollama - uncensored and private</p>
+        </div>
+        
+        <div class="card">
+            <div class="mode-selector">
+                <button class="mode-btn active" data-mode="oneshot">⚡ Quick Generate</button>
+                <button class="mode-btn" data-mode="chat">💬 Chat & Refine</button>
+            </div>
+            
+            <div class="model-selector">
+                <button class="model-btn active" data-model="flux">Flux Dev</button>
+                <button class="model-btn" data-model="sdxl">SDXL (Juggernaut)</button>
+            </div>
+            
+            <div class="presets-section">
+                <h3>🎨 Presets (Optional)</h3>
+                <div class="presets-grid">
+                    <div class="preset-group">
+                        <label for="styleSelect">Style:</label>
+                        <select id="styleSelect" class="preset-select">
+                            <option value="None">None</option>
+                        </select>
+                    </div>
+                    
+                    <div class="preset-group">
+                        <label for="artistSelect">Artist/Photographer:</label>
+                        <select id="artistSelect" class="preset-select">
+                            <option value="None">None</option>
+                        </select>
+                    </div>
+                    
+                    <div class="preset-group">
+                        <label for="compositionSelect">Composition:</label>
+                        <select id="compositionSelect" class="preset-select">
+                            <option value="None">None</option>
+                        </select>
+                    </div>
+                    
+                    <div class="preset-group">
+                        <label for="lightingSelect">Lighting:</label>
+                        <select id="lightingSelect" class="preset-select">
+                            <option value="None">None</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="error" id="error"></div>
+            
+            <div class="chat-history" id="chatHistory"></div>
+            
+            <div class="input-area">
+                <label for="userInput" id="inputLabel">Describe what you want to generate:</label>
+                <textarea id="userInput" placeholder="Example: a cyberpunk character with neon hair..."></textarea>
+            </div>
+            
+            <div class="actions">
+                <button class="btn btn-primary" id="generateBtn">Generate Prompt</button>
+                <button class="btn btn-secondary" id="resetBtn" style="display: none;">New Conversation</button>
+            </div>
+            
+            <div class="loading" id="loading">🤖 Thinking...</div>
+            
+            <div class="output-area" id="outputArea">
+                <div class="output-box">
+                    <h3>Generated Prompt:</h3>
+                    <button class="copy-btn" id="copyBtn">Copy</button>
+                    <div class="output-content" id="output"></div>
+                </div>
+            </div>
+            
+            <div class="tips">
+                <h3>💡 Tips:</h3>
+                <ul>
+                    <li><strong>Quick Generate:</strong> Describe your idea, get a prompt instantly</li>
+                    <li><strong>Chat Mode:</strong> Have a conversation to refine and iterate on ideas</li>
+                    <li><strong>Presets:</strong> Use style, artist, composition, and lighting dropdowns for instant enhancements</li>
+                    <li><strong>Flux:</strong> Best with natural language, very detailed descriptions</li>
+                    <li><strong>SDXL:</strong> Works great with quality tags and negative prompts</li>
+                    <li>Mix and match presets - try combining different styles with specific lighting</li>
+                    <li>Presets are optional - leave them on "None" for full AI creativity</li>
+                    <li>Everything runs locally - no censorship, total privacy</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentMode = 'oneshot';
+        let currentModel = 'flux';
+        let presets = {};
+        
+        // Load presets on page load
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const response = await fetch('/presets');
+                presets = await response.json();
+                
+                // Populate dropdowns
+                populateSelect('styleSelect', presets.styles);
+                populateSelect('artistSelect', presets.artists);
+                populateSelect('compositionSelect', presets.composition);
+                populateSelect('lightingSelect', presets.lighting);
+            } catch (error) {
+                console.error('Failed to load presets:', error);
+            }
+        });
+        
+        function populateSelect(selectId, options) {
+            const select = document.getElementById(selectId);
+            Object.keys(options).forEach(key => {
+                if (key !== 'None') {  // Skip None, it's already in HTML
+                    const option = document.createElement('option');
+                    option.value = key;
+                    option.textContent = key;
+                    select.appendChild(option);
+                }
+            });
+        }
+        
+        // Mode switching
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentMode = btn.dataset.mode;
+                
+                const resetBtn = document.getElementById('resetBtn');
+                const chatHistory = document.getElementById('chatHistory');
+                const inputLabel = document.getElementById('inputLabel');
+                
+                if (currentMode === 'chat') {
+                    resetBtn.style.display = 'block';
+                    inputLabel.textContent = 'Your message:';
+                } else {
+                    resetBtn.style.display = 'none';
+                    chatHistory.classList.remove('visible');
+                    inputLabel.textContent = 'Describe what you want to generate:';
+                }
+                
+                hideError();
+                document.getElementById('userInput').value = '';
+            });
+        });
+        
+        // Model switching
+        document.querySelectorAll('.model-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentModel = btn.dataset.model;
+                hideError();
+            });
+        });
+        
+        // Generate button
+        document.getElementById('generateBtn').addEventListener('click', async () => {
+            const input = document.getElementById('userInput').value.trim();
+            
+            if (!input) {
+                showError('Please enter a description or message!');
+                return;
+            }
+            
+            // Get preset selections
+            const style = document.getElementById('styleSelect').value;
+            const artist = document.getElementById('artistSelect').value;
+            const composition = document.getElementById('compositionSelect').value;
+            const lighting = document.getElementById('lightingSelect').value;
+            
+            hideError();
+            showLoading();
+            
+            const endpoint = currentMode === 'oneshot' ? '/generate' : '/chat';
+            const payload = currentMode === 'oneshot' 
+                ? { 
+                    input: input, 
+                    model: currentModel,
+                    style: style,
+                    artist: artist,
+                    composition: composition,
+                    lighting: lighting
+                }
+                : { 
+                    message: input, 
+                    model: currentModel,
+                    style: style,
+                    artist: artist,
+                    composition: composition,
+                    lighting: lighting
+                };
+            
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    if (currentMode === 'chat') {
+                        addChatMessage('user', input);
+                        addChatMessage('assistant', data.result);
+                        document.getElementById('userInput').value = '';
+                    } else {
+                        showOutput(data.result);
+                    }
+                } else {
+                    showError(data.error || 'Something went wrong!');
+                }
+            } catch (error) {
+                showError('Failed to connect to server. Make sure Ollama is running!');
+            } finally {
+                hideLoading();
+            }
+        });
+        
+        // Reset conversation
+        document.getElementById('resetBtn').addEventListener('click', async () => {
+            if (confirm('Start a new conversation?')) {
+                await fetch('/reset', { method: 'POST' });
+                document.getElementById('chatHistory').innerHTML = '';
+                document.getElementById('chatHistory').classList.remove('visible');
+                document.getElementById('userInput').value = '';
+                document.getElementById('outputArea').classList.remove('visible');
+                hideError();
+            }
+        });
+        
+        // Copy button
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            const output = document.getElementById('output').textContent;
+            navigator.clipboard.writeText(output).then(() => {
+                const btn = document.getElementById('copyBtn');
+                btn.textContent = '✓ Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = 'Copy';
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        });
+        
+        // Enter to submit (Ctrl+Enter for newline)
+        document.getElementById('userInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.ctrlKey && !e.shiftKey) {
+                e.preventDefault();
+                document.getElementById('generateBtn').click();
+            }
+        });
+        
+        function showOutput(text) {
+            document.getElementById('output').textContent = text;
+            document.getElementById('outputArea').classList.add('visible');
+        }
+        
+        function addChatMessage(role, content) {
+            const chatHistory = document.getElementById('chatHistory');
+            chatHistory.classList.add('visible');
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${role}`;
+            messageDiv.innerHTML = `
+                <div class="role">${role === 'user' ? '👤 You' : '🤖 Assistant'}</div>
+                <div class="content">${content}</div>
+            `;
+            
+            chatHistory.appendChild(messageDiv);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+            
+            if (role === 'assistant') {
+                showOutput(content);
+            }
+        }
+        
+        function showLoading() {
+            document.getElementById('loading').classList.add('visible');
+            document.getElementById('generateBtn').disabled = true;
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('visible');
+            document.getElementById('generateBtn').disabled = false;
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('visible');
+        }
+        
+        function hideError() {
+            document.getElementById('error').classList.remove('visible');
+        }
+    </script>
+</body>
+</html>
