@@ -23,6 +23,8 @@ import logging
 from logging.handlers import RotatingFileHandler
 from dotenv import load_dotenv
 from requests.exceptions import ConnectionError, Timeout, RequestException
+import sqlite3
+from datetime import datetime
 
 # Load environment variables from .env file if it exists
 load_dotenv()
@@ -82,6 +84,157 @@ logger = setup_logging()
 
 app = Flask(__name__)
 app.secret_key = FLASK_SECRET_KEY
+
+
+# Database Configuration
+DB_PATH = 'prompt_history.db'
+
+
+def init_db():
+    """Initialize the database and create the history table if it doesn't exist"""
+    logger.info("Initializing prompt history database")
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS prompt_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT NOT NULL,
+            user_input TEXT NOT NULL,
+            generated_output TEXT NOT NULL,
+            model TEXT NOT NULL,
+            presets TEXT,
+            mode TEXT NOT NULL
+        )
+    ''')
+
+    conn.commit()
+    conn.close()
+    logger.info("Database initialized successfully")
+
+
+def save_to_history(user_input, output, model, presets, mode):
+    """
+    Save a generated prompt to the history database
+
+    Args:
+        user_input: The user's input text
+        output: The generated prompt output
+        model: The model type (flux or sdxl)
+        presets: Dictionary of preset selections
+        mode: The generation mode (oneshot or chat)
+
+    Returns:
+        int: The ID of the inserted record, or None if failed
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+
+        timestamp = datetime.utcnow().isoformat()
+        presets_json = json.dumps(presets)
+
+        cursor.execute('''
+            INSERT INTO prompt_history (timestamp, user_input, generated_output, model, presets, mode)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (timestamp, user_input, output, model, presets_json, mode))
+
+        record_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+
+        logger.debug(f"Saved prompt to history with ID: {record_id}")
+        return record_id
+    except Exception as e:
+        logger.error(f"Failed to save to history: {str(e)}")
+        return None
+
+
+def get_history(limit=50, search_query=None):
+    """
+    Retrieve prompt history from the database
+
+    Args:
+        limit: Maximum number of records to return (default: 50)
+        search_query: Optional search string to filter results
+
+    Returns:
+        list: List of history records as dictionaries
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row  # Enable column access by name
+        cursor = conn.cursor()
+
+        if search_query:
+            # Search in user_input and generated_output
+            cursor.execute('''
+                SELECT id, timestamp, user_input, generated_output, model, presets, mode
+                FROM prompt_history
+                WHERE user_input LIKE ? OR generated_output LIKE ?
+                ORDER BY timestamp DESC
+                LIMIT ?
+            ''', (f'%{search_query}%', f'%{search_query}%', limit))
+        else:
+            cursor.execute('''
+                SELECT id, timestamp, user_input, generated_output, model, presets, mode
+                FROM prompt_history
+                ORDER BY timestamp DESC
+                LIMIT ?
+            ''', (limit,))
+
+        rows = cursor.fetchall()
+        conn.close()
+
+        # Convert rows to dictionaries
+        history = []
+        for row in rows:
+            history.append({
+                'id': row['id'],
+                'timestamp': row['timestamp'],
+                'user_input': row['user_input'],
+                'generated_output': row['generated_output'],
+                'model': row['model'],
+                'presets': json.loads(row['presets']) if row['presets'] else {},
+                'mode': row['mode']
+            })
+
+        logger.debug(f"Retrieved {len(history)} history records")
+        return history
+    except Exception as e:
+        logger.error(f"Failed to retrieve history: {str(e)}")
+        return []
+
+
+def delete_history_item(item_id):
+    """
+    Delete a specific history item from the database
+
+    Args:
+        item_id: The ID of the history item to delete
+
+    Returns:
+        bool: True if deletion was successful, False otherwise
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+
+        cursor.execute('DELETE FROM prompt_history WHERE id = ?', (item_id,))
+
+        deleted = cursor.rowcount > 0
+        conn.commit()
+        conn.close()
+
+        if deleted:
+            logger.info(f"Deleted history item with ID: {item_id}")
+        else:
+            logger.warning(f"No history item found with ID: {item_id}")
+
+        return deleted
+    except Exception as e:
+        logger.error(f"Failed to delete history item: {str(e)}")
+        return False
 
 
 # Custom Exception Classes
@@ -555,6 +708,15 @@ def generate():
     result = call_ollama(messages)
     logger.info("Successfully generated prompt")
 
+    # Save to history
+    presets_dict = {
+        'style': style,
+        'artist': artist,
+        'composition': composition,
+        'lighting': lighting
+    }
+    save_to_history(user_input, result, model_type, presets_dict, 'oneshot')
+
     return jsonify({
         'result': result,
         'model': model_type
@@ -653,6 +815,15 @@ def chat():
     session.modified = True
     logger.info("Successfully processed chat message")
 
+    # Save to history
+    presets_dict = {
+        'style': style,
+        'artist': artist,
+        'composition': composition,
+        'lighting': lighting
+    }
+    save_to_history(user_message, result, model_type, presets_dict, 'chat')
+
     return jsonify({
         'result': result,
         'model': model_type
@@ -666,7 +837,53 @@ def reset():
     session.pop('model_type', None)
     return jsonify({'status': 'reset'})
 
+
+@app.route('/history', methods=['GET'])
+def get_prompt_history():
+    """Get prompt history (last 50 records by default)"""
+    logger.info("Received /history request")
+
+    limit = request.args.get('limit', 50, type=int)
+    search_query = request.args.get('q', None)
+
+    # Validate limit
+    if limit < 1 or limit > 200:
+        return jsonify({
+            'error': 'Invalid limit',
+            'message': 'Limit must be between 1 and 200'
+        }), 400
+
+    history = get_history(limit=limit, search_query=search_query)
+
+    logger.info(f"Retrieved {len(history)} history records")
+    return jsonify({
+        'history': history,
+        'count': len(history)
+    })
+
+
+@app.route('/history/<int:history_id>', methods=['DELETE'])
+def delete_prompt_history(history_id):
+    """Delete a specific history item"""
+    logger.info(f"Received request to delete history item {history_id}")
+
+    success = delete_history_item(history_id)
+
+    if success:
+        return jsonify({
+            'status': 'deleted',
+            'id': history_id
+        })
+    else:
+        return jsonify({
+            'error': 'Not found',
+            'message': f'History item with ID {history_id} not found'
+        }), 404
+
 if __name__ == '__main__':
+    # Initialize database
+    init_db()
+
     print("\n" + "="*60)
     print("=== Prompt Generator Starting ===")
     print("="*60)
