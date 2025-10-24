@@ -375,16 +375,18 @@ PROMPT: [single detailed natural language prompt incorporating any presets natur
 Be extremely descriptive and creative. Write like you're describing a photograph or painting in detail. Integrate the preset selections seamlessly into the narrative."""
 }
 
-def call_ollama(messages, model=None):
+def call_ollama(messages, model=None, stream=False):
     """
     Call Ollama API with messages
 
     Args:
         messages: List of message dictionaries with 'role' and 'content'
         model: Model name (optional, defaults to OLLAMA_MODEL)
+        stream: If True, returns a generator that yields tokens; if False, returns complete response
 
     Returns:
-        str: The response from Ollama
+        str: The complete response from Ollama (if stream=False)
+        generator: A generator that yields tokens (if stream=True)
 
     Raises:
         OllamaConnectionError: If cannot connect to Ollama server
@@ -395,33 +397,160 @@ def call_ollama(messages, model=None):
     if model is None:
         model = OLLAMA_MODEL
 
-    logger.debug(f"Attempting to call Ollama API with model: {model}")
+    logger.debug(f"Attempting to call Ollama API with model: {model}, stream: {stream}")
 
+    # Build the prompt from messages
+    system_msg = ""
+    conversation = ""
+
+    for msg in messages:
+        if msg["role"] == "system":
+            system_msg = msg["content"]
+        elif msg["role"] == "user":
+            conversation += f"User: {msg['content']}\n"
+        elif msg["role"] == "assistant":
+            conversation += f"Assistant: {msg['content']}\n"
+
+    # Format the full prompt
+    if system_msg:
+        full_prompt = f"{system_msg}\n\n{conversation}Assistant:"
+    else:
+        full_prompt = f"{conversation}Assistant:"
+
+    payload = {
+        "model": model,
+        "prompt": full_prompt,
+        "stream": stream
+    }
+
+    if stream:
+        # Return generator for streaming mode
+        return _stream_ollama_response(payload, model)
+    else:
+        # Non-streaming mode (existing behavior)
+        return _call_ollama_sync(payload, model)
+
+
+def _stream_ollama_response(payload, model):
+    """
+    Generator function that streams tokens from Ollama
+
+    Args:
+        payload: The request payload
+        model: Model name for error messages
+
+    Yields:
+        str: Individual tokens as they arrive
+    """
     try:
-        # Build the prompt from messages
-        system_msg = ""
-        conversation = ""
+        logger.debug(f"Sending streaming request to Ollama at {OLLAMA_URL}")
+        response = requests.post(OLLAMA_URL, json=payload, stream=True, timeout=120)
 
-        for msg in messages:
-            if msg["role"] == "system":
-                system_msg = msg["content"]
-            elif msg["role"] == "user":
-                conversation += f"User: {msg['content']}\n"
-            elif msg["role"] == "assistant":
-                conversation += f"Assistant: {msg['content']}\n"
+        # Check for specific error status codes
+        if response.status_code == 404:
+            error_detail = response.json().get('error', '') if response.headers.get('content-type', '').startswith('application/json') else ''
+            if 'model' in error_detail.lower() or 'not found' in error_detail.lower():
+                logger.error(f"Ollama model not found: {model}")
+                raise OllamaModelNotFoundError(
+                    f"Model '{model}' is not installed.\n\n"
+                    f"To fix this, run:\n"
+                    f"  ollama pull {model}\n\n"
+                    f"To see available models, visit: https://ollama.com/library\n"
+                    f"To list installed models, run: ollama list"
+                )
+            logger.error(f"Ollama API endpoint not found: {error_detail}")
+            raise OllamaAPIError(
+                f"Ollama API endpoint not found.\n\n"
+                f"To fix this:\n"
+                f"1. Verify Ollama is running: curl http://localhost:11434\n"
+                f"2. Check OLLAMA_URL in .env (current: {OLLAMA_URL})\n"
+                f"3. Update Ollama to latest version: curl -fsSL https://ollama.com/install.sh | sh\n\n"
+                f"Error details: {error_detail}"
+            )
 
-        # Format the full prompt
-        if system_msg:
-            full_prompt = f"{system_msg}\n\n{conversation}Assistant:"
-        else:
-            full_prompt = f"{conversation}Assistant:"
+        # Raise for other HTTP errors
+        response.raise_for_status()
 
-        payload = {
-            "model": model,
-            "prompt": full_prompt,
-            "stream": False
-        }
+        # Stream the response line by line
+        for line in response.iter_lines():
+            if line:
+                try:
+                    chunk = json.loads(line)
 
+                    # Check for errors in the chunk
+                    if 'error' in chunk:
+                        logger.error(f"Ollama API returned error: {chunk['error']}")
+                        raise OllamaAPIError(f"Ollama API error: {chunk['error']}")
+
+                    # Yield the token if present
+                    if 'response' in chunk:
+                        yield chunk['response']
+
+                    # Check if done
+                    if chunk.get('done', False):
+                        logger.debug("Streaming completed successfully")
+                        break
+
+                except json.JSONDecodeError:
+                    logger.warning(f"Failed to parse streaming chunk: {line}")
+                    continue
+
+    except Timeout:
+        logger.error(f"Ollama request timed out after 120 seconds for model: {model}")
+        raise OllamaTimeoutError(
+            f"Request timed out after 120 seconds.\n\n"
+            f"To fix this:\n"
+            f"1. Try a smaller/faster model: ollama pull qwen2.5:0.5b\n"
+            f"2. Check Ollama status: ollama ps\n"
+            f"3. Ensure your system has enough RAM (8GB+ recommended)\n"
+            f"4. Try restarting Ollama: pkill ollama && ollama serve\n\n"
+            f"Current model '{model}' may be too large for your system."
+        )
+    except ConnectionError:
+        logger.error(f"Failed to connect to Ollama at {OLLAMA_URL}")
+        raise OllamaConnectionError(
+            f"Cannot connect to Ollama at {OLLAMA_URL}\n\n"
+            f"To fix this:\n"
+            f"1. Start Ollama: ollama serve\n"
+            f"2. Verify it's running: curl {OLLAMA_URL.rsplit('/api', 1)[0]}\n"
+            f"3. Check your OLLAMA_URL setting in .env\n\n"
+            f"For installation help: https://ollama.com/download"
+        )
+    except (OllamaConnectionError, OllamaTimeoutError, OllamaModelNotFoundError, OllamaAPIError):
+        # Re-raise our custom exceptions (already logged)
+        raise
+    except RequestException as e:
+        logger.error(f"Request exception when calling Ollama: {str(e)}")
+        raise OllamaAPIError(
+            f"Network error communicating with Ollama: {str(e)}\n\n"
+            f"To fix this:\n"
+            f"1. Check network connectivity to {OLLAMA_URL}\n"
+            f"2. Verify Ollama is running: curl http://localhost:11434\n"
+            f"3. Check firewall settings if using remote Ollama"
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error when streaming from Ollama: {str(e)}", exc_info=True)
+        raise OllamaAPIError(
+            f"Unexpected error: {str(e)}\n\n"
+            f"To troubleshoot:\n"
+            f"1. Check application logs: tail -f logs/app.log\n"
+            f"2. Verify Ollama is working: ollama run {model} \"test\"\n"
+            f"3. Report issue with logs at: https://github.com/CreativeNewEra/comfyui-prompt-generator/issues"
+        )
+
+
+def _call_ollama_sync(payload, model):
+    """
+    Synchronous call to Ollama (non-streaming)
+
+    Args:
+        payload: The request payload
+        model: Model name for error messages
+
+    Returns:
+        str: The complete response from Ollama
+    """
+    try:
         logger.debug(f"Sending request to Ollama at {OLLAMA_URL}")
         response = requests.post(OLLAMA_URL, json=payload, timeout=120)
 
@@ -828,6 +957,233 @@ def chat():
         'result': result,
         'model': model_type
     })
+
+@app.route('/generate-stream', methods=['POST'])
+def generate_stream():
+    """Generate a prompt with streaming (one-shot mode)"""
+    logger.info("Received /generate-stream request")
+
+    # Validate request has JSON data
+    if not request.json:
+        logger.warning("Generate-stream request missing JSON data")
+        return jsonify({
+            'error': 'Invalid request',
+            'message': 'Request must contain JSON data'
+        }), 400
+
+    data = request.json
+    user_input = data.get('input', '').strip()
+    model_type = data.get('model', 'flux')
+
+    # Get preset selections
+    style = data.get('style', 'None')
+    artist = data.get('artist', 'None')
+    composition = data.get('composition', 'None')
+    lighting = data.get('lighting', 'None')
+
+    if not user_input:
+        logger.warning("Generate-stream request with empty input")
+        return jsonify({
+            'error': 'Invalid input',
+            'message': 'Please provide a description'
+        }), 400
+
+    logger.info(f"Generating streaming prompt for model: {model_type}")
+    logger.debug(f"User input preview: {user_input[:50]}...")
+
+    # Build context with presets
+    preset_context = []
+    if style != 'None':
+        preset_context.append(f"Style: {PRESETS['styles'][style]}")
+    if artist != 'None':
+        preset_context.append(f"Artist/Style: {PRESETS['artists'][artist]}")
+    if composition != 'None':
+        preset_context.append(f"Composition: {PRESETS['composition'][composition]}")
+    if lighting != 'None':
+        preset_context.append(f"Lighting: {PRESETS['lighting'][lighting]}")
+
+    # Build the full user message
+    if preset_context:
+        preset_info = "\n".join(preset_context)
+        full_input = f"User's image idea: {user_input}\n\nSelected presets:\n{preset_info}\n\nPlease create a detailed prompt incorporating these elements."
+    else:
+        full_input = user_input
+
+    # Get appropriate system prompt
+    system_prompt = SYSTEM_PROMPTS.get(model_type, SYSTEM_PROMPTS['flux'])
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": full_input}
+    ]
+
+    def generate():
+        """Generator function for SSE streaming"""
+        try:
+            full_response = ""
+            for token in call_ollama(messages, stream=True):
+                full_response += token
+                # Send token as SSE event
+                yield f"data: {json.dumps({'token': token})}\n\n"
+
+            # Send completion event
+            yield f"data: {json.dumps({'done': True})}\n\n"
+
+            # Save to history after completion
+            presets_dict = {
+                'style': style,
+                'artist': artist,
+                'composition': composition,
+                'lighting': lighting
+            }
+            save_to_history(user_input, full_response, model_type, presets_dict, 'oneshot')
+            logger.info("Successfully generated streaming prompt")
+
+        except (OllamaConnectionError, OllamaTimeoutError, OllamaModelNotFoundError, OllamaAPIError) as e:
+            # Send error event
+            yield f"data: {json.dumps({'error': str(e), 'type': type(e).__name__})}\n\n"
+            logger.error(f"Error during streaming: {str(e)}")
+        except Exception as e:
+            # Send generic error event
+            yield f"data: {json.dumps({'error': f'Unexpected error: {str(e)}', 'type': 'UnexpectedError'})}\n\n"
+            logger.error(f"Unexpected error during streaming: {str(e)}", exc_info=True)
+
+    return app.response_class(generate(), mimetype='text/event-stream')
+
+
+@app.route('/chat-stream', methods=['POST'])
+def chat_stream():
+    """Conversational mode with streaming - refine ideas back and forth"""
+    logger.info("Received /chat-stream request")
+
+    # Validate request has JSON data
+    if not request.json:
+        logger.warning("Chat-stream request missing JSON data")
+        return jsonify({
+            'error': 'Invalid request',
+            'message': 'Request must contain JSON data'
+        }), 400
+
+    data = request.json
+    user_message = data.get('message', '').strip()
+    model_type = data.get('model', 'flux')
+
+    # Get preset selections
+    style = data.get('style', 'None')
+    artist = data.get('artist', 'None')
+    composition = data.get('composition', 'None')
+    lighting = data.get('lighting', 'None')
+
+    if not user_message:
+        logger.warning("Chat-stream request with empty message")
+        return jsonify({
+            'error': 'Invalid input',
+            'message': 'Please provide a message'
+        }), 400
+
+    # Get or initialize conversation history
+    if 'conversation' not in session:
+        logger.info("Starting new chat conversation")
+        session['conversation'] = []
+        session['model_type'] = model_type
+
+    # If model changed, reset conversation
+    if session.get('model_type') != model_type:
+        logger.info(f"Model changed to {model_type}, resetting conversation")
+        session['conversation'] = []
+        session['model_type'] = model_type
+
+    # Add system prompt if starting new conversation
+    if not session['conversation']:
+        system_prompt = SYSTEM_PROMPTS.get(model_type, SYSTEM_PROMPTS['flux'])
+        session['conversation'].append({
+            "role": "system",
+            "content": system_prompt
+        })
+
+    logger.debug(f"Chat message preview: {user_message[:50]}...")
+
+    # Build context with presets
+    preset_context = []
+    if style != 'None':
+        preset_context.append(f"Style: {PRESETS['styles'][style]}")
+    if artist != 'None':
+        preset_context.append(f"Artist/Style: {PRESETS['artists'][artist]}")
+    if composition != 'None':
+        preset_context.append(f"Composition: {PRESETS['composition'][composition]}")
+    if lighting != 'None':
+        preset_context.append(f"Lighting: {PRESETS['lighting'][lighting]}")
+
+    # Build the full user message
+    if preset_context:
+        preset_info = "\n".join(preset_context)
+        full_message = f"{user_message}\n\n[Selected presets: {preset_info}]"
+    else:
+        full_message = user_message
+
+    # Add user message
+    session['conversation'].append({
+        "role": "user",
+        "content": full_message
+    })
+
+    # Make a copy of the conversation for the request
+    conversation_snapshot = list(session['conversation'])
+
+    # Store session data that we'll need after streaming
+    session_conversation = session['conversation']
+
+    def generate():
+        """Generator function for SSE streaming"""
+        full_response = ""
+        try:
+            for token in call_ollama(conversation_snapshot, stream=True):
+                full_response += token
+                # Send token as SSE event
+                yield f"data: {json.dumps({'token': token})}\n\n"
+
+            # Send completion event
+            yield f"data: {json.dumps({'done': True})}\n\n"
+
+            logger.info("Successfully processed streaming chat message")
+
+        except (OllamaConnectionError, OllamaTimeoutError, OllamaModelNotFoundError, OllamaAPIError) as e:
+            # Send error event
+            yield f"data: {json.dumps({'error': str(e), 'type': type(e).__name__})}\n\n"
+            logger.error(f"Error during streaming: {str(e)}")
+        except Exception as e:
+            # Send generic error event
+            yield f"data: {json.dumps({'error': f'Unexpected error: {str(e)}', 'type': 'UnexpectedError'})}\n\n"
+            logger.error(f"Unexpected error during streaming: {str(e)}", exc_info=True)
+        finally:
+            # Update session after streaming completes
+            # Note: This happens after the response is sent, so we update via a background task
+            if full_response:
+                # Add assistant response to session history
+                session_conversation.append({
+                    "role": "assistant",
+                    "content": full_response
+                })
+
+                # Keep conversation manageable (last 10 messages + system)
+                if len(session_conversation) > 21:  # system + 20 messages
+                    logger.debug("Trimming conversation history to maintain manageable size")
+                    # Trim but keep the reference valid
+                    trimmed = [session_conversation[0]] + session_conversation[-20:]
+                    session_conversation.clear()
+                    session_conversation.extend(trimmed)
+
+                # Save to history after completion
+                presets_dict = {
+                    'style': style,
+                    'artist': artist,
+                    'composition': composition,
+                    'lighting': lighting
+                }
+                save_to_history(user_message, full_response, model_type, presets_dict, 'chat')
+
+    return app.response_class(generate(), mimetype='text/event-stream')
+
 
 @app.route('/reset', methods=['POST'])
 def reset():
