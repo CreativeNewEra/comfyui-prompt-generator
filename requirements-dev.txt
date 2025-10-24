@@ -1,0 +1,12 @@
+# Development dependencies for testing
+# Install with: pip install -r requirements-dev.txt
+
+# Include production dependencies
+-r requirements.txt
+
+# Testing frameworks
+pytest==7.4.3
+pytest-flask==1.3.0
+
+# Code quality and linting
+flake8==6.1.0

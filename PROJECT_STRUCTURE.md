@@ -1,70 +1,101 @@
 # 📁 Project Structure
 
+## 🌳 File Tree
+
 ```
 comfyui-prompt-generator/
 │
-├── 📄 prompt_generator.py          # Main Flask application
-│   ├── Flask routes and API endpoints
-│   ├── Ollama API integration
-│   ├── Preset definitions (styles, artists, composition, lighting)
-│   ├── System prompts for Flux and SDXL
-│   └── Session management for chat mode
-│
-├── 📁 templates/
-│   └── 📄 index.html               # Single-page frontend application
-│       ├── Dual-mode UI (Quick Generate / Chat & Refine)
-│       ├── Model selector (Flux / SDXL)
-│       ├── Preset dropdown system
-│       ├── Chat history display
-│       └── Real-time interaction with backend
-│
 ├── 📁 .github/
 │   └── 📁 workflows/
-│       └── 📄 lint.yml             # GitHub Actions for Python linting
+│       └── 📄 lint.yml                    # GitHub Actions CI/CD
 │
-├── 📄 requirements.txt             # Python dependencies
-│   ├── Flask==3.0.0
-│   └── requests==2.31.0
+├── 📁 templates/
+│   └── 📄 index.html                      # Frontend application (450 lines)
 │
-├── 📄 .gitignore                   # Git ignore patterns
-│   ├── Python bytecode
-│   ├── Virtual environments
-│   ├── IDE files
-│   └── OS-specific files
-│
-├── 📄 LICENSE                      # MIT License
-│
-├── 📄 README.md                    # Comprehensive documentation
-│   ├── Features overview
-│   ├── Installation guide
-│   ├── Usage examples
-│   ├── Configuration options
-│   ├── Troubleshooting
-│   └── Roadmap
-│
-├── 📄 QUICKSTART.md                # 5-minute setup guide
-│   ├── Quick installation steps
-│   ├── First use examples
-│   └── Common issues
-│
-├── 📄 CONTRIBUTING.md              # Contribution guidelines
-│   ├── How to contribute
-│   ├── Code style guide
-│   ├── PR process
-│   └── Architecture overview
-│
-├── 📄 setup.sh                     # Linux/Mac setup script
-│   ├── Environment setup
-│   ├── Dependency installation
-│   └── Quick start instructions
-│
-└── 📄 setup.bat                    # Windows setup script
-    ├── Environment setup
-    ├── Dependency installation
-    └── Quick start instructions
+├── 📄 .gitignore                          # Git ignore patterns
+├── 📄 CHANGELOG.md                        # Version history
+├── 📄 CLAUDE.md                           # Claude Code instructions
+├── 📄 CONTRIBUTING.md                     # Contribution guide (200+ lines)
+├── 📄 GIT_SETUP.md                        # GitHub upload instructions
+├── 📄 LICENSE                             # MIT License
+├── 📄 PROJECT_STRUCTURE.md                # This architecture documentation
+├── 📄 QUICKSTART.md                       # 5-minute setup guide
+├── 📄 README.md                           # Main documentation (500+ lines)
+├── 📄 prompt_generator.py                 # Flask backend (340 lines)
+├── 📄 requirements.txt                    # Python dependencies
+├── 📄 setup.bat                           # Windows setup script
+└── 📄 setup.sh                            # Linux/Mac setup script
+
+Total: 14 files across 3 directories
 ```
 
-## 🔑 Key Files Explained
+## 📊 File Breakdown by Type
+
+### Application Code (2 files)
+```
+prompt_generator.py     340 lines   Python/Flask backend
+templates/index.html    450 lines   HTML/CSS/JavaScript frontend
+─────────────────────────────────
+Total Code:             790 lines
+```
+
+### Documentation (7 files)
+```
+README.md               500+ lines  Main documentation
+CONTRIBUTING.md         200+ lines  Contributor guide
+PROJECT_STRUCTURE.md    200+ lines  Architecture docs (this file)
+GIT_SETUP.md           250+ lines  Upload instructions
+QUICKSTART.md          100+ lines  Quick start guide
+CLAUDE.md              150+ lines  Claude Code guide
+CHANGELOG.md           100+ lines  Version history
+LICENSE                 21 lines   MIT License
+─────────────────────────────────
+Total Documentation:    1,600+ lines (~5,500 words)
+```
+
+### Configuration (4 files)
+```
+requirements.txt        2 lines     Python packages
+.gitignore             40 lines     Git patterns
+setup.sh               30 lines     Unix setup
+setup.bat              35 lines     Windows setup
+```
+
+### CI/CD (1 file)
+```
+.github/workflows/lint.yml  25 lines  GitHub Actions
+```
+
+## 📦 Total Project Size
+
+- **Files**: 14
+- **Directories**: 3
+- **Code**: ~790 lines
+- **Documentation**: ~1,600 lines
+- **Configuration**: ~110 lines
+- **Total Lines**: ~2,500 lines
+
+## 🎯 What Each File Does
+
+| File | Purpose | Priority |
+|------|---------|----------|
+| `prompt_generator.py` | Core application logic | 🔴 Critical |
+| `templates/index.html` | User interface | 🔴 Critical |
+| `requirements.txt` | Dependencies | 🔴 Critical |
+| `README.md` | Main documentation | 🟡 Important |
+| `QUICKSTART.md` | Quick setup | 🟡 Important |
+| `LICENSE` | Legal terms | 🟡 Important |
+| `.gitignore` | Clean commits | 🟡 Important |
+| `GIT_SETUP.md` | Upload guide | 🟢 Helpful |
+| `CONTRIBUTING.md` | Contributor guide | 🟢 Helpful |
+| `setup.sh` | Unix automation | 🟢 Helpful |
+| `setup.bat` | Windows automation | 🟢 Helpful |
+| `CLAUDE.md` | Claude Code guide | 🔵 Reference |
+| `PROJECT_STRUCTURE.md` | Architecture (this file) | 🔵 Reference |
+| `CHANGELOG.md` | Version tracking | 🔵 Reference |
+| `.github/workflows/lint.yml` | Code quality | 🔵 Reference |
+
+## 🔑 Key Components Explained
 
 ### `prompt_generator.py`
 The heart of the application. Contains:
@@ -87,9 +118,11 @@ Complete frontend in a single file:
 - **GitHub Actions**: Automated code quality checks
 
 ### Documentation Files
-- **README.md**: Full documentation (1000+ lines)
+- **README.md**: Full documentation with Getting Started guide
 - **QUICKSTART.md**: Get started in 5 minutes
 - **CONTRIBUTING.md**: Guide for contributors
+- **GIT_SETUP.md**: Step-by-step GitHub upload instructions
+- **CLAUDE.md**: Instructions for Claude Code development
 
 ## 🎨 Preset Categories
 
@@ -139,7 +172,7 @@ The application includes 50+ presets across 4 categories:
 
 Easy places to extend the application:
 
-1. **Add Presets**: Edit `PRESETS` dictionary
+1. **Add Presets**: Edit `PRESETS` dictionary in `prompt_generator.py`
 2. **Change Model**: Modify `call_ollama()` function
 3. **Adjust System Prompts**: Edit `SYSTEM_PROMPTS` dictionary
 4. **Modify UI**: Update `templates/index.html`
@@ -162,9 +195,69 @@ Easy places to extend the application:
 - **No database**: Stateless design for simplicity
 - **Local-first**: Privacy and no API costs
 
+## 💾 Disk Space
+
+Estimated sizes:
+```
+Code:           ~50 KB
+Documentation:  ~200 KB
+Total:          ~250 KB (minimal!)
+```
+
+With virtual environment:
+```
+venv/:          ~50 MB (Python packages)
+Total:          ~50.25 MB
+```
+
+## 🚀 File Creation Order (if rebuilding)
+
+1. **Core Files First**
+   ```
+   prompt_generator.py
+   templates/index.html
+   requirements.txt
+   ```
+
+2. **Essential Config**
+   ```
+   .gitignore
+   LICENSE
+   ```
+
+3. **Main Documentation**
+   ```
+   README.md
+   QUICKSTART.md
+   ```
+
+4. **Helper Scripts**
+   ```
+   setup.sh
+   setup.bat
+   ```
+
+5. **Extended Documentation**
+   ```
+   CONTRIBUTING.md
+   GIT_SETUP.md
+   PROJECT_STRUCTURE.md
+   CHANGELOG.md
+   CLAUDE.md
+   ```
+
+6. **CI/CD**
+   ```
+   .github/workflows/lint.yml
+   ```
+
+## 🎨 Color-Coded Priority
+
+- 🔴 **Critical**: Can't run without these
+- 🟡 **Important**: Should include for professionalism
+- 🟢 **Helpful**: Makes life easier
+- 🔵 **Reference**: Nice to have, informative
+
 ---
 
-**Total Files Created**: 11
-**Lines of Code**: ~2000+
-**Documentation**: ~4000+ words
-**Ready to Deploy**: ✅
+**Everything is organized, documented, and ready to go!** ✨

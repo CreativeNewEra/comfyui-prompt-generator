@@ -8,94 +8,176 @@ This is a **ComfyUI Prompt Generator** - a Flask web application that integrates
 
 ## Development Commands
 
-### Setup and Installation
+### Quick Start with Make (Recommended)
 ```bash
-# Initial setup (Linux/Mac)
-./setup.sh
+# Complete setup
+make install
 
-# Initial setup (Windows)
-setup.bat
+# Configure environment
+cp .env.example .env
+# Edit .env with your settings
 
-# Manual setup
-python -m venv venv
+# Start the application
+make run
+
+# Run tests
+make test
+
+# Run linting
+make lint
+
+# View all available commands
+make help
+```
+
+### Manual Setup (Alternative)
+```bash
+# Create virtual environment
+python3 -m venv venv
 source venv/bin/activate  # Linux/Mac
 venv\Scripts\activate     # Windows
+
+# Install dependencies
 pip install -r requirements.txt
-```
 
-### Running the Application
-```bash
-# Start Ollama (required dependency)
-ollama serve
+# For development (includes pytest, flake8)
+pip install -r requirements-dev.txt
 
-# Run the Flask application
+# Run the application
 python prompt_generator.py
-# Access at: http://localhost:5000
 ```
 
-### Testing Ollama Connection
+### Testing
 ```bash
+# Run all tests
+make test
+# or: pytest
+
+# Run tests with coverage
+make test-cov
+# or: pytest --cov=prompt_generator --cov-report=html
+
+# Run specific test file
+pytest tests/test_app.py
+pytest tests/test_presets.py
+```
+
+### Linting
+```bash
+# Run flake8
+make lint
+# or: flake8 prompt_generator.py tests/
+
+# Configuration in .flake8 (max line length: 120)
+```
+
+### Ollama Setup
+```bash
+# Show Ollama setup instructions
+make setup-ollama
+
 # Verify Ollama is running
 curl http://localhost:11434
 
 # List installed models
 ollama list
 
-# Install a model if needed
+# Install a model
 ollama pull qwen3:latest
 ```
 
 ## Architecture
 
 ### Core Application Structure
-- **Backend**: `prompt_generator.py` - Flask application with 5 main routes
-- **Frontend**: `index.html` - Single-page application (no templates/ directory)
-- **Dependencies**: Only Flask 3.0.0 and requests 2.31.0
+- **Backend**: `prompt_generator.py` - Flask application (630 lines)
+- **Frontend**: `templates/index.html` - Single-page application with embedded CSS/JS
+- **Dependencies**: Flask 3.0.0, requests 2.31.0, python-dotenv 1.0.0
+- **Tests**: `tests/` directory with pytest fixtures in `conftest.py`
 
 ### Key Routes
-- `GET /` - Serves the main application
-- `GET /presets` - Returns available preset configurations
+- `GET /` - Serves the main application (`templates/index.html`)
+- `GET /presets` - Returns available preset configurations (JSON)
 - `POST /generate` - One-shot prompt generation (Quick Generate mode)
 - `POST /chat` - Conversational prompt refinement (Chat & Refine mode)
 - `POST /reset` - Clears chat conversation history
 
+### Error Handling
+The application uses custom exception classes with specific HTTP error handlers:
+- `OllamaConnectionError` → 503 Service Unavailable
+- `OllamaTimeoutError` → 504 Gateway Timeout
+- `OllamaModelNotFoundError` → 404 Not Found
+- `OllamaAPIError` → 502 Bad Gateway
+
+All routes return JSON error responses with `error`, `message`, `status`, and `type` fields.
+
+### Session Management
+- Chat mode uses Flask server-side sessions (signed cookies)
+- Conversation history automatically limited to 20 messages + system prompt
+- Sessions reset when switching models or calling `/reset`
+- Trimming happens in `/chat` route when conversation exceeds 21 messages
+
 ### Preset System
-The application includes 50+ curated presets across 4 categories:
-- **Styles** (14 options): Cinematic, Anime, Photorealistic, etc.
-- **Artists/Photographers** (17 options): Greg Rutkowski, Ansel Adams, etc.
-- **Composition** (15 options): Portrait, Landscape, Rule of Thirds, etc.
-- **Lighting** (15 options): Golden Hour, Neon, Volumetric, etc.
+The application includes 50+ curated presets in the `PRESETS` dictionary (lines 108-186):
+- **styles**: 14 options (Cinematic, Anime, Photorealistic, etc.)
+- **artists**: 17 options (Greg Rutkowski, Ansel Adams, Studio Ghibli, etc.)
+- **composition**: 15 options (Portrait, Landscape, Rule of Thirds, etc.)
+- **lighting**: 15 options (Golden Hour, Neon, Volumetric, etc.)
+
+Each preset is optional - all default to "None" with empty string value.
 
 ### Model-Specific Prompting
-- **Flux Dev**: Natural language, conversational style prompts
-- **SDXL (Juggernaut)**: Quality-tagged prompts with negative prompt generation
+Two distinct system prompts in `SYSTEM_PROMPTS` dictionary (lines 188-222):
+- **Flux**: Natural language, conversational style, no quality tags needed
+- **SDXL**: Quality-tagged prompts with separate negative prompt generation
 
 ## Configuration
 
-### Changing Ollama Model
-Edit `prompt_generator.py` line 134:
-```python
-def call_ollama(messages, model="qwen3:latest"):
-    # Change to your preferred model
+### Environment Variables (.env)
+Configuration is managed via `.env` file (copy from `.env.example`):
+
+```bash
+# Ollama Configuration
+OLLAMA_URL=http://localhost:11434/api/generate
+OLLAMA_MODEL=qwen3:latest
+
+# Flask Configuration
+FLASK_PORT=5000
+FLASK_DEBUG=true  # false for production
+FLASK_SECRET_KEY=your-secret-key-here  # Generate with: python -c "import secrets; print(secrets.token_hex(32))"
+
+# Logging
+LOG_LEVEL=INFO  # DEBUG, INFO, WARNING, ERROR, CRITICAL
 ```
 
-### Changing Application Port
-Edit `prompt_generator.py` line 323:
-```python
-app.run(debug=True, host='0.0.0.0', port=5000)
-# Change port=5000 to desired port
-```
+All configuration values have fallback defaults if .env is not present.
 
-### Remote Ollama Instance
-Edit `prompt_generator.py` line 15:
-```python
-OLLAMA_URL = "http://your-ollama-server:11434/api/generate"
+### Changing Configuration
+Prefer editing `.env` over modifying code. Key locations if manual editing is needed:
+- Ollama URL: Line 30
+- Ollama model: Line 31
+- Flask port: Line 32
+- Flask debug: Line 33
+- Secret key: Line 34
+- Log level: Line 35
+
+## Logging System
+
+The application includes comprehensive logging:
+- **Location**: `logs/app.log` (created automatically)
+- **Rotation**: 10MB max file size, keeps 5 backups
+- **Format**: `%(asctime)s - %(name)s - %(levelname)s - %(message)s`
+- **Setup**: `setup_logging()` function (lines 38-80)
+
+View logs:
+```bash
+make logs          # View last 50 lines
+make logs-follow   # Follow logs in real-time
 ```
 
 ## Development Guidelines
 
 ### Adding New Presets
-Edit the `PRESETS` dictionary in `prompt_generator.py` (lines 18-96):
+Edit `PRESETS` dictionary in `prompt_generator.py` (lines 108-186):
 ```python
 PRESETS = {
     "styles": {
@@ -106,62 +188,108 @@ PRESETS = {
 }
 ```
 
-### Session Management
-- Chat mode uses Flask server-side sessions
-- Conversation history is automatically limited to 20 messages + system prompt
-- Sessions reset when switching models
-
-### Frontend Architecture
-- Single HTML file with embedded CSS and JavaScript
-- No external dependencies or frameworks
-- Responsive design with mobile support
-- Real-time preset selection and mode switching
-
-## Common Development Tasks
+Presets are automatically available via `/presets` endpoint and frontend dropdowns.
 
 ### Adding New Routes
-Follow the existing pattern in `prompt_generator.py`:
+Follow the RESTful pattern:
 ```python
 @app.route('/new-endpoint', methods=['POST'])
 def new_function():
+    logger.info("Received /new-endpoint request")
+
+    # Validate JSON
+    if not request.json:
+        return jsonify({'error': 'Invalid request', 'message': 'Request must contain JSON data'}), 400
+
     data = request.json
     # Handle request
+
+    logger.info("Successfully processed request")
     return jsonify({'result': 'response'})
 ```
 
-### Modifying UI
-All frontend code is in `index.html`:
-- CSS: Lines 8-367
-- HTML structure: Lines 370-459  
-- JavaScript: Lines 461-671
+Error handling is automatic via registered error handlers.
 
-### Debugging Connection Issues
-1. Verify Ollama is running: `ollama serve`
-2. Check Ollama API: `curl http://localhost:11434`
-3. Verify model installation: `ollama list`
-4. Check Flask console for backend errors
-5. Check browser console (F12) for frontend errors
+### Adding New Model Types
+1. Add system prompt to `SYSTEM_PROMPTS` dictionary (lines 188-222)
+2. Update frontend model selector in `templates/index.html`
+3. No other code changes needed - the system is model-agnostic
+
+### Modifying UI
+All frontend code is in `templates/index.html` (single file):
+- Structure: HTML with semantic markup
+- Styling: Embedded CSS with custom properties
+- Logic: Vanilla JavaScript (ES6+)
+- No build step or external dependencies
+
+### Testing Best Practices
+- Tests use `monkeypatch` to mock Ollama calls (see `tests/test_app.py`)
+- Fixtures available: `flask_app`, `client`, `presets` (defined in `conftest.py`)
+- All tests must pass before CI succeeds (GitHub Actions)
+- Coverage report generated with `make test-cov`
 
 ## Troubleshooting
 
 ### "Failed to connect to server"
-- Ensure Ollama is running: `ollama serve`
-- Verify correct Ollama URL in configuration
-- Check firewall settings
+1. Verify Ollama is running: `ollama serve`
+2. Check Ollama API: `curl http://localhost:11434`
+3. Verify model installation: `ollama list`
+4. Check OLLAMA_URL in `.env` or code (line 30)
+5. Review logs: `make logs`
 
 ### Empty or Poor Quality Prompts
-- Try different Ollama models
+- Try different Ollama models (`OLLAMA_MODEL` in `.env`)
 - Provide more detailed input descriptions
 - Use presets to guide AI output
 - Switch to Chat mode for iterative refinement
+- Check logs for errors
 
 ### Port Conflicts
-- Change port in `prompt_generator.py` line 323
+- Change `FLASK_PORT` in `.env` file
 - Common alternatives: 8080, 3000, 8000
+- Verify port availability: `lsof -i :5000` (Linux/Mac)
+
+### Tests Failing
+- Ensure virtual environment is activated
+- Install dev dependencies: `pip install -r requirements-dev.txt`
+- Check pytest output for specific failures
+- Verify imports work: `python -c "from prompt_generator import app"`
+
+### Linting Errors
+- Configuration in `.flake8` file
+- Max line length: 120 characters
+- Excludes: venv, logs, build artifacts
+- Auto-fix some issues: Consider using `black` or `autopep8`
+
+## File Structure
+
+```
+.
+├── prompt_generator.py      # Main Flask application (630 lines)
+├── templates/
+│   └── index.html          # Single-page frontend
+├── tests/
+│   ├── __init__.py
+│   ├── conftest.py         # Pytest fixtures
+│   ├── test_app.py         # Route and functionality tests
+│   └── test_presets.py     # Preset validation tests
+├── requirements.txt         # Production dependencies
+├── requirements-dev.txt     # Development dependencies (pytest, flake8)
+├── .env.example            # Environment configuration template
+├── .flake8                 # Linting configuration
+├── Makefile                # Development commands
+├── README.md               # User-facing documentation
+├── ARCHITECTURE.md         # Detailed technical architecture
+└── logs/                   # Application logs (auto-created)
+    └── app.log
+```
 
 ## Privacy and Security
 
 - All processing happens locally via Ollama
 - No external API calls or data collection
-- Session data stored server-side (not localStorage)
-- No sensitive information should be logged or committed
+- Session data stored server-side (signed cookies)
+- Secret key from environment variable (generate unique for production)
+- No authentication (designed for single-user local use)
+- Input validation on all routes
+- Comprehensive error handling prevents information leakage

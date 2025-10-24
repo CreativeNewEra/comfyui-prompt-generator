@@ -47,6 +47,7 @@ Thumbs.db
 
 # Logs
 *.log
+logs/
 
 # Environment variables
 .env
@@ -61,3 +62,9 @@ flask_session/
 # Temporary files
 *.tmp
 *.temp
+
+# Archives and builds
+*.tar.gz
+*.zip
+*.tar
+*.rar

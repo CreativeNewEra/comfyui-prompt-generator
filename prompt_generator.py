@@ -2,17 +2,107 @@
 """
 Prompt Generator Web App
 Talks to local Ollama to generate detailed prompts for ComfyUI
+
+Configuration:
+    You can customize the application by creating a .env file in the root directory.
+    Copy .env.example to .env and modify the values:
+    - OLLAMA_URL: URL for the Ollama API endpoint
+    - OLLAMA_MODEL: Default model to use (e.g., qwen3:latest, llama2, mistral)
+    - FLASK_PORT: Port for the web server (default: 5000)
+    - FLASK_DEBUG: Debug mode (true/false)
+    - FLASK_SECRET_KEY: Secret key for session management (generate a random one for production)
 """
 
 from flask import Flask, render_template, request, jsonify, session
 import requests
 import json
 import secrets
+import os
+import logging
+from logging.handlers import RotatingFileHandler
+from dotenv import load_dotenv
+from requests.exceptions import ConnectionError, Timeout, RequestException
+
+# Load environment variables from .env file if it exists
+load_dotenv()
+
+# Configuration with environment variable fallbacks
+OLLAMA_URL = os.getenv('OLLAMA_URL', 'http://localhost:11434/api/generate')
+OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'qwen3:latest')
+FLASK_PORT = int(os.getenv('FLASK_PORT', '5000'))
+FLASK_DEBUG = os.getenv('FLASK_DEBUG', 'true').lower() in ('true', '1', 'yes')
+FLASK_SECRET_KEY = os.getenv('FLASK_SECRET_KEY', secrets.token_hex(16))
+LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
+
+# Configure logging
+def setup_logging():
+    """Configure logging with both console and file handlers"""
+    # Create logs directory if it doesn't exist
+    log_dir = 'logs'
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+
+    # Convert string log level to logging constant
+    numeric_level = getattr(logging, LOG_LEVEL, logging.INFO)
+
+    # Create formatter
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+
+    # Setup file handler with rotation (10MB max, keep 5 backups)
+    file_handler = RotatingFileHandler(
+        os.path.join(log_dir, 'app.log'),
+        maxBytes=10*1024*1024,
+        backupCount=5
+    )
+    file_handler.setLevel(numeric_level)
+    file_handler.setFormatter(formatter)
+
+    # Setup console handler
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(numeric_level)
+    console_handler.setFormatter(formatter)
+
+    # Configure root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(numeric_level)
+    root_logger.addHandler(file_handler)
+    root_logger.addHandler(console_handler)
+
+    # Reduce noise from werkzeug (Flask's dev server)
+    logging.getLogger('werkzeug').setLevel(logging.WARNING)
+
+    return logging.getLogger(__name__)
+
+# Initialize logging
+logger = setup_logging()
 
 app = Flask(__name__)
-app.secret_key = secrets.token_hex(16)
+app.secret_key = FLASK_SECRET_KEY
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
+
+# Custom Exception Classes
+class OllamaConnectionError(Exception):
+    """Raised when unable to connect to Ollama"""
+    pass
+
+
+class OllamaTimeoutError(Exception):
+    """Raised when Ollama request times out"""
+    pass
+
+
+class OllamaModelNotFoundError(Exception):
+    """Raised when the requested model is not found"""
+    pass
+
+
+class OllamaAPIError(Exception):
+    """Raised when Ollama returns an error response"""
+    pass
+
 
 # Preset options for prompt enhancement
 PRESETS = {
@@ -131,13 +221,33 @@ PROMPT: [single detailed natural language prompt incorporating any presets natur
 Be extremely descriptive and creative. Write like you're describing a photograph or painting in detail. Integrate the preset selections seamlessly into the narrative."""
 }
 
-def call_ollama(messages, model="qwen3:latest"):
-    """Call Ollama API with messages"""
+def call_ollama(messages, model=None):
+    """
+    Call Ollama API with messages
+
+    Args:
+        messages: List of message dictionaries with 'role' and 'content'
+        model: Model name (optional, defaults to OLLAMA_MODEL)
+
+    Returns:
+        str: The response from Ollama
+
+    Raises:
+        OllamaConnectionError: If cannot connect to Ollama server
+        OllamaTimeoutError: If the request times out
+        OllamaModelNotFoundError: If the requested model is not found
+        OllamaAPIError: If Ollama returns an error response
+    """
+    if model is None:
+        model = OLLAMA_MODEL
+
+    logger.debug(f"Attempting to call Ollama API with model: {model}")
+
     try:
         # Build the prompt from messages
         system_msg = ""
         conversation = ""
-        
+
         for msg in messages:
             if msg["role"] == "system":
                 system_msg = msg["content"]
@@ -145,29 +255,173 @@ def call_ollama(messages, model="qwen3:latest"):
                 conversation += f"User: {msg['content']}\n"
             elif msg["role"] == "assistant":
                 conversation += f"Assistant: {msg['content']}\n"
-        
+
         # Format the full prompt
         if system_msg:
             full_prompt = f"{system_msg}\n\n{conversation}Assistant:"
         else:
             full_prompt = f"{conversation}Assistant:"
-        
+
         payload = {
             "model": model,
             "prompt": full_prompt,
             "stream": False
         }
-        
-        response = requests.post(OLLAMA_URL, json=payload, timeout=120)
-        response.raise_for_status()
-        
-        result = response.json()
-        return result['response']
-    except requests.exceptions.RequestException as e:
-        return f"Error connecting to Ollama: {str(e)}"
-    except Exception as e:
-        return f"Error: {str(e)}"
 
+        logger.debug(f"Sending request to Ollama at {OLLAMA_URL}")
+        response = requests.post(OLLAMA_URL, json=payload, timeout=120)
+
+        # Check for specific error status codes
+        if response.status_code == 404:
+            error_detail = response.json().get('error', '') if response.headers.get('content-type', '').startswith('application/json') else ''
+            if 'model' in error_detail.lower() or 'not found' in error_detail.lower():
+                logger.error(f"Ollama model not found: {model}")
+                raise OllamaModelNotFoundError(
+                    f"Model '{model}' not found. Please install it with: ollama pull {model}"
+                )
+            logger.error(f"Ollama API endpoint not found: {error_detail}")
+            raise OllamaAPIError(f"Ollama API endpoint not found. Error: {error_detail}")
+
+        # Raise for other HTTP errors
+        response.raise_for_status()
+
+        # Parse response
+        result = response.json()
+
+        # Check if response contains an error field
+        if 'error' in result:
+            logger.error(f"Ollama API returned error: {result['error']}")
+            raise OllamaAPIError(f"Ollama returned an error: {result['error']}")
+
+        # Return the generated response
+        if 'response' in result:
+            logger.debug("Successfully received response from Ollama")
+            return result['response']
+        else:
+            logger.error("Unexpected response format from Ollama API")
+            raise OllamaAPIError("Unexpected response format from Ollama API")
+
+    except Timeout:
+        logger.error(f"Ollama request timed out after 120 seconds for model: {model}")
+        raise OllamaTimeoutError(
+            f"Request to Ollama timed out after 120 seconds. The model might be too large or the server is overloaded."
+        )
+    except ConnectionError:
+        logger.error(f"Failed to connect to Ollama at {OLLAMA_URL}")
+        raise OllamaConnectionError(
+            f"Failed to connect to Ollama at {OLLAMA_URL}. "
+            "Make sure Ollama is running with: ollama serve"
+        )
+    except (OllamaConnectionError, OllamaTimeoutError, OllamaModelNotFoundError, OllamaAPIError):
+        # Re-raise our custom exceptions (already logged)
+        raise
+    except RequestException as e:
+        logger.error(f"Request exception when calling Ollama: {str(e)}")
+        raise OllamaAPIError(f"Request error: {str(e)}")
+    except json.JSONDecodeError:
+        logger.error("Failed to parse JSON response from Ollama API")
+        raise OllamaAPIError("Failed to parse response from Ollama API")
+    except KeyError as e:
+        logger.error(f"Missing expected field in Ollama response: {str(e)}")
+        raise OllamaAPIError(f"Missing expected field in Ollama response: {str(e)}")
+    except Exception as e:
+        logger.error(f"Unexpected error when calling Ollama: {str(e)}", exc_info=True)
+        raise OllamaAPIError(f"Unexpected error: {str(e)}")
+
+# Error Handlers
+@app.errorhandler(400)
+def bad_request_error(error):
+    """Handle 400 errors"""
+    logger.warning(f"Bad request: {str(error)}")
+    return jsonify({
+        'error': 'Bad request',
+        'message': 'The request could not be understood or was missing required parameters',
+        'status': 400
+    }), 400
+
+
+@app.errorhandler(404)
+def not_found_error(error):
+    """Handle 404 errors"""
+    logger.warning(f"Not found: {request.path}")
+    return jsonify({
+        'error': 'Not found',
+        'message': 'The requested resource was not found on this server',
+        'status': 404
+    }), 404
+
+
+@app.errorhandler(500)
+def internal_error(error):
+    """Handle 500 errors"""
+    logger.error(f"Internal server error: {str(error)}", exc_info=True)
+    return jsonify({
+        'error': 'Internal server error',
+        'message': 'An internal server error occurred. Please try again later.',
+        'status': 500
+    }), 500
+
+
+@app.errorhandler(Exception)
+def handle_unexpected_error(error):
+    """Handle any unexpected errors"""
+    logger.error(f"Unexpected error: {str(error)}", exc_info=True)
+    return jsonify({
+        'error': 'Unexpected error',
+        'message': 'An unexpected error occurred. Please try again.',
+        'status': 500
+    }), 500
+
+
+@app.errorhandler(OllamaConnectionError)
+def handle_connection_error(error):
+    """Handle Ollama connection errors"""
+    logger.error(f"Ollama connection error: {str(error)}")
+    return jsonify({
+        'error': 'Connection Error',
+        'message': str(error),
+        'status': 503,
+        'type': 'connection_error'
+    }), 503
+
+
+@app.errorhandler(OllamaTimeoutError)
+def handle_timeout_error(error):
+    """Handle Ollama timeout errors"""
+    logger.error(f"Ollama timeout error: {str(error)}")
+    return jsonify({
+        'error': 'Timeout Error',
+        'message': str(error),
+        'status': 504,
+        'type': 'timeout_error'
+    }), 504
+
+
+@app.errorhandler(OllamaModelNotFoundError)
+def handle_model_not_found_error(error):
+    """Handle Ollama model not found errors"""
+    logger.error(f"Ollama model not found: {str(error)}")
+    return jsonify({
+        'error': 'Model Not Found',
+        'message': str(error),
+        'status': 404,
+        'type': 'model_not_found'
+    }), 404
+
+
+@app.errorhandler(OllamaAPIError)
+def handle_api_error(error):
+    """Handle Ollama API errors"""
+    logger.error(f"Ollama API error: {str(error)}")
+    return jsonify({
+        'error': 'API Error',
+        'message': str(error),
+        'status': 502,
+        'type': 'api_error'
+    }), 502
+
+
+# Routes
 @app.route('/')
 def index():
     """Main page"""
@@ -181,19 +435,36 @@ def get_presets():
 @app.route('/generate', methods=['POST'])
 def generate():
     """Generate a prompt (one-shot mode)"""
+    logger.info("Received /generate request")
+
+    # Validate request has JSON data
+    if not request.json:
+        logger.warning("Generate request missing JSON data")
+        return jsonify({
+            'error': 'Invalid request',
+            'message': 'Request must contain JSON data'
+        }), 400
+
     data = request.json
     user_input = data.get('input', '').strip()
     model_type = data.get('model', 'flux')
-    
+
     # Get preset selections
     style = data.get('style', 'None')
     artist = data.get('artist', 'None')
     composition = data.get('composition', 'None')
     lighting = data.get('lighting', 'None')
-    
+
     if not user_input:
-        return jsonify({'error': 'Please provide a description'}), 400
-    
+        logger.warning("Generate request with empty input")
+        return jsonify({
+            'error': 'Invalid input',
+            'message': 'Please provide a description'
+        }), 400
+
+    logger.info(f"Generating prompt for model: {model_type}")
+    logger.debug(f"User input preview: {user_input[:50]}...")
+
     # Build context with presets
     preset_context = []
     if style != 'None':
@@ -204,24 +475,25 @@ def generate():
         preset_context.append(f"Composition: {PRESETS['composition'][composition]}")
     if lighting != 'None':
         preset_context.append(f"Lighting: {PRESETS['lighting'][lighting]}")
-    
+
     # Build the full user message
     if preset_context:
         preset_info = "\n".join(preset_context)
         full_input = f"User's image idea: {user_input}\n\nSelected presets:\n{preset_info}\n\nPlease create a detailed prompt incorporating these elements."
     else:
         full_input = user_input
-    
+
     # Get appropriate system prompt
     system_prompt = SYSTEM_PROMPTS.get(model_type, SYSTEM_PROMPTS['flux'])
-    
+
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": full_input}
     ]
-    
+
     result = call_ollama(messages)
-    
+    logger.info("Successfully generated prompt")
+
     return jsonify({
         'result': result,
         'model': model_type
@@ -230,37 +502,55 @@ def generate():
 @app.route('/chat', methods=['POST'])
 def chat():
     """Conversational mode - refine ideas back and forth"""
+    logger.info("Received /chat request")
+
+    # Validate request has JSON data
+    if not request.json:
+        logger.warning("Chat request missing JSON data")
+        return jsonify({
+            'error': 'Invalid request',
+            'message': 'Request must contain JSON data'
+        }), 400
+
     data = request.json
     user_message = data.get('message', '').strip()
     model_type = data.get('model', 'flux')
-    
+
     # Get preset selections
     style = data.get('style', 'None')
     artist = data.get('artist', 'None')
     composition = data.get('composition', 'None')
     lighting = data.get('lighting', 'None')
-    
+
     if not user_message:
-        return jsonify({'error': 'Please provide a message'}), 400
-    
+        logger.warning("Chat request with empty message")
+        return jsonify({
+            'error': 'Invalid input',
+            'message': 'Please provide a message'
+        }), 400
+
     # Get or initialize conversation history
     if 'conversation' not in session:
+        logger.info("Starting new chat conversation")
         session['conversation'] = []
         session['model_type'] = model_type
-    
+
     # If model changed, reset conversation
     if session.get('model_type') != model_type:
+        logger.info(f"Model changed to {model_type}, resetting conversation")
         session['conversation'] = []
         session['model_type'] = model_type
-    
+
     # Add system prompt if starting new conversation
     if not session['conversation']:
         system_prompt = SYSTEM_PROMPTS.get(model_type, SYSTEM_PROMPTS['flux'])
         session['conversation'].append({
-            "role": "system", 
+            "role": "system",
             "content": system_prompt
         })
-    
+
+    logger.debug(f"Chat message preview: {user_message[:50]}...")
+
     # Build context with presets
     preset_context = []
     if style != 'None':
@@ -271,35 +561,37 @@ def chat():
         preset_context.append(f"Composition: {PRESETS['composition'][composition]}")
     if lighting != 'None':
         preset_context.append(f"Lighting: {PRESETS['lighting'][lighting]}")
-    
+
     # Build the full user message
     if preset_context:
         preset_info = "\n".join(preset_context)
         full_message = f"{user_message}\n\n[Selected presets: {preset_info}]"
     else:
         full_message = user_message
-    
+
     # Add user message
     session['conversation'].append({
         "role": "user",
         "content": full_message
     })
-    
+
     # Get response from Ollama
     result = call_ollama(session['conversation'])
-    
+
     # Add assistant response to history
     session['conversation'].append({
         "role": "assistant",
         "content": result
     })
-    
+
     # Keep conversation manageable (last 10 messages + system)
     if len(session['conversation']) > 21:  # system + 20 messages
+        logger.debug("Trimming conversation history to maintain manageable size")
         session['conversation'] = [session['conversation'][0]] + session['conversation'][-20:]
-    
+
     session.modified = True
-    
+    logger.info("Successfully processed chat message")
+
     return jsonify({
         'result': result,
         'model': model_type
@@ -308,6 +600,7 @@ def chat():
 @app.route('/reset', methods=['POST'])
 def reset():
     """Reset conversation history"""
+    logger.info("Resetting conversation history")
     session.pop('conversation', None)
     session.pop('model_type', None)
     return jsonify({'status': 'reset'})
@@ -316,8 +609,21 @@ if __name__ == '__main__':
     print("\n" + "="*60)
     print("🎨 Prompt Generator Starting...")
     print("="*60)
-    print("\nOpen your browser to: http://localhost:5000")
+    print(f"\nOpen your browser to: http://localhost:{FLASK_PORT}")
+    print(f"Using Ollama model: {OLLAMA_MODEL}")
+    print(f"Ollama URL: {OLLAMA_URL}")
+    print(f"Log level: {LOG_LEVEL}")
     print("\nMake sure Ollama is running!")
     print("Press Ctrl+C to stop\n")
-    
-    app.run(debug=True, host='0.0.0.0', port=5000)
+
+    logger.info("="*60)
+    logger.info("Starting Prompt Generator Application")
+    logger.info("="*60)
+    logger.info(f"Flask port: {FLASK_PORT}")
+    logger.info(f"Flask debug mode: {FLASK_DEBUG}")
+    logger.info(f"Ollama URL: {OLLAMA_URL}")
+    logger.info(f"Ollama model: {OLLAMA_MODEL}")
+    logger.info(f"Log level: {LOG_LEVEL}")
+    logger.info("Application ready to accept requests")
+
+    app.run(debug=FLASK_DEBUG, host='0.0.0.0', port=FLASK_PORT)
