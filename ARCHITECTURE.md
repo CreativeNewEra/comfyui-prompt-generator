@@ -2,12 +2,13 @@
 
 ## Table of Contents
 - [High-Level Architecture](#high-level-architecture)
+- [Project Structure](#project-structure)
 - [Component Overview](#component-overview)
 - [Request/Response Flow](#requestresponse-flow)
 - [Data Models](#data-models)
 - [Key Design Decisions](#key-design-decisions)
 - [Extension Points](#extension-points)
-- [Security Considerations](#security-considerations)
+- [Security Considerations](#security-characteristics)
 - [Performance Characteristics](#performance-characteristics)
 
 ---
@@ -55,6 +56,120 @@ graph TB
 3. **Stateless API**: Routes are stateless except for chat sessions
 4. **Modular Design**: Components can be modified independently
 5. **Privacy-Focused**: No external API calls or data collection
+
+---
+
+## Project Structure
+
+### File Organization
+
+```
+comfyui-prompt-generator/
+│
+├── 📁 .github/
+│   └── 📁 workflows/
+│       └── 📄 ci.yml                      # GitHub Actions CI/CD pipeline
+│
+├── 📁 templates/
+│   └── 📄 index.html                      # Frontend SPA (~500+ lines)
+│
+├── 📁 tests/
+│   ├── 📄 __init__.py
+│   ├── 📄 conftest.py                     # Pytest fixtures
+│   ├── 📄 test_app.py                     # Route and functionality tests
+│   └── 📄 test_presets.py                 # Preset validation tests
+│
+├── 📁 logs/
+│   └── 📄 app.log                         # Application logs (auto-created)
+│
+├── 📄 prompt_generator.py                 # Flask backend (~1,760 lines)
+├── 📄 prompt_history.db                   # SQLite database (auto-created)
+├── 📄 requirements.txt                    # Production dependencies
+├── 📄 requirements-dev.txt                # Development dependencies
+├── 📄 .env.example                        # Environment config template
+├── 📄 .env                                # Your local config (gitignored)
+├── 📄 .flake8                             # Linting configuration
+├── 📄 .gitignore                          # Git ignore patterns
+├── 📄 Makefile                            # Development commands
+├── 📄 setup.sh                            # Unix setup script
+├── 📄 setup.bat                           # Windows setup script
+├── 📄 README.md                           # Main documentation
+├── 📄 ARCHITECTURE.md                     # This file
+├── 📄 CONTRIBUTING.md                     # Contributor guide
+├── 📄 CLAUDE.md                           # AI development guide
+├── 📄 EXAMPLES.md                         # Usage examples
+├── 📄 CHANGELOG.md                        # Version history
+└── 📄 LICENSE                             # MIT License
+```
+
+### Component Breakdown
+
+**Application Code**: ~2,260 lines
+- `prompt_generator.py`: ~1,760 lines (Backend)
+- `templates/index.html`: ~500 lines (Frontend)
+
+**Documentation**: ~5,000+ lines
+- README.md, ARCHITECTURE.md, EXAMPLES.md, CONTRIBUTING.md, CLAUDE.md, CHANGELOG.md
+
+**Tests**: Comprehensive pytest suite
+- Route testing, preset validation, error handling
+
+**Configuration**:
+- `.env` for environment variables
+- `.flake8` for code quality
+- `Makefile` for dev workflow
+
+### Preset Breakdown
+
+The application includes **61 curated presets**:
+
+1. **Styles (14 presets)**
+   - Cinematic, Anime, Photorealistic, Oil Painting, Digital Art
+   - Watercolor, Cyberpunk, Fantasy Art, Comic Book, Minimalist
+   - Surreal, Vintage, 3D Render, Pencil Sketch
+
+2. **Artists/Photographers (18 presets)**
+   - Digital Artists: Greg Rutkowski, Artgerm, Ross Tran, Loish
+   - Traditional: Alphonse Mucha, H.R. Giger, Moebius, Zdzisław Beksiński
+   - Photographers: Ansel Adams, Annie Leibovitz, Steve McCurry, Peter Lindbergh, Sebastião Salgado, Irving Penn
+   - Animation: Hayao Miyazaki, Makoto Shinkai, Simon Stålenhag
+
+3. **Composition (15 presets)**
+   - Portrait, Landscape, Close-up, Wide Shot, Medium Shot
+   - Extreme Close-up, Bird's Eye View, Low Angle, High Angle
+   - Dutch Angle, Rule of Thirds, Symmetrical, Leading Lines
+   - Frame within Frame, Golden Ratio
+
+4. **Lighting (15 presets)**
+   - Natural: Golden Hour, Blue Hour, Natural Window Light, Harsh Sunlight, Overcast
+   - Studio: Professional Studio Lighting, Soft Diffused
+   - Creative: Neon, Volumetric, Backlit, Dramatic Shadows
+   - Atmospheric: Moonlight, Candlelight, Fire Light, Underwater Light
+
+### Disk Usage
+
+**Minimal footprint:**
+- Application code: ~100 KB
+- Documentation: ~200 KB
+- Dependencies (in venv): ~50 MB
+- Database (varies): 1-10 MB depending on usage
+- Logs (with rotation): Max 50 MB (10MB × 5 backups)
+
+**Total**: ~50-60 MB including virtual environment
+
+### Key File Purposes
+
+| File | Lines | Purpose | Priority |
+|------|-------|---------|----------|
+| `prompt_generator.py` | ~1,760 | Core application logic | 🔴 Critical |
+| `templates/index.html` | ~500 | User interface | 🔴 Critical |
+| `requirements.txt` | 4 | Production dependencies | 🔴 Critical |
+| `prompt_history.db` | N/A | Prompt history storage | 🟡 Important |
+| `README.md` | 900+ | Main documentation | 🟡 Important |
+| `ARCHITECTURE.md` | 1,200+ | Technical docs (this file) | 🟢 Reference |
+| `.env` | 10 | Local configuration | 🟡 Important |
+| `tests/` | Multiple | Quality assurance | 🟢 Development |
+| `Makefile` | 150+ | Development workflow | 🟢 Development |
 
 ---
 
@@ -124,8 +239,12 @@ Frontend Architecture:
 | `/` | GET | Serve main HTML page | None |
 | `/presets` | GET | Return preset configurations | None |
 | `/generate` | POST | One-shot prompt generation | None |
+| `/generate-stream` | POST | One-shot generation with SSE streaming | None |
 | `/chat` | POST | Conversational refinement | Session-based |
+| `/chat-stream` | POST | Conversational mode with SSE streaming | Session-based |
 | `/reset` | POST | Clear chat history | Session-based |
+| `/history` | GET | Retrieve prompt history (with search) | None |
+| `/history/<id>` | DELETE | Delete specific history item | None |
 
 **Architecture Pattern**: RESTful API with Flask blueprints pattern (future enhancement)
 
@@ -189,7 +308,84 @@ Backend Architecture:
 
 ---
 
-### 3. AI Integration (Ollama)
+### 3. Database Layer (SQLite)
+
+**Purpose**: Persistent storage of prompt generation history
+
+**Technology**: SQLite3 (built-in Python module, no external dependencies)
+
+**Database File**: `prompt_history.db` (auto-created in project root)
+
+**Schema**:
+
+```sql
+CREATE TABLE prompt_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp TEXT NOT NULL,              -- ISO 8601 UTC timestamp
+    user_input TEXT NOT NULL,             -- Original user description
+    generated_output TEXT NOT NULL,       -- AI-generated prompt result
+    model TEXT NOT NULL,                  -- Model type (flux/sdxl)
+    presets TEXT,                         -- JSON string of preset selections
+    mode TEXT NOT NULL                    -- Generation mode (oneshot/chat)
+);
+```
+
+**Key Functions**:
+
+1. **`init_db()`** - Initialize database and create tables
+   - Idempotent (safe to call multiple times)
+   - Called on application startup
+   - Creates database file if missing
+
+2. **`save_to_history(user_input, output, model, presets, mode)`**
+   - Saves each generation to database
+   - Automatically called after successful generation
+   - Returns record ID or None if failed
+
+3. **`get_history(limit=50, search_query=None)`**
+   - Retrieves prompt history (default: 50 most recent)
+   - Optional search across user_input and generated_output
+   - Returns list of dictionaries with all fields
+
+4. **`delete_history_item(item_id)`**
+   - Deletes specific history record by ID
+   - Returns True if successful, False if not found
+
+**Database Architecture**:
+
+```
+┌─────────────────────────────────────────────┐
+│         Flask Routes                        │
+│  /generate, /chat, /generate-stream, etc.  │
+└───────────────┬─────────────────────────────┘
+                │
+                ↓ save_to_history()
+┌─────────────────────────────────────────────┐
+│         Database Functions                  │
+│  save_to_history(), get_history(),          │
+│  delete_history_item()                      │
+└───────────────┬─────────────────────────────┘
+                │
+                ↓ SQL queries
+┌─────────────────────────────────────────────┐
+│         SQLite Database                     │
+│  prompt_history.db                          │
+│  Table: prompt_history                      │
+└─────────────────────────────────────────────┘
+```
+
+**Features**:
+- ✅ Automatic persistence of all generations
+- ✅ Full-text search capability
+- ✅ Lightweight (no separate database server)
+- ✅ Local storage (privacy-focused)
+- ✅ Supports pagination and filtering
+
+**Storage Location**: Project root directory (same level as `prompt_generator.py`)
+
+---
+
+### 4. AI Integration (Ollama)
 
 **Communication Protocol**: HTTP REST API
 
@@ -257,7 +453,7 @@ Backend Architecture:
 
 ---
 
-### 4. Preset System
+### 5. Preset System
 
 **Purpose**: Provide curated style/composition/lighting guidance to the AI
 
@@ -319,7 +515,7 @@ Final Prompt:
 
 ---
 
-### 5. Session Management
+### 6. Session Management
 
 **Purpose**: Maintain conversation history in Chat & Refine mode
 
@@ -373,6 +569,91 @@ session = {
 **Session Storage**:
 - **Development**: In-memory (lost on server restart)
 - **Production**: Can be configured for Redis, database, or filesystem
+
+---
+
+### 7. Streaming Responses (Server-Sent Events)
+
+**Purpose**: Provide real-time token-by-token generation feedback to users
+
+**Technology**: Server-Sent Events (SSE) with Flask response streaming
+
+**Streaming Endpoints**:
+- **`/generate-stream`** - Streaming one-shot generation
+- **`/chat-stream`** - Streaming conversational mode
+
+**Implementation Architecture**:
+
+```python
+def generate_stream():
+    """SSE endpoint that yields tokens as they arrive"""
+    def generate():
+        for token in call_ollama(messages, stream=True):
+            # Yield each token as SSE event
+            yield f"data: {json.dumps({'token': token})}\n\n"
+
+        # Signal completion
+        yield f"data: {json.dumps({'done': True})}\n\n"
+
+    return Response(generate(), mimetype='text/event-stream')
+```
+
+**Streaming Flow**:
+
+```
+┌─────────┐                 ┌───────┐                 ┌────────┐
+│ Browser │                 │ Flask │                 │ Ollama │
+└────┬────┘                 └───┬───┘                 └───┬────┘
+     │                          │                         │
+     │ POST /generate-stream    │                         │
+     ├─────────────────────────>│                         │
+     │                          │                         │
+     │                          │ POST with stream=true   │
+     │                          ├────────────────────────>│
+     │                          │                         │
+     │                          │ <-- token1              │
+     │ <-- SSE: token1          │<────────────────────────┤
+     │                          │                         │
+     │                          │ <-- token2              │
+     │ <-- SSE: token2          │<────────────────────────┤
+     │                          │                         │
+     │                          │ ... tokens continue ... │
+     │                          │                         │
+     │                          │ <-- done: true          │
+     │ <-- SSE: done            │<────────────────────────┤
+     │                          │                         │
+```
+
+**Key Functions**:
+
+1. **`call_ollama(messages, stream=True)`**
+   - Handles both streaming and synchronous modes
+   - Routes to `_stream_ollama_response()` when stream=True
+   - Returns generator that yields tokens
+
+2. **`_stream_ollama_response(payload, model)`**
+   - Generator function that streams from Ollama
+   - Parses newline-delimited JSON (NDJSON)
+   - Yields tokens incrementally as they arrive
+   - Handles errors gracefully mid-stream
+
+3. **Frontend EventSource**
+   - Browser uses EventSource API to consume SSE
+   - Appends tokens to UI in real-time
+   - Provides responsive user experience
+
+**Benefits**:
+- ✅ Real-time feedback (tokens appear immediately)
+- ✅ Better perceived performance
+- ✅ User can see generation progress
+- ✅ No need for polling or WebSockets
+- ✅ Works over standard HTTP/HTTPS
+
+**Session Handling in Streaming**:
+- Chat-stream mode maintains conversation history
+- Session updated after stream completes
+- Full response saved to history database
+- History trimming applied post-generation
 
 ---
 

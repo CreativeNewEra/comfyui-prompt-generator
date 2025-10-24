@@ -10,15 +10,43 @@ A powerful, privacy-focused web application that uses local Ollama to generate d
 
 ---
 
-## 📍 Start Here
+## ⚡ Quick Start (5 Minutes!)
+
+**Already have Ollama?** Get running in 4 commands:
+
+```bash
+# 1. Install dependencies
+pip install -r requirements.txt
+
+# 2. Start Ollama (in separate terminal)
+ollama serve
+
+# 3. Pull a model
+ollama pull qwen3:latest
+
+# 4. Run the app
+python prompt_generator.py
+
+# 5. Open http://localhost:5000 and start generating!
+```
+
+**First time? Try this:**
+- Type: `"a cyberpunk warrior in neon city"`
+- Click "Generate Prompt"
+- Select some presets (Cyberpunk + Neon Lighting)
+- Try "Chat & Refine" mode to iterate!
+
+---
+
+## 📍 Full Documentation
 
 | Your Goal | Documentation |
 |-----------|---------------|
-| **New user?** | [5-minute setup →](QUICKSTART.md) |
+| **New user? Complete setup** | [Installation Guide ↓](#-installation) |
 | **Want to contribute?** | [Contribution guide →](CONTRIBUTING.md) |
 | **Technical deep-dive?** | [Architecture docs →](ARCHITECTURE.md) |
 | **Using Claude Code?** | [Development guide →](CLAUDE.md) |
-| **Uploading to GitHub?** | [Git setup guide →](GIT_SETUP.md) |
+| **API integration?** | [API Reference ↓](#-api-reference) |
 
 ---
 
@@ -85,29 +113,39 @@ Your complete project package includes:
 ### 🚀 Dual Mode Operation
 - **⚡ Quick Generate**: Instantly transform simple ideas into detailed prompts
 - **💬 Chat & Refine**: Conversational mode to iteratively improve and refine your prompts
+- **⚡ Streaming Responses**: Real-time token-by-token generation for immediate feedback
 
 ### 🎯 Model-Specific Optimization
 - **Flux Dev**: Natural language prompts with detailed scene descriptions
 - **SDXL (Juggernaut)**: Quality-tagged prompts with negative prompt generation
 
 ### 🎨 Intelligent Preset System
-Choose from curated presets across four categories:
+Choose from 61 curated presets across four categories:
 - **Styles**: Cinematic, Anime, Photorealistic, Oil Painting, Cyberpunk, and more
 - **Artists/Photographers**: Greg Rutkowski, Ansel Adams, Studio Ghibli, and more
 - **Composition**: Portrait, Landscape, Bird's Eye View, Golden Ratio, and more
 - **Lighting**: Golden Hour, Volumetric, Studio Lighting, Neon, and more
 
+### 💾 Prompt History & Management
+- **SQLite Database**: Automatically saves all generated prompts
+- **Search & Filter**: Find past prompts by content or keywords
+- **History Management**: Browse, reuse, and delete previous generations
+- **Persistent Storage**: All your prompts saved locally for future reference
+
 ### 🔒 Privacy & Control
 - **100% Local**: All processing happens on your machine via Ollama
 - **No Censorship**: Uncensored models, complete creative freedom
 - **No Data Collection**: Your prompts never leave your computer
+- **Local Database**: History stored in local SQLite file only
 
 ### 🎯 User Experience
+- 🌙 **Dark Mode Toggle**: Switch between light and dark themes
 - Clean, modern interface with gradient design
 - Real-time preset selection
 - Copy-to-clipboard functionality
 - Chat history in conversational mode
 - Responsive design for all screen sizes
+- Rotating log files (10MB max, keeps 5 backups)
 
 ## 💡 Quick Examples
 
@@ -541,6 +579,9 @@ The easiest way to configure the application is using a `.env` file:
    # Generate a secure secret key for production:
    # python -c "import secrets; print(secrets.token_hex(32))"
    FLASK_SECRET_KEY=your-secret-key-here
+
+   # Logging Configuration
+   LOG_LEVEL=INFO
    ```
 
 3. **Available configuration options:**
@@ -549,6 +590,7 @@ The easiest way to configure the application is using a `.env` file:
    - `FLASK_PORT`: Port for the web server (default: 5000)
    - `FLASK_DEBUG`: Debug mode - `true` for development, `false` for production
    - `FLASK_SECRET_KEY`: Secret key for session management (generate a random one for production)
+   - `LOG_LEVEL`: Logging verbosity - `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL` (default: INFO)
 
 ### Manual Configuration (Alternative)
 
@@ -585,6 +627,27 @@ PRESETS = {
     # ... other categories
 }
 ```
+
+## 🔌 API Reference
+
+The application provides the following REST API endpoints:
+
+### Core Generation
+- **`GET /`** - Serve the main web application
+- **`GET /presets`** - Return available preset configurations
+- **`POST /generate`** - One-shot prompt generation (Quick Generate mode)
+- **`POST /chat`** - Conversational prompt refinement (Chat & Refine mode)
+- **`POST /reset`** - Clear chat conversation history
+
+### Streaming (Real-time)
+- **`POST /generate-stream`** - One-shot generation with Server-Sent Events streaming
+- **`POST /chat-stream`** - Conversational mode with real-time token streaming
+
+### History Management
+- **`GET /history`** - Retrieve prompt generation history (supports `?limit=N` and `?q=search`)
+- **`DELETE /history/<id>`** - Delete a specific history item by ID
+
+For detailed API documentation including request/response formats, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## 🧪 Testing
 
