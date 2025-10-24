@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Prompt Generator Web App
 Talks to local Ollama to generate detailed prompts for ComfyUI
