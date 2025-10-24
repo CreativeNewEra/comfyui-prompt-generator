@@ -1804,6 +1804,8 @@
 
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
+                // Buffer is used to handle incomplete SSE messages that may be split across multiple chunks.
+                // This ensures that only complete lines are processed, and partial lines are kept for the next chunk.
                 let buffer = '';
 
                 while (isStreaming) {
