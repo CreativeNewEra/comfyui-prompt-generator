@@ -68,3 +68,7 @@ flask_session/
 *.zip
 *.tar
 *.rar
+
+# Database files
+prompt_history.db
+*.db
