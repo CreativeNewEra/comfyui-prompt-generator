@@ -184,6 +184,92 @@ Feel free to:
 - Ask in existing issues
 - Check closed issues for similar questions
 
+## 🚀 Publishing to GitHub
+
+Ready to share your work? Here's how to publish your contribution or fork:
+
+### Creating a Repository
+
+1. **On GitHub**: Click **+** → **New repository**
+2. **Name it**: `comfyui-prompt-generator` (or your fork name)
+3. **Don't initialize** with README (we have one)
+4. Click **Create repository**
+
+### Initial Push
+
+```bash
+# Initialize git (if not already)
+git init
+
+# Add all files
+git add .
+
+# Create initial commit
+git commit -m "Initial commit" -m "ComfyUI Prompt Generator with [feature description]"
+
+# Set main branch
+git branch -M main
+
+# Add remote (replace YOUR_USERNAME)
+git remote add origin https://github.com/YOUR_USERNAME/comfyui-prompt-generator.git
+
+# Push
+git push -u origin main
+```
+
+### Making Updates
+
+```bash
+# Check what changed
+git status
+
+# Stage changes
+git add .
+
+# Commit with clear message
+git commit -m "Add feature: [description]"
+
+# Push to GitHub
+git push
+```
+
+### Good Commit Messages
+
+```bash
+# Features
+git commit -m "Add: Prompt history export feature"
+
+# Bug fixes
+git commit -m "Fix: Chat history not clearing on reset"
+
+# Documentation
+git commit -m "Docs: Add API examples to README"
+
+# Refactoring
+git commit -m "Refactor: Improve preset loading performance"
+```
+
+### Post-Publication Checklist
+
+After your first push:
+
+1. **Add Topics** (repo settings): `comfyui`, `prompt-generator`, `ollama`, `ai`, `flask`, `stable-diffusion`
+2. **Add Description**: "AI-powered prompt generator for ComfyUI using local Ollama"
+3. **Create Release** (optional): Tag `v1.0.0` with changelog
+4. **Enable Discussions** (optional): For community Q&A
+5. **Add License Badge**: Already in README
+
+### Troubleshooting
+
+**Authentication failed?**
+- GitHub removed password auth
+- Use Personal Access Token: Settings → Developer settings → Generate new token
+- Use token as password when prompted
+
+**Large files warning?**
+- Check `.gitignore` includes `venv/`, `logs/`, `*.db`
+- Remove cached: `git rm --cached <file>`
+
 ## 📜 Code of Conduct
 
 - Be respectful and constructive

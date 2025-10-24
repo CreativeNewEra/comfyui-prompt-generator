@@ -7,15 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Documentation consolidation and accuracy improvements
+- Comprehensive API reference in README
+- Database schema documentation in ARCHITECTURE
+- Streaming responses documentation
+- Dark mode feature now documented
+
+### Changed
+- Merged QUICKSTART.md into README (Quick Start section)
+- Merged PROJECT_STRUCTURE.md into ARCHITECTURE (Project Structure section)
+- Merged GIT_SETUP.md into CONTRIBUTING (Publishing to GitHub section)
+- Updated all line count references (prompt_generator.py now ~1,760 lines)
+- Updated preset count to accurate 61 presets
+- Fixed outdated route documentation (added 4 new endpoints)
+
+### Documentation
+- Added missing features: Prompt History Database, Streaming Responses, Dark Mode Toggle
+- Updated environment variables (added LOG_LEVEL)
+- Fixed Architecture documentation with new routes: /generate-stream, /chat-stream, /history, /history/<id>
+- Added Database Layer section with SQLite schema
+- Added Streaming Responses (SSE) section
+- Improved cross-references between docs
+
+### Removed
+- QUICKSTART.md (merged into README)
+- PROJECT_STRUCTURE.md (merged into ARCHITECTURE)
+- GIT_SETUP.md (merged into CONTRIBUTING)
+
 ### Planned
 - Model selector dropdown (auto-detect Ollama models)
-- Prompt history with search and tags
 - Save favorite preset combinations
 - Batch generation (multiple variations)
 - Direct ComfyUI API integration
 - Image upload for prompt analysis
 - Token counter and prompt analysis
 - Custom preset creator UI
+- Condense EXAMPLES.md for better readability
 
 ## [1.0.0] - 2025-01-XX
 
