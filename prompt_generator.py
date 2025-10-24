@@ -197,7 +197,7 @@ def save_to_history(user_input, output, model, presets, mode):
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
-        timestamp = datetime.utcnow().isoformat()
+        timestamp = datetime.now(datetime.UTC).isoformat()
         presets_json = json.dumps(presets)
 
         cursor.execute('''
@@ -1173,15 +1173,15 @@ def generate():
     logger.debug(f"User input preview: {user_input[:50]}...")
 
     # Build preset context by looking up selected preset values
-    # Only include presets that aren't "None"
+    # Only include presets that aren't "None" or empty
     preset_context = []
-    if style != 'None':
+    if style and style != 'None' and style in PRESETS['styles']:
         preset_context.append(f"Style: {PRESETS['styles'][style]}")
-    if artist != 'None':
+    if artist and artist != 'None' and artist in PRESETS['artists']:
         preset_context.append(f"Artist/Style: {PRESETS['artists'][artist]}")
-    if composition != 'None':
+    if composition and composition != 'None' and composition in PRESETS['composition']:
         preset_context.append(f"Composition: {PRESETS['composition'][composition]}")
-    if lighting != 'None':
+    if lighting and lighting != 'None' and lighting in PRESETS['lighting']:
         preset_context.append(f"Lighting: {PRESETS['lighting'][lighting]}")
 
     # Build the full user message with presets incorporated
@@ -1315,13 +1315,13 @@ def chat():
 
     # Build context with presets
     preset_context = []
-    if style != 'None':
+    if style and style != 'None' and style in PRESETS['styles']:
         preset_context.append(f"Style: {PRESETS['styles'][style]}")
-    if artist != 'None':
+    if artist and artist != 'None' and artist in PRESETS['artists']:
         preset_context.append(f"Artist/Style: {PRESETS['artists'][artist]}")
-    if composition != 'None':
+    if composition and composition != 'None' and composition in PRESETS['composition']:
         preset_context.append(f"Composition: {PRESETS['composition'][composition]}")
-    if lighting != 'None':
+    if lighting and lighting != 'None' and lighting in PRESETS['lighting']:
         preset_context.append(f"Lighting: {PRESETS['lighting'][lighting]}")
 
     # Build the full user message
@@ -1406,13 +1406,13 @@ def generate_stream():
 
     # Build context with presets
     preset_context = []
-    if style != 'None':
+    if style and style != 'None' and style in PRESETS['styles']:
         preset_context.append(f"Style: {PRESETS['styles'][style]}")
-    if artist != 'None':
+    if artist and artist != 'None' and artist in PRESETS['artists']:
         preset_context.append(f"Artist/Style: {PRESETS['artists'][artist]}")
-    if composition != 'None':
+    if composition and composition != 'None' and composition in PRESETS['composition']:
         preset_context.append(f"Composition: {PRESETS['composition'][composition]}")
-    if lighting != 'None':
+    if lighting and lighting != 'None' and lighting in PRESETS['lighting']:
         preset_context.append(f"Lighting: {PRESETS['lighting'][lighting]}")
 
     # Build the full user message
@@ -1518,13 +1518,13 @@ def chat_stream():
 
     # Build context with presets
     preset_context = []
-    if style != 'None':
+    if style and style != 'None' and style in PRESETS['styles']:
         preset_context.append(f"Style: {PRESETS['styles'][style]}")
-    if artist != 'None':
+    if artist and artist != 'None' and artist in PRESETS['artists']:
         preset_context.append(f"Artist/Style: {PRESETS['artists'][artist]}")
-    if composition != 'None':
+    if composition and composition != 'None' and composition in PRESETS['composition']:
         preset_context.append(f"Composition: {PRESETS['composition'][composition]}")
-    if lighting != 'None':
+    if lighting and lighting != 'None' and lighting in PRESETS['lighting']:
         preset_context.append(f"Lighting: {PRESETS['lighting'][lighting]}")
 
     # Build the full user message
