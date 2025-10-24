@@ -27,19 +27,67 @@ import sqlite3
 from datetime import datetime
 
 # Load environment variables from .env file if it exists
+# This allows users to customize configuration without modifying code
 load_dotenv()
 
-# Configuration with environment variable fallbacks
+# ============================================================================
+# Application Configuration
+# ============================================================================
+# All configuration values can be set via environment variables in .env file.
+# See .env.example for available options and descriptions.
+
+# Ollama API endpoint URL for prompt generation
+# Default: http://localhost:11434/api/generate
+# Can be customized to point to remote Ollama instances
 OLLAMA_URL = os.getenv('OLLAMA_URL', 'http://localhost:11434/api/generate')
+
+# Default Ollama model to use for prompt generation
+# Common options: qwen3:latest, llama2, mistral, phi
+# Must be installed locally: ollama pull <model-name>
 OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'qwen3:latest')
+
+# Flask web server port
+# Default: 5000. Change if port is already in use
 FLASK_PORT = int(os.getenv('FLASK_PORT', '5000'))
+
+# Flask debug mode - enables detailed error pages and auto-reload
+# Set to 'false' in production for security
+# Accepts: true/false, 1/0, yes/no (case insensitive)
 FLASK_DEBUG = os.getenv('FLASK_DEBUG', 'true').lower() in ('true', '1', 'yes')
+
+# Flask secret key for session management and cookie signing
+# Generated randomly if not provided. Set a stable value in production
+# Generate with: python -c "import secrets; print(secrets.token_hex(32))"
 FLASK_SECRET_KEY = os.getenv('FLASK_SECRET_KEY', secrets.token_hex(16))
+
+# Logging level for application logs
+# Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
+# Default: INFO provides good balance of detail
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
 
-# Configure logging
+# ============================================================================
+# Logging Configuration
+# ============================================================================
+
 def setup_logging():
-    """Configure logging with both console and file handlers"""
+    """
+    Configure application logging with file rotation and console output.
+
+    Sets up two handlers:
+    1. File handler: Rotates logs at 10MB, keeps 5 backups in logs/app.log
+    2. Console handler: Outputs to stderr for real-time monitoring
+
+    Both handlers use the same format and log level (from LOG_LEVEL config).
+    Werkzeug (Flask dev server) logging is reduced to WARNING to minimize noise.
+
+    Returns:
+        logging.Logger: Configured logger instance for this module
+
+    Notes:
+        - Log files are created in ./logs/ directory (auto-created if missing)
+        - Format: timestamp - module - level - message
+        - Rotation prevents unbounded disk usage
+    """
     # Create logs directory if it doesn't exist
     log_dir = 'logs'
     if not os.path.exists(log_dir):
@@ -79,19 +127,37 @@ def setup_logging():
 
     return logging.getLogger(__name__)
 
-# Initialize logging
+# Initialize logging system
 logger = setup_logging()
 
+# Initialize Flask application
 app = Flask(__name__)
-app.secret_key = FLASK_SECRET_KEY
+app.secret_key = FLASK_SECRET_KEY  # Required for session management
 
-
+# ============================================================================
 # Database Configuration
+# ============================================================================
+# SQLite database for storing prompt generation history
+# Allows users to browse, search, and reuse previous prompts
 DB_PATH = 'prompt_history.db'
 
 
 def init_db():
-    """Initialize the database and create the history table if it doesn't exist"""
+    """
+    Initialize the SQLite database and create tables if they don't exist.
+
+    Creates the prompt_history table with the following schema:
+    - id: Auto-incrementing primary key
+    - timestamp: ISO format UTC timestamp of generation
+    - user_input: Original user description/request
+    - generated_output: AI-generated prompt result
+    - model: Model type used (flux/sdxl)
+    - presets: JSON string of preset selections
+    - mode: Generation mode (oneshot/chat)
+
+    This function is idempotent - safe to call multiple times.
+    Creates database file if it doesn't exist.
+    """
     logger.info("Initializing prompt history database")
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -237,29 +303,94 @@ def delete_history_item(item_id):
         return False
 
 
+# ============================================================================
 # Custom Exception Classes
+# ============================================================================
+# These exceptions provide granular error handling for Ollama API interactions.
+# Each exception type maps to a specific HTTP error handler with appropriate
+# status codes and user-friendly error messages.
+
+
 class OllamaConnectionError(Exception):
-    """Raised when unable to connect to Ollama"""
+    """
+    Raised when unable to establish connection to Ollama server.
+
+    This typically indicates:
+    - Ollama is not running
+    - Wrong URL configured
+    - Network/firewall issues
+
+    HTTP Status: 503 Service Unavailable
+    """
     pass
 
 
 class OllamaTimeoutError(Exception):
-    """Raised when Ollama request times out"""
+    """
+    Raised when Ollama request exceeds timeout threshold (120 seconds).
+
+    This typically indicates:
+    - Model is too large for available RAM
+    - System resources exhausted
+    - Ollama is hung/unresponsive
+
+    HTTP Status: 504 Gateway Timeout
+    """
     pass
 
 
 class OllamaModelNotFoundError(Exception):
-    """Raised when the requested model is not found"""
+    """
+    Raised when the requested model is not installed locally.
+
+    This typically indicates:
+    - Model not pulled via 'ollama pull <model>'
+    - Typo in model name
+    - Model was deleted
+
+    HTTP Status: 404 Not Found
+    """
     pass
 
 
 class OllamaAPIError(Exception):
-    """Raised when Ollama returns an error response"""
+    """
+    Raised when Ollama returns an error response or unexpected format.
+
+    This is a catch-all for:
+    - Invalid API responses
+    - Ollama version mismatches
+    - API endpoint errors
+    - Unexpected errors
+
+    HTTP Status: 502 Bad Gateway
+    """
     pass
 
 
-# Preset options for prompt enhancement
+# ============================================================================
+# Preset System
+# ============================================================================
+# Curated preset options that users can combine to enhance their prompts.
+# Each category provides dropdown options in the UI. When selected (not "None"),
+# the preset text is incorporated into the AI prompt generation context.
+#
+# Structure:
+#   PRESETS = {
+#       "category_name": {
+#           "Display Name": "prompt text/tags to inject",
+#           ...
+#       },
+#       ...
+#   }
+#
+# All presets default to "None" (empty string), making them optional.
+# Users can mix and match presets across categories for creative control.
+# The AI model weaves these elements naturally into the final prompt.
+
 PRESETS = {
+    # Visual styles and artistic approaches
+    # Defines the overall aesthetic and rendering style
     "styles": {
         "None": "",
         "Cinematic": "cinematic, dramatic, movie still, film grain",
@@ -277,7 +408,10 @@ PRESETS = {
         "3D Render": "3d render, octane render, unreal engine, ray tracing",
         "Pencil Sketch": "pencil sketch, graphite, hand drawn, detailed shading"
     },
-    
+
+    # Artist and photographer styles
+    # Emulates the distinctive style of famous artists and photographers
+    # Helps achieve specific visual signatures and techniques
     "artists": {
         "None": "",
         "Greg Rutkowski": "in the style of Greg Rutkowski",
@@ -299,7 +433,10 @@ PRESETS = {
         "Simon Stålenhag": "in the style of Simon Stålenhag",
         "Zdzisław Beksiński": "in the style of Zdzisław Beksiński, dystopian"
     },
-    
+
+    # Camera angles and framing composition
+    # Controls how the subject is positioned and framed in the image
+    # Affects perspective, viewer engagement, and visual hierarchy
     "composition": {
         "None": "",
         "Portrait": "portrait composition, centered subject",
@@ -318,7 +455,10 @@ PRESETS = {
         "Frame within Frame": "frame within frame composition",
         "Golden Ratio": "golden ratio composition, fibonacci spiral"
     },
-    
+
+    # Lighting conditions and techniques
+    # Defines the mood, atmosphere, and time of day
+    # Critical for achieving professional, cinematic, or artistic looks
     "lighting": {
         "None": "",
         "Golden Hour": "golden hour lighting, warm, soft sunlight",
@@ -339,7 +479,25 @@ PRESETS = {
     }
 }
 
-# System prompts for different models
+# ============================================================================
+# Model-Specific System Prompts
+# ============================================================================
+# Different AI image generation models have different prompting requirements.
+# These system prompts instruct the Ollama LLM on how to format output
+# appropriately for each model type.
+#
+# SDXL (Stable Diffusion XL):
+#   - Requires quality tags and structured format
+#   - Needs separate negative prompt for things to avoid
+#   - Uses comma-separated tag style prompts
+#
+# Flux:
+#   - Prefers natural language descriptions
+#   - No need for quality tags or negative prompts
+#   - Works best with conversational, detailed narratives
+#
+# When adding new models, define their optimal prompting strategy here.
+
 SYSTEM_PROMPTS = {
     "sdxl": """You are an expert prompt engineer for Stable Diffusion XL (SDXL). When users describe an image idea, you expand it into a detailed, effective prompt.
 
@@ -375,78 +533,126 @@ PROMPT: [single detailed natural language prompt incorporating any presets natur
 Be extremely descriptive and creative. Write like you're describing a photograph or painting in detail. Integrate the preset selections seamlessly into the narrative."""
 }
 
+# ============================================================================
+# Ollama API Integration
+# ============================================================================
+
 def call_ollama(messages, model=None, stream=False):
     """
-    Call Ollama API with messages
+    Call Ollama API to generate text based on conversation messages.
+
+    This is the main interface for communicating with Ollama. It handles
+    message formatting, API calls, and error handling. Supports both
+    streaming (token-by-token) and synchronous (complete response) modes.
 
     Args:
-        messages: List of message dictionaries with 'role' and 'content'
-        model: Model name (optional, defaults to OLLAMA_MODEL)
-        stream: If True, returns a generator that yields tokens; if False, returns complete response
+        messages (list): List of message dictionaries with 'role' and 'content' keys.
+                        Valid roles: 'system', 'user', 'assistant'
+                        Example: [
+                            {"role": "system", "content": "You are helpful"},
+                            {"role": "user", "content": "Generate a prompt"}
+                        ]
+        model (str, optional): Ollama model name (e.g., 'qwen3:latest', 'llama2').
+                              Defaults to OLLAMA_MODEL from config.
+        stream (bool, optional): If True, returns a generator yielding tokens.
+                                If False, returns complete response string.
+                                Default: False
 
     Returns:
         str: The complete response from Ollama (if stream=False)
-        generator: A generator that yields tokens (if stream=True)
+        generator: A generator that yields tokens as they arrive (if stream=True)
 
     Raises:
-        OllamaConnectionError: If cannot connect to Ollama server
-        OllamaTimeoutError: If the request times out
-        OllamaModelNotFoundError: If the requested model is not found
-        OllamaAPIError: If Ollama returns an error response
+        OllamaConnectionError: Cannot connect to Ollama server (check if running)
+        OllamaTimeoutError: Request exceeded 120 second timeout (model too large?)
+        OllamaModelNotFoundError: Model not installed (need 'ollama pull')
+        OllamaAPIError: API returned error or unexpected format
+
+    Notes:
+        - Timeout is fixed at 120 seconds
+        - Messages are formatted into a single prompt string for Ollama
+        - System message is placed at the start, followed by conversation
+        - All custom exceptions include troubleshooting guidance
     """
+    # Use configured default model if none specified
     if model is None:
         model = OLLAMA_MODEL
 
     logger.debug(f"Attempting to call Ollama API with model: {model}, stream: {stream}")
 
     # Build the prompt from messages
+    # Ollama's /api/generate endpoint expects a single prompt string,
+    # so we convert the message list into a formatted conversation
     system_msg = ""
     conversation = ""
 
     for msg in messages:
         if msg["role"] == "system":
+            # Extract system message (instructions for the AI)
             system_msg = msg["content"]
         elif msg["role"] == "user":
+            # Format user messages with "User:" prefix
             conversation += f"User: {msg['content']}\n"
         elif msg["role"] == "assistant":
+            # Format assistant messages (conversation history)
             conversation += f"Assistant: {msg['content']}\n"
 
-    # Format the full prompt
+    # Assemble the full prompt
+    # System message goes first, then conversation, ending with "Assistant:" to prompt response
     if system_msg:
         full_prompt = f"{system_msg}\n\n{conversation}Assistant:"
     else:
         full_prompt = f"{conversation}Assistant:"
 
+    # Prepare API request payload
     payload = {
         "model": model,
         "prompt": full_prompt,
-        "stream": stream
+        "stream": stream  # Enable/disable streaming mode
     }
 
+    # Route to appropriate handler based on streaming mode
     if stream:
-        # Return generator for streaming mode
+        # Return generator for streaming mode (tokens arrive one by one)
         return _stream_ollama_response(payload, model)
     else:
-        # Non-streaming mode (existing behavior)
+        # Return complete response for synchronous mode
         return _call_ollama_sync(payload, model)
 
 
 def _stream_ollama_response(payload, model):
     """
-    Generator function that streams tokens from Ollama
+    Generator function that streams tokens from Ollama in real-time.
+
+    This function makes a streaming HTTP request to Ollama and yields tokens
+    as they arrive. Used for the /generate-stream and /chat-stream endpoints
+    to provide responsive, real-time feedback to users.
 
     Args:
-        payload: The request payload
-        model: Model name for error messages
+        payload (dict): Request payload containing 'model', 'prompt', and 'stream'
+        model (str): Model name for inclusion in error messages
 
     Yields:
-        str: Individual tokens as they arrive
+        str: Individual tokens (text fragments) as they arrive from Ollama
+
+    Raises:
+        OllamaConnectionError: Cannot connect to Ollama server
+        OllamaTimeoutError: Request exceeded 120 second timeout
+        OllamaModelNotFoundError: Model not installed locally
+        OllamaAPIError: API returned error or malformed response
+
+    Notes:
+        - Processes response line-by-line as JSON chunks
+        - Each chunk contains a 'response' field (token) and 'done' flag
+        - Continues until 'done': true is received
+        - Skips malformed JSON lines with warning instead of failing
     """
     try:
         logger.debug(f"Sending streaming request to Ollama at {OLLAMA_URL}")
+        # stream=True enables line-by-line reading, timeout prevents hanging
         response = requests.post(OLLAMA_URL, json=payload, stream=True, timeout=120)
 
-        # Check for specific error status codes
+        # Check for HTTP 404 - could be model not found OR endpoint not found
         if response.status_code == 404:
             error_detail = response.json().get('error', '') if response.headers.get('content-type', '').startswith('application/json') else ''
             if 'model' in error_detail.lower() or 'not found' in error_detail.lower():
@@ -468,30 +674,35 @@ def _stream_ollama_response(payload, model):
                 f"Error details: {error_detail}"
             )
 
-        # Raise for other HTTP errors
+        # Raise for other HTTP errors (non-404)
         response.raise_for_status()
 
         # Stream the response line by line
+        # Ollama returns newline-delimited JSON (NDJSON) format
         for line in response.iter_lines():
-            if line:
+            if line:  # Skip empty lines
                 try:
+                    # Each line is a JSON object with response token and metadata
                     chunk = json.loads(line)
 
-                    # Check for errors in the chunk
+                    # Check for error field in chunk (API-level errors)
                     if 'error' in chunk:
                         logger.error(f"Ollama API returned error: {chunk['error']}")
                         raise OllamaAPIError(f"Ollama API error: {chunk['error']}")
 
-                    # Yield the token if present
+                    # Yield the token if present (incremental text generation)
                     if 'response' in chunk:
                         yield chunk['response']
 
-                    # Check if done
+                    # Check if generation is complete
+                    # Final chunk has 'done': true and includes metadata (timing, etc.)
                     if chunk.get('done', False):
                         logger.debug("Streaming completed successfully")
                         break
 
                 except json.JSONDecodeError:
+                    # Don't fail on malformed lines, just log and continue
+                    # This provides resilience against network issues
                     logger.warning(f"Failed to parse streaming chunk: {line}")
                     continue
 
@@ -671,10 +882,26 @@ def _call_ollama_sync(payload, model):
             f"3. Report issue with logs at: https://github.com/CreativeNewEra/comfyui-prompt-generator/issues"
         )
 
-# Error Handlers
+# ============================================================================
+# Flask Error Handlers
+# ============================================================================
+# These handlers catch exceptions and return consistent JSON error responses.
+# All error responses include: error, message, status, and optionally type.
+# Custom Ollama exceptions (defined above) have dedicated handlers.
+
 @app.errorhandler(400)
 def bad_request_error(error):
-    """Handle 400 errors"""
+    """
+    Handle HTTP 400 Bad Request errors.
+
+    Triggered by malformed requests, missing parameters, or validation failures.
+
+    Args:
+        error: The error object from Flask
+
+    Returns:
+        tuple: (JSON response dict, HTTP status code 400)
+    """
     logger.warning(f"Bad request: {str(error)}")
     return jsonify({
         'error': 'Bad request',
@@ -685,7 +912,17 @@ def bad_request_error(error):
 
 @app.errorhandler(404)
 def not_found_error(error):
-    """Handle 404 errors"""
+    """
+    Handle HTTP 404 Not Found errors.
+
+    Triggered when a route doesn't exist or a resource (like history item) isn't found.
+
+    Args:
+        error: The error object from Flask
+
+    Returns:
+        tuple: (JSON response dict, HTTP status code 404)
+    """
     logger.warning(f"Not found: {request.path}")
     return jsonify({
         'error': 'Not found',
@@ -696,7 +933,17 @@ def not_found_error(error):
 
 @app.errorhandler(500)
 def internal_error(error):
-    """Handle 500 errors"""
+    """
+    Handle HTTP 500 Internal Server Error.
+
+    Triggered by uncaught exceptions in route handlers or application logic.
+
+    Args:
+        error: The error object from Flask
+
+    Returns:
+        tuple: (JSON response dict, HTTP status code 500)
+    """
     logger.error(f"Internal server error: {str(error)}", exc_info=True)
     return jsonify({
         'error': 'Internal server error',
@@ -707,7 +954,18 @@ def internal_error(error):
 
 @app.errorhandler(Exception)
 def handle_unexpected_error(error):
-    """Handle any unexpected errors"""
+    """
+    Handle any unexpected/uncaught exceptions.
+
+    Catch-all handler for exceptions not covered by specific handlers.
+    Logs full traceback for debugging.
+
+    Args:
+        error: The exception object
+
+    Returns:
+        tuple: (JSON response dict, HTTP status code 500)
+    """
     logger.error(f"Unexpected error: {str(error)}", exc_info=True)
     return jsonify({
         'error': 'Unexpected error',
@@ -718,7 +976,18 @@ def handle_unexpected_error(error):
 
 @app.errorhandler(OllamaConnectionError)
 def handle_connection_error(error):
-    """Handle Ollama connection errors"""
+    """
+    Handle Ollama connection errors (custom exception).
+
+    Returns 503 Service Unavailable when Ollama server is unreachable.
+    Error message includes troubleshooting steps.
+
+    Args:
+        error (OllamaConnectionError): The connection error exception
+
+    Returns:
+        tuple: (JSON response dict with troubleshooting, HTTP status code 503)
+    """
     logger.error(f"Ollama connection error: {str(error)}")
     return jsonify({
         'error': 'Connection Error',
@@ -730,7 +999,18 @@ def handle_connection_error(error):
 
 @app.errorhandler(OllamaTimeoutError)
 def handle_timeout_error(error):
-    """Handle Ollama timeout errors"""
+    """
+    Handle Ollama timeout errors (custom exception).
+
+    Returns 504 Gateway Timeout when request exceeds 120 second limit.
+    Usually indicates model is too large for available system resources.
+
+    Args:
+        error (OllamaTimeoutError): The timeout error exception
+
+    Returns:
+        tuple: (JSON response dict with troubleshooting, HTTP status code 504)
+    """
     logger.error(f"Ollama timeout error: {str(error)}")
     return jsonify({
         'error': 'Timeout Error',
@@ -742,7 +1022,18 @@ def handle_timeout_error(error):
 
 @app.errorhandler(OllamaModelNotFoundError)
 def handle_model_not_found_error(error):
-    """Handle Ollama model not found errors"""
+    """
+    Handle Ollama model not found errors (custom exception).
+
+    Returns 404 Not Found when requested model isn't installed locally.
+    Error message includes 'ollama pull' command to install the model.
+
+    Args:
+        error (OllamaModelNotFoundError): The model not found exception
+
+    Returns:
+        tuple: (JSON response dict with installation instructions, HTTP status code 404)
+    """
     logger.error(f"Ollama model not found: {str(error)}")
     return jsonify({
         'error': 'Model Not Found',
@@ -754,7 +1045,18 @@ def handle_model_not_found_error(error):
 
 @app.errorhandler(OllamaAPIError)
 def handle_api_error(error):
-    """Handle Ollama API errors"""
+    """
+    Handle Ollama API errors (custom exception).
+
+    Returns 502 Bad Gateway for API-level errors, malformed responses,
+    or unexpected Ollama behavior.
+
+    Args:
+        error (OllamaAPIError): The API error exception
+
+    Returns:
+        tuple: (JSON response dict with troubleshooting, HTTP status code 502)
+    """
     logger.error(f"Ollama API error: {str(error)}")
     return jsonify({
         'error': 'API Error',
@@ -764,23 +1066,83 @@ def handle_api_error(error):
     }), 502
 
 
-# Routes
+# ============================================================================
+# Application Routes
+# ============================================================================
+
 @app.route('/')
 def index():
-    """Main page"""
+    """
+    Serve the main application page.
+
+    Returns the single-page application HTML which includes embedded
+    CSS and JavaScript for the full user interface.
+
+    Returns:
+        str: Rendered HTML template (templates/index.html)
+    """
     return render_template('index.html')
+
 
 @app.route('/presets', methods=['GET'])
 def get_presets():
-    """Get available presets"""
+    """
+    Return available preset options as JSON.
+
+    Provides the PRESETS dictionary to the frontend for populating
+    dropdown menus. Includes all categories: styles, artists,
+    composition, and lighting.
+
+    Returns:
+        JSON: PRESETS dictionary with all preset categories and options
+
+    Example Response:
+        {
+            "styles": {"None": "", "Cinematic": "cinematic, dramatic, ...", ...},
+            "artists": {"None": "", "Greg Rutkowski": "in the style of...", ...},
+            ...
+        }
+    """
     return jsonify(PRESETS)
+
 
 @app.route('/generate', methods=['POST'])
 def generate():
-    """Generate a prompt (one-shot mode)"""
+    """
+    Generate a prompt using one-shot mode (Quick Generate).
+
+    Accepts user input and optional preset selections, then calls Ollama
+    to generate a detailed prompt formatted for the selected model type.
+    Saves result to history database.
+
+    Request JSON:
+        {
+            "input": "user description text",
+            "model": "flux" or "sdxl",
+            "style": "preset name or None",
+            "artist": "preset name or None",
+            "composition": "preset name or None",
+            "lighting": "preset name or None"
+        }
+
+    Returns:
+        JSON: Generated prompt and model type
+        {
+            "result": "generated prompt text",
+            "model": "flux"
+        }
+
+    Status Codes:
+        200: Success
+        400: Missing/invalid input
+        503: Ollama connection failed
+        504: Ollama timeout
+        404: Model not found
+        502: Ollama API error
+    """
     logger.info("Received /generate request")
 
-    # Validate request has JSON data
+    # Validate request contains JSON data
     if not request.json:
         logger.warning("Generate request missing JSON data")
         return jsonify({
@@ -788,16 +1150,18 @@ def generate():
             'message': 'Request must contain JSON data'
         }), 400
 
+    # Extract request parameters
     data = request.json
     user_input = data.get('input', '').strip()
-    model_type = data.get('model', 'flux')
+    model_type = data.get('model', 'flux')  # Default to Flux if not specified
 
-    # Get preset selections
+    # Extract preset selections (all default to 'None' if not provided)
     style = data.get('style', 'None')
     artist = data.get('artist', 'None')
     composition = data.get('composition', 'None')
     lighting = data.get('lighting', 'None')
 
+    # Validate user provided some input
     if not user_input:
         logger.warning("Generate request with empty input")
         return jsonify({
@@ -808,7 +1172,8 @@ def generate():
     logger.info(f"Generating prompt for model: {model_type}")
     logger.debug(f"User input preview: {user_input[:50]}...")
 
-    # Build context with presets
+    # Build preset context by looking up selected preset values
+    # Only include presets that aren't "None"
     preset_context = []
     if style != 'None':
         preset_context.append(f"Style: {PRESETS['styles'][style]}")
@@ -819,25 +1184,30 @@ def generate():
     if lighting != 'None':
         preset_context.append(f"Lighting: {PRESETS['lighting'][lighting]}")
 
-    # Build the full user message
+    # Build the full user message with presets incorporated
     if preset_context:
+        # If presets are selected, format them clearly for the AI
         preset_info = "\n".join(preset_context)
         full_input = f"User's image idea: {user_input}\n\nSelected presets:\n{preset_info}\n\nPlease create a detailed prompt incorporating these elements."
     else:
+        # No presets selected, use input as-is
         full_input = user_input
 
-    # Get appropriate system prompt
+    # Get the appropriate system prompt for this model type
+    # Falls back to Flux prompt if model type is unknown
     system_prompt = SYSTEM_PROMPTS.get(model_type, SYSTEM_PROMPTS['flux'])
 
+    # Construct message array for Ollama
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": full_input}
     ]
 
+    # Call Ollama API (may raise custom exceptions caught by error handlers)
     result = call_ollama(messages)
     logger.info("Successfully generated prompt")
 
-    # Save to history
+    # Save the generation to history database for later retrieval
     presets_dict = {
         'style': style,
         'artist': artist,
@@ -853,7 +1223,44 @@ def generate():
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    """Conversational mode - refine ideas back and forth"""
+    """
+    Generate prompts using conversational mode (Chat & Refine).
+
+    Maintains conversation history in Flask session to allow iterative
+    refinement. Users can have back-and-forth discussion to perfect prompts.
+    Session automatically trims to last 20 messages to prevent bloat.
+
+    Request JSON:
+        {
+            "message": "user message text",
+            "model": "flux" or "sdxl",
+            "style": "preset name or None",
+            "artist": "preset name or None",
+            "composition": "preset name or None",
+            "lighting": "preset name or None"
+        }
+
+    Returns:
+        JSON: Generated response and model type
+        {
+            "result": "AI response text",
+            "model": "flux"
+        }
+
+    Status Codes:
+        200: Success
+        400: Missing/invalid message
+        503: Ollama connection failed
+        504: Ollama timeout
+        404: Model not found
+        502: Ollama API error
+
+    Notes:
+        - Conversation history stored in session['conversation']
+        - Changing model resets conversation
+        - History limited to 21 messages (system + 20 exchanges)
+        - Each message saved to database with mode='chat'
+    """
     logger.info("Received /chat request")
 
     # Validate request has JSON data
@@ -881,19 +1288,22 @@ def chat():
             'message': 'Please provide a message'
         }), 400
 
-    # Get or initialize conversation history
+    # Get or initialize conversation history from Flask session
+    # Session is stored as signed cookie, persists across requests
     if 'conversation' not in session:
         logger.info("Starting new chat conversation")
         session['conversation'] = []
         session['model_type'] = model_type
 
-    # If model changed, reset conversation
+    # If model type changed, reset conversation
+    # Different models need different prompting strategies
     if session.get('model_type') != model_type:
         logger.info(f"Model changed to {model_type}, resetting conversation")
         session['conversation'] = []
         session['model_type'] = model_type
 
     # Add system prompt if starting new conversation
+    # System prompt instructs the AI on how to format responses
     if not session['conversation']:
         system_prompt = SYSTEM_PROMPTS.get(model_type, SYSTEM_PROMPTS['flux'])
         session['conversation'].append({
@@ -936,11 +1346,14 @@ def chat():
         "content": result
     })
 
-    # Keep conversation manageable (last 10 messages + system)
+    # Keep conversation manageable to prevent session bloat and token limits
+    # Retain system message (index 0) + last 20 messages (10 exchanges)
     if len(session['conversation']) > 21:  # system + 20 messages
         logger.debug("Trimming conversation history to maintain manageable size")
+        # Keep first message (system) and last 20 messages
         session['conversation'] = [session['conversation'][0]] + session['conversation'][-20:]
 
+    # Mark session as modified to ensure Flask saves changes
     session.modified = True
     logger.info("Successfully processed chat message")
 
@@ -1187,7 +1600,22 @@ def chat_stream():
 
 @app.route('/reset', methods=['POST'])
 def reset():
-    """Reset conversation history"""
+    """
+    Reset the conversation history in chat mode.
+
+    Clears the session conversation and model type, effectively starting
+    a fresh conversation. Useful when users want to start over or are
+    stuck in an unproductive conversation thread.
+
+    Returns:
+        JSON: Confirmation of reset
+        {
+            "status": "reset"
+        }
+
+    Status Codes:
+        200: Success (always)
+    """
     logger.info("Resetting conversation history")
     session.pop('conversation', None)
     session.pop('model_type', None)
@@ -1196,7 +1624,41 @@ def reset():
 
 @app.route('/history', methods=['GET'])
 def get_prompt_history():
-    """Get prompt history (last 50 records by default)"""
+    """
+    Retrieve prompt generation history from database.
+
+    Returns up to 200 most recent prompt generations, optionally filtered
+    by search query. Searches both user input and generated output fields.
+
+    Query Parameters:
+        limit (int, optional): Number of records to return (1-200, default: 50)
+        q (str, optional): Search query to filter results
+
+    Returns:
+        JSON: List of history records with metadata
+        {
+            "history": [
+                {
+                    "id": 123,
+                    "timestamp": "2024-01-15T10:30:00",
+                    "user_input": "original description",
+                    "generated_output": "generated prompt",
+                    "model": "flux",
+                    "presets": {"style": "Cinematic", ...},
+                    "mode": "oneshot"
+                },
+                ...
+            ],
+            "count": 10
+        }
+
+    Status Codes:
+        200: Success
+        400: Invalid limit parameter
+
+    Example:
+        GET /history?limit=10&q=cyberpunk
+    """
     logger.info("Received /history request")
 
     limit = request.args.get('limit', 50, type=int)
@@ -1220,7 +1682,29 @@ def get_prompt_history():
 
 @app.route('/history/<int:history_id>', methods=['DELETE'])
 def delete_prompt_history(history_id):
-    """Delete a specific history item"""
+    """
+    Delete a specific prompt history record.
+
+    Permanently removes a history item from the database by ID.
+    Useful for cleaning up unwanted or test generations.
+
+    URL Parameters:
+        history_id (int): Database ID of the history record to delete
+
+    Returns:
+        JSON: Confirmation of deletion
+        {
+            "status": "deleted",
+            "id": 123
+        }
+
+    Status Codes:
+        200: Successfully deleted
+        404: History item not found
+
+    Example:
+        DELETE /history/123
+    """
     logger.info(f"Received request to delete history item {history_id}")
 
     success = delete_history_item(history_id)
@@ -1236,10 +1720,15 @@ def delete_prompt_history(history_id):
             'message': f'History item with ID {history_id} not found'
         }), 404
 
+# ============================================================================
+# Application Entry Point
+# ============================================================================
+
 if __name__ == '__main__':
-    # Initialize database
+    # Initialize the SQLite database (creates tables if they don't exist)
     init_db()
 
+    # Display startup banner to console with configuration details
     print("\n" + "="*60)
     print("=== Prompt Generator Starting ===")
     print("="*60)
@@ -1255,6 +1744,7 @@ if __name__ == '__main__':
     print("-"*60)
     print("\nPress Ctrl+C to stop\n")
 
+    # Log startup information for debugging
     logger.info("="*60)
     logger.info("Starting Prompt Generator Application")
     logger.info("="*60)
@@ -1265,4 +1755,7 @@ if __name__ == '__main__':
     logger.info(f"Log level: {LOG_LEVEL}")
     logger.info("Application ready to accept requests")
 
+    # Start Flask development server
+    # host='0.0.0.0' allows access from other devices on network
+    # DO NOT use debug=True in production (security risk)
     app.run(debug=FLASK_DEBUG, host='0.0.0.0', port=FLASK_PORT)
