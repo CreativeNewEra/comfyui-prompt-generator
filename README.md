@@ -97,35 +97,11 @@ Choose from curated presets across four categories:
 
 ## 📸 Screenshots
 
-### Quick Generate Mode
-Transform simple ideas into detailed prompts instantly.
-
-![Quick Generate Mode](./docs/screenshots/quick-generate.png)
-<!-- TODO: Add screenshot showing the Quick Generate interface with preset dropdowns and generated prompt -->
-
-### Chat & Refine Mode
-Iteratively refine your prompts through conversation.
-
-![Chat & Refine Mode](./docs/screenshots/chat-refine.png)
-<!-- TODO: Add screenshot showing the chat interface with conversation history -->
-
-### Preset Selection
-Choose from 50+ curated presets across 4 categories.
-
-![Preset Selection](./docs/screenshots/preset-selection.png)
-<!-- TODO: Add screenshot highlighting the preset dropdown menus with various options -->
+Screenshots coming soon - see the app in action at http://localhost:5000 after installation!
 
 ## 🎬 Demo
 
-See the Prompt Generator in action:
-
-![Demo Animation](./docs/demo.gif)
-<!-- TODO: Add animated GIF showing:
-     1. User entering a prompt
-     2. Selecting presets
-     3. Generating result
-     4. Copying to clipboard
-     Recommended: 10-15 second loop, 800px width -->
+See the app in action by running it locally at http://localhost:5000 - it only takes a few minutes to set up!
 
 ## 🏗️ Architecture
 
