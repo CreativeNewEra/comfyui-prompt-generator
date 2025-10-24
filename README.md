@@ -8,6 +8,20 @@ A powerful, privacy-focused web application that uses local Ollama to generate d
 [![Code style: flake8](https://img.shields.io/badge/code%20style-flake8-black.svg)](https://flake8.pycqa.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+---
+
+## 📍 Start Here
+
+| Your Goal | Documentation |
+|-----------|---------------|
+| **New user?** | [5-minute setup →](QUICKSTART.md) |
+| **Want to contribute?** | [Contribution guide →](CONTRIBUTING.md) |
+| **Technical deep-dive?** | [Architecture docs →](ARCHITECTURE.md) |
+| **Using Claude Code?** | [Development guide →](CLAUDE.md) |
+| **Uploading to GitHub?** | [Git setup guide →](GIT_SETUP.md) |
+
+---
+
 ## 🚀 Getting Started
 
 ### Quick Start Paths
