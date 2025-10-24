@@ -109,6 +109,67 @@ Choose from curated presets across four categories:
 - Chat history in conversational mode
 - Responsive design for all screen sizes
 
+## 💡 Quick Examples
+
+See the tool in action with these real-world examples:
+
+### Example 1: Simple One-Shot Generation
+
+**Input:**
+```
+dragon perched on a mountain peak
+```
+
+**Output (Flux Dev):**
+> A majestic dragon rests atop a windswept mountain peak, its scales shimmering with iridescent hues of deep emerald and sapphire. Massive leathery wings fold gracefully along its muscular body as it surveys the vast mountain range stretching to the horizon. The setting sun casts dramatic golden light across the scene, creating long shadows in the valleys below. Wispy clouds drift past at eye level, and ancient snow clings to the rocky summit. The dragon's eyes gleam with ancient wisdom, smoke curling from its nostrils into the thin mountain air. Ultra-detailed scales catch the light, each one perfectly rendered with depth and texture.
+
+### Example 2: Chat & Refine Mode (Iterative Improvement)
+
+**Initial message:**
+```
+a cyberpunk street market at night
+```
+
+> A bustling cyberpunk street market illuminated by neon signs in pink, blue, and cyan. Vendor stalls line narrow alleyways, selling exotic tech and street food. Holographic advertisements flicker overhead, rain-slicked pavement reflects the vibrant lights. Crowds of diverse people in futuristic clothing browse the stalls, steam rises from food carts, and the scene has a gritty yet colorful atmosphere.
+
+**Follow-up message:**
+```
+add more rain and make it more atmospheric, darker mood
+```
+
+> A rain-drenched cyberpunk street market shrouded in atmospheric darkness, heavy rainfall creating sheets of water that cascade from awnings and signs. Neon lights in deep purples, electric blues, and crimson reds reflect and refract through the downpour, creating pools of color on the flooded pavement. Shadowy figures huddle under makeshift shelters, their forms barely visible through the rain. Fog and steam mix with the precipitation, reducing visibility and adding mystery. Flickering holographic ads glitch in the weather, casting eerie dancing lights. The mood is moody, noir-inspired, with strong contrast between the bright neon accents and deep shadows. Water droplets visible in the air, bokeh effects from distant lights creating depth.
+
+**Final refinement:**
+```
+perfect, now add a street vendor in the foreground cooking noodles
+```
+
+> A rain-drenched cyberpunk street market shrouded in atmospheric darkness, heavy rainfall creating sheets of water cascading from awnings. In the foreground, a weathered street vendor stands over a steaming wok, stir-frying noodles under a makeshift plastic canopy. Bright flames from the portable burner illuminate their face with warm orange light, contrasting against the cool neon blues and purples reflecting off the wet surfaces. Steam billows from the cooking station, mixing with rain and fog. The vendor wears a water-resistant jacket, their skilled hands working the wok with practiced efficiency. Behind them, shadowy figures huddle under shelters while neon signs flicker through the heavy rainfall. Flooded pavement reflects fragmented colors, holographic ads glitch overhead, and the scene captures both the intimacy of the food preparation and the vast, moody atmosphere of the rainy cyberpunk street. Strong depth of field with the vendor sharp in focus and the market fading into atmospheric haze.
+
+### Example 3: Using Presets for Targeted Style
+
+**Selected Presets:**
+- **Style:** Cinematic
+- **Artist/Photographer:** Greg Rutkowski
+- **Composition:** Low Angle
+- **Lighting:** Volumetric
+
+**Input:**
+```
+a lone astronaut discovering an alien temple
+```
+
+**Output (SDXL/Juggernaut):**
+> **Positive Prompt:**
+> A lone astronaut stands before a massive alien temple, low angle shot emphasizing the towering ancient structure reaching into an alien sky. Volumetric light beams pierce through the temple's geometric openings, creating god rays that illuminate swirling dust particles and the astronaut's reflective suit. The scene is rendered in cinematic style reminiscent of Greg Rutkowski's epic compositions, with dramatic lighting and atmospheric depth. Intricate alien hieroglyphs cover the temple's weathered stone surface, bioluminescent elements pulse with mysterious energy. The astronaut's helmet reflects the otherworldly architecture, small human figure dwarfed by the monumental discovery. Rich color palette of deep teals, warm oranges, and purple atmospheric haze. Ultra-detailed textures, photorealistic rendering, 8k quality, masterpiece composition.
+>
+> **Negative Prompt:**
+> blurry, low quality, distorted proportions, bad anatomy, cartoon, anime style, oversaturated, flat lighting, low detail, amateur, pixelated, compression artifacts, watermark, signature, text, multiple astronauts, modern buildings, Earth-like structures
+
+---
+
+These examples demonstrate how the tool transforms simple ideas into detailed, production-ready prompts for ComfyUI!
+
 ## 📸 Screenshots
 
 Screenshots coming soon - see the app in action at http://localhost:5000 after installation!
