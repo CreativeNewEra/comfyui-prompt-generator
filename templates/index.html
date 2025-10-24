@@ -744,6 +744,137 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
         }
+
+        /* Streaming Toggle Styles */
+        .streaming-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+        }
+
+        .streaming-section label {
+            font-weight: bold;
+            color: #555;
+            font-size: 0.95em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .streaming-toggle {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+
+        .streaming-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .streaming-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 26px;
+        }
+
+        .streaming-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        .streaming-toggle input:checked + .streaming-slider {
+            background-color: #667eea;
+        }
+
+        .streaming-toggle input:checked + .streaming-slider:before {
+            transform: translateX(24px);
+        }
+
+        .streaming-info {
+            font-size: 0.85em;
+            color: #666;
+            font-style: italic;
+        }
+
+        /* Stop Button Styles */
+        .btn-stop {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: none;
+        }
+
+        .btn-stop.visible {
+            display: block;
+        }
+
+        .btn-stop:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+        }
+
+        /* Streaming Animation */
+        @keyframes typing-dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        .streaming-indicator {
+            display: none;
+            text-align: center;
+            padding: 15px;
+            color: #667eea;
+            font-weight: bold;
+            background: #f0f4ff;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .streaming-indicator.visible {
+            display: block;
+        }
+
+        .streaming-indicator::after {
+            content: '...';
+            animation: typing-dots 1.5s infinite;
+        }
+
+        /* Partial output during streaming */
+        .output-content.streaming {
+            border-left: 4px solid #667eea;
+            background: linear-gradient(to right, #f0f4ff, white);
+        }
     </style>
 </head>
 <body>
@@ -765,6 +896,17 @@
             <div class="model-selector">
                 <button class="model-btn active" data-model="flux">Flux Dev</button>
                 <button class="model-btn" data-model="sdxl">SDXL (Juggernaut)</button>
+            </div>
+
+            <div class="streaming-section">
+                <label for="streamingToggle">
+                    <span>⚡ Enable Streaming</span>
+                    <label class="streaming-toggle">
+                        <input type="checkbox" id="streamingToggle">
+                        <span class="streaming-slider"></span>
+                    </label>
+                </label>
+                <span class="streaming-info">(See prompts generated in real-time)</span>
             </div>
 
             <div class="favorites-section">
@@ -821,9 +963,11 @@
             
             <div class="actions">
                 <button class="btn btn-primary" id="generateBtn">Generate Prompt</button>
+                <button class="btn btn-stop" id="stopBtn">⏹ Stop</button>
                 <button class="btn btn-secondary" id="resetBtn" style="display: none;">New Conversation</button>
             </div>
-            
+
+            <div class="streaming-indicator" id="streamingIndicator">🤖 Streaming response</div>
             <div class="loading" id="loading">🤖 Thinking...</div>
             
             <div class="output-area" id="outputArea">
@@ -839,6 +983,7 @@
                 <ul>
                     <li><strong>Quick Generate:</strong> Describe your idea, get a prompt instantly</li>
                     <li><strong>Chat Mode:</strong> Have a conversation to refine and iterate on ideas</li>
+                    <li><strong>Streaming:</strong> Enable streaming to see prompts generated in real-time! Watch tokens appear as they're created (defaults to OFF for reliability)</li>
                     <li><strong>Favorites:</strong> Save your favorite preset combinations! Click "Save Current" to create one, then click any favorite to instantly apply it</li>
                     <li><strong>Presets:</strong> Use style, artist, composition, and lighting dropdowns for instant enhancements</li>
                     <li><strong>Flux:</strong> Best with natural language, very detailed descriptions</li>
@@ -846,6 +991,8 @@
                     <li>Mix and match presets - try combining different styles with specific lighting</li>
                     <li>Hover over favorites to rename or delete them</li>
                     <li>Presets are optional - leave them on "None" for full AI creativity</li>
+                    <li>Click "Stop" button during streaming to cancel generation</li>
+                    <li>Streaming automatically falls back to normal mode if connection issues occur</li>
                     <li>Everything runs locally - no censorship, total privacy</li>
                 </ul>
             </div>
@@ -876,6 +1023,9 @@
         let currentModel = 'flux';
         let presets = {};
         let favorites = [];
+        let isStreaming = false;
+        let currentEventSource = null;
+        let streamingEnabled = false;
 
         // Favorites Management Functions
         function initializeDefaultFavorites() {
@@ -1125,53 +1275,220 @@
                 hideError();
             });
         });
-        
+
+        // Streaming toggle
+        document.getElementById('streamingToggle').addEventListener('change', (e) => {
+            streamingEnabled = e.target.checked;
+        });
+
+        // Stop button
+        document.getElementById('stopBtn').addEventListener('click', () => {
+            stopStreaming();
+        });
+
+        // Streaming functions
+        function stopStreaming() {
+            if (currentEventSource) {
+                currentEventSource.close();
+                currentEventSource = null;
+            }
+            isStreaming = false;
+            hideStreamingIndicator();
+            hideStopButton();
+            hideLoading();
+            document.getElementById('generateBtn').disabled = false;
+            document.getElementById('userInput').disabled = false;
+        }
+
+        function showStreamingIndicator() {
+            document.getElementById('streamingIndicator').classList.add('visible');
+            document.getElementById('loading').classList.remove('visible');
+        }
+
+        function hideStreamingIndicator() {
+            document.getElementById('streamingIndicator').classList.remove('visible');
+        }
+
+        function showStopButton() {
+            document.getElementById('stopBtn').classList.add('visible');
+            document.getElementById('generateBtn').style.display = 'none';
+        }
+
+        function hideStopButton() {
+            document.getElementById('stopBtn').classList.remove('visible');
+            document.getElementById('generateBtn').style.display = 'block';
+        }
+
+        async function generateWithStreaming(endpoint, payload) {
+            isStreaming = true;
+            showStreamingIndicator();
+            showStopButton();
+            document.getElementById('userInput').disabled = true;
+
+            // Create URL with query parameters for EventSource
+            const params = new URLSearchParams();
+            for (const key in payload) {
+                params.append(key, payload[key]);
+            }
+
+            let fullResponse = '';
+            const outputDiv = document.getElementById('output');
+            const outputArea = document.getElementById('outputArea');
+            outputArea.classList.add('visible');
+            outputDiv.classList.add('streaming');
+            outputDiv.textContent = '';
+
+            // For chat mode, show user message first
+            if (currentMode === 'chat') {
+                const userInput = payload.message || payload.input;
+                addChatMessage('user', userInput);
+            }
+
+            try {
+                // Use fetch with streaming response instead of EventSource
+                // because EventSource doesn't support POST with body
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+
+                while (isStreaming) {
+                    const { done, value } = await reader.read();
+
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.slice(6));
+
+                                if (data.error) {
+                                    throw new Error(data.error);
+                                }
+
+                                if (data.token) {
+                                    fullResponse += data.token;
+                                    outputDiv.textContent = fullResponse;
+                                    // Auto-scroll
+                                    outputDiv.scrollTop = outputDiv.scrollHeight;
+                                }
+
+                                if (data.done) {
+                                    isStreaming = false;
+                                    outputDiv.classList.remove('streaming');
+
+                                    if (currentMode === 'chat') {
+                                        addChatMessage('assistant', fullResponse);
+                                        document.getElementById('userInput').value = '';
+                                    }
+                                    break;
+                                }
+                            } catch (e) {
+                                console.error('Failed to parse SSE data:', e);
+                            }
+                        }
+                    }
+                }
+
+            } catch (error) {
+                console.error('Streaming error:', error);
+                showError(error.message || 'Streaming failed. Falling back to normal mode.');
+                outputDiv.classList.remove('streaming');
+
+                // Fallback to non-streaming
+                try {
+                    const fallbackEndpoint = currentMode === 'oneshot' ? '/generate' : '/chat';
+                    const fallbackResponse = await fetch(fallbackEndpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const data = await fallbackResponse.json();
+                    if (fallbackResponse.ok) {
+                        if (currentMode === 'chat') {
+                            addChatMessage('assistant', data.result);
+                            document.getElementById('userInput').value = '';
+                        } else {
+                            showOutput(data.result);
+                        }
+                    } else {
+                        showError(data.error || 'Something went wrong!');
+                    }
+                } catch (fallbackError) {
+                    showError('Failed to connect to server. Make sure Ollama is running!');
+                }
+            } finally {
+                stopStreaming();
+            }
+        }
+
         // Generate button
         document.getElementById('generateBtn').addEventListener('click', async () => {
             const input = document.getElementById('userInput').value.trim();
-            
+
             if (!input) {
                 showError('Please enter a description or message!');
                 return;
             }
-            
+
             // Get preset selections
             const style = document.getElementById('styleSelect').value;
             const artist = document.getElementById('artistSelect').value;
             const composition = document.getElementById('compositionSelect').value;
             const lighting = document.getElementById('lightingSelect').value;
-            
+
             hideError();
-            showLoading();
-            
-            const endpoint = currentMode === 'oneshot' ? '/generate' : '/chat';
-            const payload = currentMode === 'oneshot' 
-                ? { 
-                    input: input, 
+
+            const payload = currentMode === 'oneshot'
+                ? {
+                    input: input,
                     model: currentModel,
                     style: style,
                     artist: artist,
                     composition: composition,
                     lighting: lighting
                 }
-                : { 
-                    message: input, 
+                : {
+                    message: input,
                     model: currentModel,
                     style: style,
                     artist: artist,
                     composition: composition,
                     lighting: lighting
                 };
-            
+
+            // Check if streaming is enabled
+            if (streamingEnabled) {
+                const streamingEndpoint = currentMode === 'oneshot' ? '/generate-stream' : '/chat-stream';
+                await generateWithStreaming(streamingEndpoint, payload);
+                return;
+            }
+
+            // Non-streaming mode (original behavior)
+            showLoading();
+            const endpoint = currentMode === 'oneshot' ? '/generate' : '/chat';
+
             try {
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (response.ok) {
                     if (currentMode === 'chat') {
                         addChatMessage('user', input);
