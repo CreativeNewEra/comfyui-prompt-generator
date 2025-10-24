@@ -278,10 +278,21 @@ def call_ollama(messages, model=None):
             if 'model' in error_detail.lower() or 'not found' in error_detail.lower():
                 logger.error(f"Ollama model not found: {model}")
                 raise OllamaModelNotFoundError(
-                    f"Model '{model}' not found. Please install it with: ollama pull {model}"
+                    f"Model '{model}' is not installed.\n\n"
+                    f"To fix this, run:\n"
+                    f"  ollama pull {model}\n\n"
+                    f"To see available models, visit: https://ollama.com/library\n"
+                    f"To list installed models, run: ollama list"
                 )
             logger.error(f"Ollama API endpoint not found: {error_detail}")
-            raise OllamaAPIError(f"Ollama API endpoint not found. Error: {error_detail}")
+            raise OllamaAPIError(
+                f"Ollama API endpoint not found.\n\n"
+                f"To fix this:\n"
+                f"1. Verify Ollama is running: curl http://localhost:11434\n"
+                f"2. Check OLLAMA_URL in .env (current: {OLLAMA_URL})\n"
+                f"3. Update Ollama to latest version: curl -fsSL https://ollama.com/install.sh | sh\n\n"
+                f"Error details: {error_detail}"
+            )
 
         # Raise for other HTTP errors
         response.raise_for_status()
@@ -292,7 +303,14 @@ def call_ollama(messages, model=None):
         # Check if response contains an error field
         if 'error' in result:
             logger.error(f"Ollama API returned error: {result['error']}")
-            raise OllamaAPIError(f"Ollama returned an error: {result['error']}")
+            raise OllamaAPIError(
+                f"Ollama API error: {result['error']}\n\n"
+                f"To troubleshoot:\n"
+                f"1. Check Ollama logs: journalctl -u ollama -f (Linux) or Console.app (Mac)\n"
+                f"2. Verify model is working: ollama run {model} \"test\"\n"
+                f"3. Check available resources: ollama ps\n"
+                f"4. Try restarting Ollama service"
+            )
 
         # Return the generated response
         if 'response' in result:
@@ -300,34 +318,76 @@ def call_ollama(messages, model=None):
             return result['response']
         else:
             logger.error("Unexpected response format from Ollama API")
-            raise OllamaAPIError("Unexpected response format from Ollama API")
+            raise OllamaAPIError(
+                f"Unexpected response format from Ollama.\n\n"
+                f"To fix this:\n"
+                f"1. Update Ollama: curl -fsSL https://ollama.com/install.sh | sh\n"
+                f"2. Verify API is working: curl {OLLAMA_URL.rsplit('/api', 1)[0]}/api/tags\n"
+                f"3. Check logs: tail -f logs/app.log\n\n"
+                f"The Ollama API may have changed or be misconfigured."
+            )
 
     except Timeout:
         logger.error(f"Ollama request timed out after 120 seconds for model: {model}")
         raise OllamaTimeoutError(
-            f"Request to Ollama timed out after 120 seconds. The model might be too large or the server is overloaded."
+            f"Request timed out after 120 seconds.\n\n"
+            f"To fix this:\n"
+            f"1. Try a smaller/faster model: ollama pull qwen2.5:0.5b\n"
+            f"2. Check Ollama status: ollama ps\n"
+            f"3. Ensure your system has enough RAM (8GB+ recommended)\n"
+            f"4. Try restarting Ollama: pkill ollama && ollama serve\n\n"
+            f"Current model '{model}' may be too large for your system."
         )
     except ConnectionError:
         logger.error(f"Failed to connect to Ollama at {OLLAMA_URL}")
         raise OllamaConnectionError(
-            f"Failed to connect to Ollama at {OLLAMA_URL}. "
-            "Make sure Ollama is running with: ollama serve"
+            f"Cannot connect to Ollama at {OLLAMA_URL}\n\n"
+            f"To fix this:\n"
+            f"1. Start Ollama: ollama serve\n"
+            f"2. Verify it's running: curl {OLLAMA_URL.rsplit('/api', 1)[0]}\n"
+            f"3. Check your OLLAMA_URL setting in .env\n\n"
+            f"For installation help: https://ollama.com/download"
         )
     except (OllamaConnectionError, OllamaTimeoutError, OllamaModelNotFoundError, OllamaAPIError):
         # Re-raise our custom exceptions (already logged)
         raise
     except RequestException as e:
         logger.error(f"Request exception when calling Ollama: {str(e)}")
-        raise OllamaAPIError(f"Request error: {str(e)}")
-    except json.JSONDecodeError:
+        raise OllamaAPIError(
+            f"Network error communicating with Ollama: {str(e)}\n\n"
+            f"To fix this:\n"
+            f"1. Check network connectivity to {OLLAMA_URL}\n"
+            f"2. Verify Ollama is running: curl http://localhost:11434\n"
+            f"3. Check firewall settings if using remote Ollama"
+        )
+    except json.JSONDecodeError as e:
         logger.error("Failed to parse JSON response from Ollama API")
-        raise OllamaAPIError("Failed to parse response from Ollama API")
+        raise OllamaAPIError(
+            f"Invalid response from Ollama (not valid JSON).\n\n"
+            f"To fix this:\n"
+            f"1. Update Ollama: curl -fsSL https://ollama.com/install.sh | sh\n"
+            f"2. Restart Ollama service\n"
+            f"3. Verify API endpoint: curl {OLLAMA_URL.rsplit('/api', 1)[0]}/api/version\n\n"
+            f"This usually indicates an Ollama version mismatch or corruption."
+        )
     except KeyError as e:
         logger.error(f"Missing expected field in Ollama response: {str(e)}")
-        raise OllamaAPIError(f"Missing expected field in Ollama response: {str(e)}")
+        raise OllamaAPIError(
+            f"Incomplete response from Ollama (missing field: {str(e)}).\n\n"
+            f"To fix this:\n"
+            f"1. Update Ollama to latest version\n"
+            f"2. Try a different model: ollama pull qwen2.5:latest\n"
+            f"3. Check Ollama status: ollama ps"
+        )
     except Exception as e:
         logger.error(f"Unexpected error when calling Ollama: {str(e)}", exc_info=True)
-        raise OllamaAPIError(f"Unexpected error: {str(e)}")
+        raise OllamaAPIError(
+            f"Unexpected error: {str(e)}\n\n"
+            f"To troubleshoot:\n"
+            f"1. Check application logs: tail -f logs/app.log\n"
+            f"2. Verify Ollama is working: ollama run {model} \"test\"\n"
+            f"3. Report issue with logs at: https://github.com/CreativeNewEra/comfyui-prompt-generator/issues"
+        )
 
 # Error Handlers
 @app.errorhandler(400)
@@ -614,8 +674,13 @@ if __name__ == '__main__':
     print(f"Using Ollama model: {OLLAMA_MODEL}")
     print(f"Ollama URL: {OLLAMA_URL}")
     print(f"Log level: {LOG_LEVEL}")
-    print("\nMake sure Ollama is running!")
-    print("Press Ctrl+C to stop\n")
+    print("\n" + "-"*60)
+    print("IMPORTANT: Make sure Ollama is running!")
+    print("  Start Ollama: ollama serve")
+    print("  Check status: curl http://localhost:11434")
+    print("  Install model: ollama pull " + OLLAMA_MODEL)
+    print("-"*60)
+    print("\nPress Ctrl+C to stop\n")
 
     logger.info("="*60)
     logger.info("Starting Prompt Generator Application")
