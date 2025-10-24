@@ -875,6 +875,121 @@
             border-left: 4px solid #667eea;
             background: linear-gradient(to right, #f0f4ff, white);
         }
+
+        /* Quick Presets Section Styles */
+        .quick-presets-section {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid rgba(102, 126, 234, 0.15);
+        }
+
+        .quick-presets-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        .quick-preset-category {
+            margin-bottom: 15px;
+        }
+
+        .quick-preset-category:last-child {
+            margin-bottom: 0;
+        }
+
+        .quick-preset-category > label {
+            display: block;
+            font-weight: bold;
+            color: #555;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+
+        .quick-preset-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .quick-preset-btn {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 0.9em;
+            font-weight: 500;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            outline: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quick-preset-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            opacity: 0;
+            transition: opacity 0.25s ease;
+            z-index: -1;
+        }
+
+        .quick-preset-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .quick-preset-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .quick-preset-btn.active:hover {
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+            transform: translateY(-2px);
+        }
+
+        @keyframes quick-preset-pulse {
+            0% {
+                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            }
+            50% {
+                box-shadow: 0 4px 20px rgba(102, 126, 234, 0.6);
+            }
+            100% {
+                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            }
+        }
+
+        .quick-preset-btn.active:active {
+            animation: quick-preset-pulse 0.3s ease;
+        }
+
+        /* Responsive design for mobile */
+        @media (max-width: 768px) {
+            .quick-preset-group {
+                flex-direction: column;
+            }
+
+            .quick-preset-btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
     </style>
 </head>
 <body>
@@ -907,6 +1022,43 @@
                     </label>
                 </label>
                 <span class="streaming-info">(See prompts generated in real-time)</span>
+            </div>
+
+            <div class="quick-presets-section">
+                <h3>⚡ Quick Presets</h3>
+                <div class="quick-preset-category">
+                    <label>Styles:</label>
+                    <div class="quick-preset-group">
+                        <button class="quick-preset-btn" data-category="style" data-value="Cinematic">Cinematic</button>
+                        <button class="quick-preset-btn" data-category="style" data-value="Photorealistic">Photorealistic</button>
+                        <button class="quick-preset-btn" data-category="style" data-value="Anime">Anime</button>
+                        <button class="quick-preset-btn" data-category="style" data-value="Cyberpunk">Cyberpunk</button>
+                    </div>
+                </div>
+                <div class="quick-preset-category">
+                    <label>Artists:</label>
+                    <div class="quick-preset-group">
+                        <button class="quick-preset-btn" data-category="artist" data-value="Greg Rutkowski">Greg Rutkowski</button>
+                        <button class="quick-preset-btn" data-category="artist" data-value="Ansel Adams">Ansel Adams</button>
+                        <button class="quick-preset-btn" data-category="artist" data-value="Studio Ghibli">Studio Ghibli</button>
+                    </div>
+                </div>
+                <div class="quick-preset-category">
+                    <label>Composition:</label>
+                    <div class="quick-preset-group">
+                        <button class="quick-preset-btn" data-category="composition" data-value="Portrait">Portrait</button>
+                        <button class="quick-preset-btn" data-category="composition" data-value="Landscape">Landscape</button>
+                        <button class="quick-preset-btn" data-category="composition" data-value="Low Angle">Low Angle</button>
+                    </div>
+                </div>
+                <div class="quick-preset-category">
+                    <label>Lighting:</label>
+                    <div class="quick-preset-group">
+                        <button class="quick-preset-btn" data-category="lighting" data-value="Golden Hour">Golden Hour</button>
+                        <button class="quick-preset-btn" data-category="lighting" data-value="Neon">Neon</button>
+                        <button class="quick-preset-btn" data-category="lighting" data-value="Volumetric">Volumetric</button>
+                    </div>
+                </div>
             </div>
 
             <div class="favorites-section">
@@ -983,12 +1135,14 @@
                 <ul>
                     <li><strong>Quick Generate:</strong> Describe your idea, get a prompt instantly</li>
                     <li><strong>Chat Mode:</strong> Have a conversation to refine and iterate on ideas</li>
+                    <li><strong>Quick Presets:</strong> Click pill-shaped buttons for instant preset selection - faster than dropdowns! Click again to toggle off</li>
                     <li><strong>Streaming:</strong> Enable streaming to see prompts generated in real-time! Watch tokens appear as they're created (defaults to OFF for reliability)</li>
                     <li><strong>Favorites:</strong> Save your favorite preset combinations! Click "Save Current" to create one, then click any favorite to instantly apply it</li>
                     <li><strong>Presets:</strong> Use style, artist, composition, and lighting dropdowns for instant enhancements</li>
                     <li><strong>Flux:</strong> Best with natural language, very detailed descriptions</li>
                     <li><strong>SDXL:</strong> Works great with quality tags and negative prompts</li>
                     <li>Mix and match presets - try combining different styles with specific lighting</li>
+                    <li>Quick presets and dropdowns stay in sync - use whichever you prefer!</li>
                     <li>Hover over favorites to rename or delete them</li>
                     <li>Presets are optional - leave them on "None" for full AI creativity</li>
                     <li>Click "Stop" button during streaming to cancel generation</li>
@@ -1128,6 +1282,9 @@
                 // Add animation
                 select.classList.add('animating');
                 setTimeout(() => select.classList.remove('animating'), 600);
+
+                // Sync quick preset buttons
+                syncQuickPresetButtons(presetKeys[index], value);
             });
         }
 
@@ -1227,7 +1384,71 @@
                     saveFavorite(name.trim());
                 }
             });
+
+            // Initialize Quick Presets functionality
+            initializeQuickPresets();
         });
+
+        // Quick Presets functionality
+        function initializeQuickPresets() {
+            const quickPresetButtons = document.querySelectorAll('.quick-preset-btn');
+            const categoryToSelectMap = {
+                'style': 'styleSelect',
+                'artist': 'artistSelect',
+                'composition': 'compositionSelect',
+                'lighting': 'lightingSelect'
+            };
+
+            // Handle quick preset button clicks
+            quickPresetButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const category = button.dataset.category;
+                    const value = button.dataset.value;
+                    const selectId = categoryToSelectMap[category];
+                    const select = document.getElementById(selectId);
+
+                    // Check if button is already active
+                    const isActive = button.classList.contains('active');
+
+                    // Deactivate all buttons in this category
+                    const categoryButtons = document.querySelectorAll(`.quick-preset-btn[data-category="${category}"]`);
+                    categoryButtons.forEach(btn => btn.classList.remove('active'));
+
+                    if (isActive) {
+                        // Toggle off - set to None
+                        select.value = 'None';
+                    } else {
+                        // Toggle on - set to value
+                        select.value = value;
+                        button.classList.add('active');
+                    }
+
+                    // Add animation to dropdown
+                    select.classList.add('animating');
+                    setTimeout(() => select.classList.remove('animating'), 600);
+                });
+            });
+
+            // Sync quick preset buttons when dropdowns change
+            Object.entries(categoryToSelectMap).forEach(([category, selectId]) => {
+                const select = document.getElementById(selectId);
+                select.addEventListener('change', () => {
+                    syncQuickPresetButtons(category, select.value);
+                });
+            });
+        }
+
+        function syncQuickPresetButtons(category, value) {
+            const categoryButtons = document.querySelectorAll(`.quick-preset-btn[data-category="${category}"]`);
+
+            categoryButtons.forEach(button => {
+                if (button.dataset.value === value && value !== 'None') {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+        }
         
         function populateSelect(selectId, options) {
             const select = document.getElementById(selectId);
