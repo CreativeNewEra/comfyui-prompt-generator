@@ -1857,7 +1857,32 @@
 
                 // If streaming was stopped manually, clean up
                 if (!fullResponse.trim()) {
-                    throw new Error('No response received');
+                    // No response received, handle fallback directly
+                    // Only fallback if we didn't get any response
+                    try {
+                        showError('Streaming failed. Trying non-streaming mode...');
+                        const fallbackEndpoint = currentMode === 'oneshot' ? '/generate' : '/chat';
+                        const fallbackResponse = await fetch(fallbackEndpoint, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const data = await fallbackResponse.json();
+                        if (fallbackResponse.ok) {
+                            hideError();
+                            if (currentMode === 'chat') {
+                                addChatMessage('assistant', data.result);
+                                document.getElementById('userInput').value = '';
+                            } else {
+                                showOutput(data.result);
+                            }
+                        } else {
+                            showError(data.error || 'Something went wrong!');
+                        }
+                    } catch (fallbackError) {
+                        showError('Failed to connect to server. Make sure Ollama is running!');
+                    }
                 }
 
             } catch (error) {
