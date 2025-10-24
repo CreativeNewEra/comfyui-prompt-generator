@@ -366,6 +366,131 @@
             margin-bottom: 5px;
         }
 
+        /* Favorites Section Styles */
+        .favorites-section {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .favorites-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .favorites-header h3 {
+            color: #333;
+            font-size: 1.1em;
+            margin: 0;
+        }
+
+        .btn-save-favorite {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-save-favorite:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+        }
+
+        .favorites-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            min-height: 40px;
+        }
+
+        .favorites-empty {
+            color: #999;
+            font-style: italic;
+            font-size: 0.95em;
+        }
+
+        .favorite-chip {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 20px;
+            padding: 8px 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+            font-weight: 500;
+            position: relative;
+        }
+
+        .favorite-chip:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .favorite-chip-name {
+            user-select: none;
+        }
+
+        .favorite-chip-actions {
+            display: none;
+            gap: 4px;
+        }
+
+        .favorite-chip:hover .favorite-chip-actions {
+            display: flex;
+        }
+
+        .favorite-chip-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.75em;
+            transition: all 0.2s;
+            color: #333;
+        }
+
+        .favorite-chip-btn:hover {
+            background: white;
+            transform: scale(1.1);
+        }
+
+        .favorite-chip-btn.delete {
+            color: #dc3545;
+        }
+
+        .favorite-chip-btn.rename {
+            color: #667eea;
+        }
+
+        @keyframes preset-highlight {
+            0% { background: #fff3cd; border-color: #ffc107; }
+            100% { background: white; border-color: #ddd; }
+        }
+
+        .preset-select.animating {
+            animation: preset-highlight 0.6s ease;
+        }
+
         /* History Modal Styles */
         .history-overlay {
             display: none;
@@ -641,7 +766,17 @@
                 <button class="model-btn active" data-model="flux">Flux Dev</button>
                 <button class="model-btn" data-model="sdxl">SDXL (Juggernaut)</button>
             </div>
-            
+
+            <div class="favorites-section">
+                <div class="favorites-header">
+                    <h3>⭐ Favorites</h3>
+                    <button class="btn-save-favorite" id="saveFavoriteBtn">💾 Save Current</button>
+                </div>
+                <div class="favorites-chips" id="favoritesChips">
+                    <span class="favorites-empty">No favorites yet. Select presets and click "Save Current" to create one!</span>
+                </div>
+            </div>
+
             <div class="presets-section">
                 <h3>🎨 Presets (Optional)</h3>
                 <div class="presets-grid">
@@ -704,10 +839,12 @@
                 <ul>
                     <li><strong>Quick Generate:</strong> Describe your idea, get a prompt instantly</li>
                     <li><strong>Chat Mode:</strong> Have a conversation to refine and iterate on ideas</li>
+                    <li><strong>Favorites:</strong> Save your favorite preset combinations! Click "Save Current" to create one, then click any favorite to instantly apply it</li>
                     <li><strong>Presets:</strong> Use style, artist, composition, and lighting dropdowns for instant enhancements</li>
                     <li><strong>Flux:</strong> Best with natural language, very detailed descriptions</li>
                     <li><strong>SDXL:</strong> Works great with quality tags and negative prompts</li>
                     <li>Mix and match presets - try combining different styles with specific lighting</li>
+                    <li>Hover over favorites to rename or delete them</li>
                     <li>Presets are optional - leave them on "None" for full AI creativity</li>
                     <li>Everything runs locally - no censorship, total privacy</li>
                 </ul>
@@ -738,21 +875,208 @@
         let currentMode = 'oneshot';
         let currentModel = 'flux';
         let presets = {};
-        
+        let favorites = [];
+
+        // Favorites Management Functions
+        function initializeDefaultFavorites() {
+            const defaults = [
+                {
+                    name: 'Cinematic Portrait',
+                    presets: {
+                        style: 'Cinematic',
+                        artist: 'Roger Deakins',
+                        composition: 'Portrait',
+                        lighting: 'Dramatic'
+                    }
+                },
+                {
+                    name: 'Cyberpunk Night',
+                    presets: {
+                        style: 'Cyberpunk',
+                        artist: 'Simon Stalenhag',
+                        composition: 'Urban',
+                        lighting: 'Neon'
+                    }
+                },
+                {
+                    name: 'Natural Photography',
+                    presets: {
+                        style: 'Photorealistic',
+                        artist: 'Ansel Adams',
+                        composition: 'Landscape',
+                        lighting: 'Natural Light'
+                    }
+                },
+                {
+                    name: 'Fantasy Art',
+                    presets: {
+                        style: 'Fantasy',
+                        artist: 'John Howe',
+                        composition: 'Epic Wide Shot',
+                        lighting: 'Dramatic'
+                    }
+                }
+            ];
+
+            const stored = localStorage.getItem('favoritePresets');
+            if (!stored) {
+                favorites = defaults;
+                localStorage.setItem('favoritePresets', JSON.stringify(defaults));
+            }
+        }
+
+        function loadFavoritesFromStorage() {
+            try {
+                const stored = localStorage.getItem('favoritePresets');
+                favorites = stored ? JSON.parse(stored) : [];
+            } catch (error) {
+                console.error('Failed to load favorites:', error);
+                favorites = [];
+            }
+            renderFavorites();
+        }
+
+        function saveFavorite(name) {
+            const currentPresets = getCurrentPresets();
+
+            // Check if any preset is selected
+            const hasPresets = Object.values(currentPresets).some(v => v && v !== 'None');
+            if (!hasPresets) {
+                alert('Please select at least one preset before saving!');
+                return;
+            }
+
+            // Check if name already exists
+            if (favorites.some(f => f.name === name)) {
+                alert('A favorite with this name already exists!');
+                return;
+            }
+
+            const favorite = {
+                name: name,
+                presets: currentPresets
+            };
+
+            favorites.push(favorite);
+            localStorage.setItem('favoritePresets', JSON.stringify(favorites));
+            renderFavorites();
+        }
+
+        function loadFavorite(name) {
+            const favorite = favorites.find(f => f.name === name);
+            if (!favorite) return;
+
+            // Apply presets with animation
+            const selects = ['styleSelect', 'artistSelect', 'compositionSelect', 'lightingSelect'];
+            const presetKeys = ['style', 'artist', 'composition', 'lighting'];
+
+            selects.forEach((selectId, index) => {
+                const select = document.getElementById(selectId);
+                const value = favorite.presets[presetKeys[index]] || 'None';
+                select.value = value;
+
+                // Add animation
+                select.classList.add('animating');
+                setTimeout(() => select.classList.remove('animating'), 600);
+            });
+        }
+
+        function deleteFavorite(name) {
+            favorites = favorites.filter(f => f.name !== name);
+            localStorage.setItem('favoritePresets', JSON.stringify(favorites));
+            renderFavorites();
+        }
+
+        function renameFavorite(oldName, newName) {
+            if (!newName || newName.trim() === '') return;
+
+            const favorite = favorites.find(f => f.name === oldName);
+            if (!favorite) return;
+
+            // Check if new name already exists
+            if (favorites.some(f => f.name === newName && f.name !== oldName)) {
+                alert('A favorite with this name already exists!');
+                return;
+            }
+
+            favorite.name = newName;
+            localStorage.setItem('favoritePresets', JSON.stringify(favorites));
+            renderFavorites();
+        }
+
+        function getCurrentPresets() {
+            return {
+                style: document.getElementById('styleSelect').value,
+                artist: document.getElementById('artistSelect').value,
+                composition: document.getElementById('compositionSelect').value,
+                lighting: document.getElementById('lightingSelect').value
+            };
+        }
+
+        function renderFavorites() {
+            const container = document.getElementById('favoritesChips');
+
+            if (favorites.length === 0) {
+                container.innerHTML = '<span class="favorites-empty">No favorites yet. Select presets and click "Save Current" to create one!</span>';
+                return;
+            }
+
+            container.innerHTML = favorites.map(fav => `
+                <div class="favorite-chip" onclick="loadFavorite('${escapeAttribute(fav.name)}')">
+                    <span class="favorite-chip-name">${escapeHtml(fav.name)}</span>
+                    <div class="favorite-chip-actions">
+                        <button class="favorite-chip-btn rename" onclick="event.stopPropagation(); handleRenameFavorite('${escapeAttribute(fav.name)}')" title="Rename">✏️</button>
+                        <button class="favorite-chip-btn delete" onclick="event.stopPropagation(); handleDeleteFavorite('${escapeAttribute(fav.name)}')" title="Delete">×</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function handleDeleteFavorite(name) {
+            if (confirm(`Delete favorite "${name}"?`)) {
+                deleteFavorite(name);
+            }
+        }
+
+        function handleRenameFavorite(oldName) {
+            const newName = prompt(`Rename favorite:`, oldName);
+            if (newName && newName.trim() !== '') {
+                renameFavorite(oldName, newName.trim());
+            }
+        }
+
+        function escapeAttribute(str) {
+            return str.replace(/'/g, "\\'");
+        }
+
         // Load presets on page load
         window.addEventListener('DOMContentLoaded', async () => {
             try {
                 const response = await fetch('/presets');
                 presets = await response.json();
-                
+
                 // Populate dropdowns
                 populateSelect('styleSelect', presets.styles);
                 populateSelect('artistSelect', presets.artists);
                 populateSelect('compositionSelect', presets.composition);
                 populateSelect('lightingSelect', presets.lighting);
+
+                // Initialize favorites
+                initializeDefaultFavorites();
+                loadFavoritesFromStorage();
             } catch (error) {
                 console.error('Failed to load presets:', error);
             }
+        });
+
+        // Save Favorite button
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('saveFavoriteBtn').addEventListener('click', () => {
+                const name = prompt('Enter a name for this favorite:');
+                if (name && name.trim() !== '') {
+                    saveFavorite(name.trim());
+                }
+            });
         });
         
         function populateSelect(selectId, options) {
