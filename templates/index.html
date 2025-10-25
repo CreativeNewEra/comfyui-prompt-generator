@@ -1193,6 +1193,13 @@
                 <button class="model-btn" data-model="sdxl">SDXL (Juggernaut)</button>
             </div>
 
+            <div class="preset-group" style="margin-bottom: 20px;">
+                <label for="ollamaModelSelect">🤖 Ollama Model:</label>
+                <select id="ollamaModelSelect" class="preset-select">
+                    <option value="">Loading models...</option>
+                </select>
+            </div>
+
             <div class="streaming-section">
                 <label for="streamingToggle">
                     <span>⚡ Enable Streaming</span>
@@ -1599,6 +1606,39 @@
             } catch (error) {
                 console.error('Failed to load presets:', error);
             }
+
+            // Load Ollama models
+            try {
+                const modelsResponse = await fetch('/models');
+                const modelsData = await modelsResponse.json();
+                const ollamaModelSelect = document.getElementById('ollamaModelSelect');
+
+                // Clear loading option
+                ollamaModelSelect.innerHTML = '';
+
+                // Populate with available models
+                if (modelsData.models && modelsData.models.length > 0) {
+                    modelsData.models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model;
+                        option.textContent = model;
+                        if (model === modelsData.default) {
+                            option.selected = true;
+                        }
+                        ollamaModelSelect.appendChild(option);
+                    });
+                } else {
+                    // No models found
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No models found';
+                    ollamaModelSelect.appendChild(option);
+                }
+            } catch (error) {
+                console.error('Failed to load Ollama models:', error);
+                const ollamaModelSelect = document.getElementById('ollamaModelSelect');
+                ollamaModelSelect.innerHTML = '<option value="">Error loading models</option>';
+            }
         });
 
         // Save Favorite button
@@ -1937,6 +1977,7 @@
             const artist = document.getElementById('artistSelect').value;
             const composition = document.getElementById('compositionSelect').value;
             const lighting = document.getElementById('lightingSelect').value;
+            const ollamaModel = document.getElementById('ollamaModelSelect').value;
 
             hideError();
 
@@ -1944,6 +1985,7 @@
                 ? {
                     input: input,
                     model: currentModel,
+                    ollama_model: ollamaModel,
                     style: style,
                     artist: artist,
                     composition: composition,
@@ -1952,6 +1994,7 @@
                 : {
                     message: input,
                     model: currentModel,
+                    ollama_model: ollamaModel,
                     style: style,
                     artist: artist,
                     composition: composition,
