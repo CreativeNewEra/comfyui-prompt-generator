@@ -250,8 +250,9 @@ def auto_discover_ollama_server(timeout: float = 0.75, max_workers: int = 20) ->
 
     logger.info(f"Scanning {network} for Ollama servers on port 11434 (parallel mode)")
 
-    # Build list of candidate IPs to scan
-    candidates = [str(host) for host in network.hosts() if str(host) != local_ip]
+    # Build list of candidate IPs to scan (exclude local IP)
+    all_hosts = [str(host) for host in network.hosts()]
+    candidates = [ip for ip in all_hosts if ip != local_ip]
 
     def check_host(host_ip: str) -> Optional[str]:
         """Check a single host for Ollama service."""
@@ -271,9 +272,10 @@ def auto_discover_ollama_server(timeout: float = 0.75, max_workers: int = 20) ->
             if result:
                 host_ip = future_to_host[future]
                 logger.info(f"Discovered Ollama server at http://{host_ip}:11434")
-                # Cancel remaining tasks since we found a server
+                # Cancel remaining pending tasks since we found a server
                 for f in future_to_host:
-                    f.cancel()
+                    if not f.done():
+                        f.cancel()
                 return result
 
     logger.info("Ollama auto-discovery scan completed without finding a server")
@@ -363,8 +365,6 @@ def ensure_ollama_connection() -> Optional[str]:
             f"Could not connect to Ollama at {new_base}. "
             "Please verify the address or try again."
         )
-
-    return None
 
 
 # Initialize Flask application
