@@ -168,21 +168,35 @@ dragon perched on a mountain peak
 a cyberpunk street market at night
 ```
 
-> A bustling cyberpunk street market illuminated by neon signs in pink, blue, and cyan. Vendor stalls line narrow alleyways, selling exotic tech and street food. Holographic advertisements flicker overhead, rain-slicked pavement reflects the vibrant lights. Crowds of diverse people in futuristic clothing browse the stalls, steam rises from food carts, and the scene has a gritty yet colorful atmosphere.
+> **Option 1 – Neon Bazaar Snapshot:** A bustling cyberpunk street market illuminated by layers of pink, teal, and amber neon signage. Vendors with holographic displays crowd the narrow alley while rain-slick pavement mirrors the lights. Dense crowds in reflective jackets weave between steam rising from food stalls, creating cinematic atmosphere.
+> **Option 2 – Elevated Transit Walkway:** From an overhead walkway, the market stretches below in cascading tiers of stalls and glowing kanji billboards. Drones zip past, casting streaks of light across metallic awnings and intricate cables, giving the scene depth and motion.
+> **Option 3 – Vendor Alley Close-Up:** Tight composition focusing on a single aisle of neon umbrellas and stacked crates of tech curiosities, with neon smoke drifting across the frame for mood.
+> _Negative prompt cues:_ blurry, low detail, washed-out colors, empty street, daylight.
+> _Follow-up question:_ Should we emphasize a particular vendor or keep the view broad for now?
 
 **Follow-up message:**
 ```
 add more rain and make it more atmospheric, darker mood
 ```
 
-> A rain-drenched cyberpunk street market shrouded in atmospheric darkness, heavy rainfall creating sheets of water that cascade from awnings and signs. Neon lights in deep purples, electric blues, and crimson reds reflect and refract through the downpour, creating pools of color on the flooded pavement. Shadowy figures huddle under makeshift shelters, their forms barely visible through the rain. Fog and steam mix with the precipitation, reducing visibility and adding mystery. Flickering holographic ads glitch in the weather, casting eerie dancing lights. The mood is moody, noir-inspired, with strong contrast between the bright neon accents and deep shadows. Water droplets visible in the air, bokeh effects from distant lights creating depth.
+> Absolutely—let's saturate the scene with rainfall and moodier contrast.
+> **Option 1 – Downpour Drama:** Torrential rain sheets off neon billboards while characters huddle under transparent umbrellas, the puddled ground blooming with chromatic reflections and stray sparks from overhead cables.
+> **Option 2 – Misty Neon Canyon:** Low-angle view through drifting fog as rain collects on suspended walkways, volumetric light slicing through mist to silhouette market-goers and glitching holograms.
+> **Option 3 – Storm Shelter Niche:** Focus on a recessed stall with tarps snapping in the wind, steam from food carts blending with rain to create hazy atmosphere around the merchants.
+> _Negative prompt refresh:_ washed-out colors, sunny daylight, crowdless, cartoonish proportions, flat lighting.
+> _Next tweak:_ Want to lean into cooler blue tones or keep the vibrant neon mix while we add the rain?
 
 **Final refinement:**
 ```
 perfect, now add a street vendor in the foreground cooking noodles
 ```
 
-> A rain-drenched cyberpunk street market shrouded in atmospheric darkness, heavy rainfall creating sheets of water cascading from awnings. In the foreground, a weathered street vendor stands over a steaming wok, stir-frying noodles under a makeshift plastic canopy. Bright flames from the portable burner illuminate their face with warm orange light, contrasting against the cool neon blues and purples reflecting off the wet surfaces. Steam billows from the cooking station, mixing with rain and fog. The vendor wears a water-resistant jacket, their skilled hands working the wok with practiced efficiency. Behind them, shadowy figures huddle under shelters while neon signs flicker through the heavy rainfall. Flooded pavement reflects fragmented colors, holographic ads glitch overhead, and the scene captures both the intimacy of the food preparation and the vast, moody atmosphere of the rainy cyberpunk street. Strong depth of field with the vendor sharp in focus and the market fading into atmospheric haze.
+> Love the idea of featuring the vendor up close—here are some takes:
+> **Option 1 – Wok Master Spotlight:** Foreground vendor framed by sizzling wok flames under a transparent canopy, warm orange bounce lighting carving through the blue neon rain behind them while steam curls around their silhouette.
+> **Option 2 – Steam-Lit Counter:** Medium shot of the vendor plating noodles on a rain-beaded counter, holographic menu panels flickering overhead and droplets streaking off the canopy edges.
+> **Option 3 – Noodle Cart Panorama:** Wider view with the vendor's cart anchoring the foreground, rain trails captured with slight motion blur as the crowd streams past in the glowing marketplace.
+> _Negative prompt reminders:_ de-saturated colors, empty foreground, flat composition, daylight, low detail.
+> _Question:_ Should the vendor feel gritty and human, or enhanced with cybernetic upgrades?
 
 ### Example 3: Using Presets for Targeted Style
 
@@ -535,11 +549,11 @@ the haze, creating a cinematic atmosphere of desolation and resilience...
 **Example Conversation:**
 ```
 You: I want a cozy coffee shop scene
-AI: [Generates detailed prompt]
+AI: Offers several labeled prompt variations, highlights negative prompt ideas, and asks whether to focus on the barista or the seating area.
 You: Make it more rainy and atmospheric
-AI: [Refines with rain and mood details]
+AI: Suggests new rainy variations, points out lighting tweaks to try, and checks if we should add characters.
 You: Perfect! Now add a person reading by the window
-AI: [Adds character with natural integration]
+AI: Proposes character-focused options and asks if you'd like to describe wardrobe or camera angle next.
 ```
 
 ### Using Presets
