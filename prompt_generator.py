@@ -1106,6 +1106,92 @@ def get_presets():
     return jsonify(PRESETS)
 
 
+@app.route('/models', methods=['GET'])
+def get_models():
+    """
+    Return available Ollama models installed on the system.
+
+    Queries the Ollama API /api/tags endpoint to retrieve a list of
+    all locally installed models. This allows users to select which
+    model they want to use for prompt generation.
+
+    Returns:
+        JSON: List of model names and default model
+        {
+            "models": ["qwen3:latest", "llama2", "mistral", ...],
+            "default": "qwen3:latest"
+        }
+
+    Status Codes:
+        200: Success
+        503: Cannot connect to Ollama
+        502: Ollama API error
+
+    Example Response:
+        {
+            "models": ["qwen3:latest", "llama2:latest", "mistral:latest"],
+            "default": "qwen3:latest"
+        }
+    """
+    logger.info("Received /models request")
+
+    try:
+        # Get base URL for Ollama (remove /api/generate path)
+        ollama_base_url = OLLAMA_URL.rsplit('/api', 1)[0]
+        tags_url = f"{ollama_base_url}/api/tags"
+
+        logger.debug(f"Fetching models from {tags_url}")
+        response = requests.get(tags_url, timeout=10)
+        response.raise_for_status()
+
+        result = response.json()
+
+        # Extract model names from the response
+        # Ollama returns: {"models": [{"name": "model:tag", ...}, ...]}
+        models = []
+        if 'models' in result:
+            models = [model['name'] for model in result['models']]
+
+        logger.info(f"Found {len(models)} installed Ollama models")
+
+        return jsonify({
+            'models': models,
+            'default': OLLAMA_MODEL
+        })
+
+    except ConnectionError:
+        logger.error(f"Failed to connect to Ollama at {tags_url}")
+        raise OllamaConnectionError(
+            f"Cannot connect to Ollama to fetch models.\n\n"
+            f"To fix this:\n"
+            f"1. Start Ollama: ollama serve\n"
+            f"2. Verify it's running: curl http://localhost:11434\n"
+            f"3. Check your OLLAMA_URL setting in .env"
+        )
+    except Timeout:
+        logger.error("Timeout fetching models from Ollama")
+        raise OllamaTimeoutError(
+            f"Timeout fetching models from Ollama.\n\n"
+            f"To fix this:\n"
+            f"1. Check Ollama status: ollama ps\n"
+            f"2. Try restarting Ollama: pkill ollama && ollama serve"
+        )
+    except RequestException as e:
+        logger.error(f"Request exception when fetching models: {str(e)}")
+        raise OllamaAPIError(
+            f"Error fetching models from Ollama: {str(e)}\n\n"
+            f"To fix this:\n"
+            f"1. Verify Ollama is running: curl http://localhost:11434\n"
+            f"2. Check network connectivity"
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error fetching models: {str(e)}", exc_info=True)
+        raise OllamaAPIError(
+            f"Unexpected error fetching models: {str(e)}\n\n"
+            f"Check application logs: tail -f logs/app.log"
+        )
+
+
 @app.route('/generate', methods=['POST'])
 def generate():
     """
@@ -1154,6 +1240,7 @@ def generate():
     data = request.json
     user_input = data.get('input', '').strip()
     model_type = data.get('model', 'flux')  # Default to Flux if not specified
+    ollama_model = data.get('ollama_model', OLLAMA_MODEL)  # Ollama model to use
 
     # Extract preset selections (all default to 'None' if not provided)
     style = data.get('style', 'None')
@@ -1204,8 +1291,8 @@ def generate():
     ]
 
     # Call Ollama API (may raise custom exceptions caught by error handlers)
-    result = call_ollama(messages)
-    logger.info("Successfully generated prompt")
+    result = call_ollama(messages, model=ollama_model)
+    logger.info(f"Successfully generated prompt using model: {ollama_model}")
 
     # Save the generation to history database for later retrieval
     presets_dict = {
@@ -1274,6 +1361,7 @@ def chat():
     data = request.json
     user_message = data.get('message', '').strip()
     model_type = data.get('model', 'flux')
+    ollama_model = data.get('ollama_model', OLLAMA_MODEL)  # Ollama model to use
 
     # Get preset selections
     style = data.get('style', 'None')
@@ -1338,7 +1426,7 @@ def chat():
     })
 
     # Get response from Ollama
-    result = call_ollama(session['conversation'])
+    result = call_ollama(session['conversation'], model=ollama_model)
 
     # Add assistant response to history
     session['conversation'].append({
@@ -1387,6 +1475,7 @@ def generate_stream():
     data = request.json
     user_input = data.get('input', '').strip()
     model_type = data.get('model', 'flux')
+    ollama_model = data.get('ollama_model', OLLAMA_MODEL)  # Ollama model to use
 
     # Get preset selections
     style = data.get('style', 'None')
@@ -1401,7 +1490,7 @@ def generate_stream():
             'message': 'Please provide a description'
         }), 400
 
-    logger.info(f"Generating streaming prompt for model: {model_type}")
+    logger.info(f"Generating streaming prompt for model: {model_type}, ollama_model: {ollama_model}")
     logger.debug(f"User input preview: {user_input[:50]}...")
 
     # Build context with presets
@@ -1434,7 +1523,7 @@ def generate_stream():
         """Generator function for SSE streaming"""
         try:
             full_response = ""
-            for token in call_ollama(messages, stream=True):
+            for token in call_ollama(messages, model=ollama_model, stream=True):
                 full_response += token
                 # Send token as SSE event
                 yield f"data: {json.dumps({'token': token})}\n\n"
@@ -1480,6 +1569,7 @@ def chat_stream():
     data = request.json
     user_message = data.get('message', '').strip()
     model_type = data.get('model', 'flux')
+    ollama_model = data.get('ollama_model', OLLAMA_MODEL)  # Ollama model to use
 
     # Get preset selections
     style = data.get('style', 'None')
@@ -1550,7 +1640,7 @@ def chat_stream():
         """Generator function for SSE streaming"""
         full_response = ""
         try:
-            for token in call_ollama(conversation_snapshot, stream=True):
+            for token in call_ollama(conversation_snapshot, model=ollama_model, stream=True):
                 full_response += token
                 # Send token as SSE event
                 yield f"data: {json.dumps({'token': token})}\n\n"
