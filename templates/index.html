@@ -1215,19 +1215,36 @@
                 <h3>⚡ Quick Presets</h3>
                 <div class="quick-preset-category">
                     <label>Styles:</label>
-                    <div class="quick-preset-group" data-category="style"></div>
+                    <div class="quick-preset-group">
+                        <button class="quick-preset-btn" data-category="style" data-value="Cinematic">Cinematic</button>
+                        <button class="quick-preset-btn" data-category="style" data-value="Photorealistic">Photorealistic</button>
+                        <button class="quick-preset-btn" data-category="style" data-value="Anime">Anime</button>
+                        <button class="quick-preset-btn" data-category="style" data-value="Cyberpunk">Cyberpunk</button>
+                    </div>
                 </div>
                 <div class="quick-preset-category">
                     <label>Artists:</label>
-                    <div class="quick-preset-group" data-category="artist"></div>
+                    <div class="quick-preset-group">
+                        <button class="quick-preset-btn" data-category="artist" data-value="Greg Rutkowski">Greg Rutkowski</button>
+                        <button class="quick-preset-btn" data-category="artist" data-value="Ansel Adams">Ansel Adams</button>
+                        <button class="quick-preset-btn" data-category="artist" data-value="Studio Ghibli">Studio Ghibli</button>
+                    </div>
                 </div>
                 <div class="quick-preset-category">
                     <label>Composition:</label>
-                    <div class="quick-preset-group" data-category="composition"></div>
+                    <div class="quick-preset-group">
+                        <button class="quick-preset-btn" data-category="composition" data-value="Portrait">Portrait</button>
+                        <button class="quick-preset-btn" data-category="composition" data-value="Landscape">Landscape</button>
+                        <button class="quick-preset-btn" data-category="composition" data-value="Low Angle">Low Angle</button>
+                    </div>
                 </div>
                 <div class="quick-preset-category">
                     <label>Lighting:</label>
-                    <div class="quick-preset-group" data-category="lighting"></div>
+                    <div class="quick-preset-group">
+                        <button class="quick-preset-btn" data-category="lighting" data-value="Golden Hour">Golden Hour</button>
+                        <button class="quick-preset-btn" data-category="lighting" data-value="Neon">Neon</button>
+                        <button class="quick-preset-btn" data-category="lighting" data-value="Volumetric">Volumetric</button>
+                    </div>
                 </div>
             </div>
 
@@ -1396,27 +1413,50 @@
         let currentEventSource = null;
         let streamingEnabled = false;
 
-        const quickPresetCategoryConfig = {
-            style: { selectId: 'styleSelect', presetKey: 'styles' },
-            artist: { selectId: 'artistSelect', presetKey: 'artists' },
-            composition: { selectId: 'compositionSelect', presetKey: 'composition' },
-            lighting: { selectId: 'lightingSelect', presetKey: 'lighting' }
-        };
-
-        const quickPresetValues = {
-            style: ['Cinematic', 'Photorealistic', 'Anime', 'Cyberpunk'],
-            artist: ['Greg Rutkowski', 'Ansel Adams', 'Hayao Miyazaki'],
-            composition: ['Portrait', 'Landscape', 'Low Angle'],
-            lighting: ['Golden Hour', 'Neon Lighting', 'Volumetric Lighting']
-        };
-
         // Favorites Management Functions
         function initializeDefaultFavorites(availablePresets) {
+            const categoryMap = {
+                style: 'styles',
+                artist: 'artists',
+                composition: 'composition',
+                lighting: 'lighting'
+            };
+
+            const isValidSelection = (category, value) => {
+                if (!value || value === 'None') return true;
+                const presetCategory = categoryMap[category];
+                return (
+                    availablePresets &&
+                    availablePresets[presetCategory] &&
+                    Object.prototype.hasOwnProperty.call(availablePresets[presetCategory], value)
+                );
+            };
+
             const stored = localStorage.getItem('favoritePresets');
+
+            // If favorites exist in storage, validate and migrate them
             if (stored) {
-                return;
+                try {
+                    const existingFavorites = JSON.parse(stored);
+                    const validExisting = existingFavorites.filter(favorite => {
+                        return Object.entries(favorite.presets).every(([category, value]) =>
+                            isValidSelection(category, value)
+                        );
+                    });
+
+                    // Update storage with only valid favorites
+                    if (validExisting.length !== existingFavorites.length) {
+                        localStorage.setItem('favoritePresets', JSON.stringify(validExisting));
+                        favorites = validExisting;
+                    }
+                    return;
+                } catch (error) {
+                    console.error('Error validating existing favorites:', error);
+                    // Continue to initialize defaults if validation fails
+                }
             }
 
+            // Initialize with default favorites
             const defaultFavoritesConfig = [
                 {
                     name: 'Ghibli Adventure',
@@ -1456,33 +1496,15 @@
                 }
             ];
 
-            const categoryMap = {
-                style: 'styles',
-                artist: 'artists',
-                composition: 'composition',
-                lighting: 'lighting'
-            };
-
-            const isValidSelection = (category, value) => {
-                if (!value || value === 'None') return true;
-                const presetCategory = categoryMap[category];
-                return (
-                    availablePresets &&
-                    availablePresets[presetCategory] &&
-                    Object.prototype.hasOwnProperty.call(availablePresets[presetCategory], value)
-                );
-            };
-
             const validDefaults = defaultFavoritesConfig.filter(favorite => {
                 return Object.entries(favorite.presets).every(([category, value]) =>
                     isValidSelection(category, value)
                 );
             });
 
-            if (validDefaults.length > 0) {
-                favorites = validDefaults;
-                localStorage.setItem('favoritePresets', JSON.stringify(validDefaults));
-            }
+            // Always initialize favorites and localStorage, even if empty
+            favorites = validDefaults;
+            localStorage.setItem('favoritePresets', JSON.stringify(validDefaults));
         }
 
         function loadFavoritesFromStorage() {
@@ -1624,8 +1646,6 @@
                 populateSelect('compositionSelect', presets.composition);
                 populateSelect('lightingSelect', presets.lighting);
 
-                initializeQuickPresets();
-
                 // Initialize favorites
                 initializeDefaultFavorites(presets);
                 loadFavoritesFromStorage();
@@ -1679,68 +1699,56 @@
                 }
             });
 
+            // Initialize Quick Presets functionality
+            initializeQuickPresets();
         });
 
         // Quick Presets functionality
-        function renderQuickPresets() {
-            Object.entries(quickPresetCategoryConfig).forEach(([category, config]) => {
-                const group = document.querySelector(`.quick-preset-group[data-category="${category}"]`);
-                if (!group) return;
+        function initializeQuickPresets() {
+            const quickPresetButtons = document.querySelectorAll('.quick-preset-btn');
+            const categoryToSelectMap = {
+                'style': 'styleSelect',
+                'artist': 'artistSelect',
+                'composition': 'compositionSelect',
+                'lighting': 'lightingSelect'
+            };
 
-                group.innerHTML = '';
+            // Handle quick preset button clicks
+            quickPresetButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const category = button.dataset.category;
+                    const value = button.dataset.value;
+                    const selectId = categoryToSelectMap[category];
+                    const select = document.getElementById(selectId);
 
-                const categoryPresets = presets[config.presetKey] || {};
-                const desiredValues = (quickPresetValues[category] && quickPresetValues[category].length > 0)
-                    ? quickPresetValues[category]
-                    : Object.keys(categoryPresets).filter(key => key !== 'None').slice(0, 4);
+                    // Check if button is already active
+                    const isActive = button.classList.contains('active');
 
-                desiredValues.forEach(value => {
-                    if (!(value in categoryPresets)) {
-                        return;
+                    // Deactivate all buttons in this category
+                    const categoryButtons = document.querySelectorAll(`.quick-preset-btn[data-category="${category}"]`);
+                    categoryButtons.forEach(btn => btn.classList.remove('active'));
+
+                    if (isActive) {
+                        // Toggle off - set to None
+                        select.value = 'None';
+                    } else {
+                        // Toggle on - set to value
+                        select.value = value;
+                        button.classList.add('active');
                     }
 
-                    const button = document.createElement('button');
-                    button.className = 'quick-preset-btn';
-                    button.dataset.category = category;
-                    button.dataset.value = value;
-                    button.textContent = value;
-                    button.addEventListener('click', () => handleQuickPresetClick(button, category));
-                    group.appendChild(button);
+                    // Add animation to dropdown
+                    select.classList.add('animating');
+                    setTimeout(() => select.classList.remove('animating'), 600);
                 });
             });
-        }
 
-        function handleQuickPresetClick(button, category) {
-            const config = quickPresetCategoryConfig[category];
-            if (!config) return;
-
-            const select = document.getElementById(config.selectId);
-            if (!select) return;
-
-            const isActive = button.classList.contains('active');
-            const newValue = isActive ? 'None' : button.dataset.value;
-
-            select.value = newValue;
-            syncQuickPresetButtons(category, newValue);
-
-            select.classList.add('animating');
-            setTimeout(() => select.classList.remove('animating'), 600);
-        }
-
-        function initializeQuickPresets() {
-            renderQuickPresets();
-
-            // Set up change listeners for preset selects
-            // Note: This function is called once during initialization, so no need to track listeners
-            Object.entries(quickPresetCategoryConfig).forEach(([category, config]) => {
-                const select = document.getElementById(config.selectId);
-                if (!select) return;
-
+            // Sync quick preset buttons when dropdowns change
+            Object.entries(categoryToSelectMap).forEach(([category, selectId]) => {
+                const select = document.getElementById(selectId);
                 select.addEventListener('change', () => {
                     syncQuickPresetButtons(category, select.value);
                 });
-
-                syncQuickPresetButtons(category, select.value);
             });
         }
 
