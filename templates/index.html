@@ -1414,51 +1414,98 @@
         let streamingEnabled = false;
 
         // Favorites Management Functions
-        function initializeDefaultFavorites() {
-            const defaults = [
+        function initializeDefaultFavorites(availablePresets) {
+            const categoryMap = {
+                style: 'styles',
+                artist: 'artists',
+                composition: 'composition',
+                lighting: 'lighting'
+            };
+
+            const isValidSelection = (category, value) => {
+                if (!value || value === 'None') return true;
+                const presetCategory = categoryMap[category];
+                return (
+                    availablePresets &&
+                    availablePresets[presetCategory] &&
+                    Object.prototype.hasOwnProperty.call(availablePresets[presetCategory], value)
+                );
+            };
+
+            const stored = localStorage.getItem('favoritePresets');
+
+            // If favorites exist in storage, validate and migrate them
+            if (stored) {
+                try {
+                    const existingFavorites = JSON.parse(stored);
+                    const validExisting = existingFavorites.filter(favorite => {
+                        return Object.entries(favorite.presets).every(([category, value]) =>
+                            isValidSelection(category, value)
+                        );
+                    });
+
+                    // Update storage with only valid favorites
+                    if (validExisting.length !== existingFavorites.length) {
+                        localStorage.setItem('favoritePresets', JSON.stringify(validExisting));
+                        favorites = validExisting;
+                    }
+                    // Default initialization of favorites is skipped here because valid favorites already exist in storage.
+                    return;
+                } catch (error) {
+                    console.error('Error validating existing favorites:', error);
+                    // Continue to initialize defaults if validation fails
+                }
+            }
+
+            // Initialize with default favorites
+            const defaultFavoritesConfig = [
                 {
-                    name: 'Cinematic Portrait',
+                    name: 'Ghibli Adventure',
                     presets: {
-                        style: 'Cinematic',
-                        artist: 'Roger Deakins',
-                        composition: 'Portrait',
-                        lighting: 'Dramatic'
+                        style: 'Anime',
+                        artist: 'Hayao Miyazaki',
+                        composition: 'Wide Shot',
+                        lighting: 'Volumetric Lighting'
                     }
                 },
                 {
-                    name: 'Cyberpunk Night',
+                    name: 'Neon City Dreams',
                     presets: {
                         style: 'Cyberpunk',
-                        artist: 'Simon Stalenhag',
-                        composition: 'Urban',
-                        lighting: 'Neon'
+                        artist: 'Simon Stålenhag',
+                        composition: 'Low Angle',
+                        lighting: 'Neon Lighting'
                     }
                 },
                 {
-                    name: 'Natural Photography',
+                    name: 'Epic Fantasy Vista',
+                    presets: {
+                        style: 'Fantasy Art',
+                        artist: 'James Gurney',
+                        composition: 'Leading Lines',
+                        lighting: 'Volumetric Lighting'
+                    }
+                },
+                {
+                    name: 'Studio Portrait Glow',
                     presets: {
                         style: 'Photorealistic',
-                        artist: 'Ansel Adams',
-                        composition: 'Landscape',
-                        lighting: 'Natural Light'
-                    }
-                },
-                {
-                    name: 'Fantasy Art',
-                    presets: {
-                        style: 'Fantasy',
-                        artist: 'John Howe',
-                        composition: 'Epic Wide Shot',
-                        lighting: 'Dramatic'
+                        artist: 'Annie Leibovitz',
+                        composition: 'Portrait',
+                        lighting: 'Studio Lighting'
                     }
                 }
             ];
 
-            const stored = localStorage.getItem('favoritePresets');
-            if (!stored) {
-                favorites = defaults;
-                localStorage.setItem('favoritePresets', JSON.stringify(defaults));
-            }
+            const validDefaults = defaultFavoritesConfig.filter(favorite => {
+                return Object.entries(favorite.presets).every(([category, value]) =>
+                    isValidSelection(category, value)
+                );
+            });
+
+            // Always initialize favorites and localStorage, even if empty
+            favorites = validDefaults;
+            localStorage.setItem('favoritePresets', JSON.stringify(validDefaults));
         }
 
         function loadFavoritesFromStorage() {
@@ -1601,7 +1648,7 @@
                 populateSelect('lightingSelect', presets.lighting);
 
                 // Initialize favorites
-                initializeDefaultFavorites();
+                initializeDefaultFavorites(presets);
                 loadFavoritesFromStorage();
             } catch (error) {
                 console.error('Failed to load presets:', error);

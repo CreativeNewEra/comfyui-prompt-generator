@@ -770,6 +770,30 @@ PROMPT: [single detailed natural language prompt incorporating any presets natur
 Be extremely descriptive and creative. Write like you're describing a photograph or painting in detail. Integrate the preset selections seamlessly into the narrative."""
 }
 
+# System prompts specifically tailored for conversational chat mode. These
+# emphasize brainstorming, collaborative refinement, and follow-up questions
+# rather than returning a single one-shot "PROMPT:" response.
+CHAT_SYSTEM_PROMPTS = {
+    "sdxl": """You are a collaborative prompt engineering partner helping the user craft prompts for Stable Diffusion XL (SDXL). Use a conversational tone and work iteratively.
+
+For each user message:
+- Briefly acknowledge the request and how it fits the ongoing concept.
+- Brainstorm 2-3 improved prompt variations labeled as Option 1, Option 2, etc. Write them as rich natural language descriptions that naturally include any provided presets.
+- Provide a short list of negative prompt considerations that SDXL users might add, highlighting differences between the options when helpful.
+- Ask at least one follow-up question or suggest the next tweak to keep the collaboration moving forward.
+
+Do not reply with a single "PROMPT:" line. Keep responses friendly, structured, and easy to skim in chat format.""",
+
+    "flux": """You are a creative brainstorming partner for Flux image models. Respond conversationally and iterate with the user.
+
+For each reply:
+- Offer 2-3 distinct creative directions or prompt variations, each clearly labeled (e.g., Option 1, Option 2) and written in vivid natural language.
+- Call out noteworthy stylistic, compositional, or lighting ideas for each option, integrating any presets the user selected.
+- Ask at least one clarifying or exploratory question to encourage further refinement, or suggest what the user might try next.
+
+Avoid emitting a single "PROMPT:" response. Keep the tone collaborative and idea-focused."""
+}
+
 # ============================================================================
 # Ollama API Integration
 # ============================================================================
@@ -1168,6 +1192,17 @@ def not_found_error(error):
     }), 404
 
 
+@app.errorhandler(405)
+def method_not_allowed_error(error):
+    """Handle HTTP 405 Method Not Allowed errors."""
+    logger.warning("Method not allowed: %s %s", request.method, request.path)
+    return jsonify({
+        'error': 'Method not allowed',
+        'message': 'The requested URL does not support this HTTP method.',
+        'status': 405
+    }), 405
+
+
 @app.errorhandler(500)
 def internal_error(error):
     """
@@ -1466,7 +1501,8 @@ def generate():
     logger.info("Received /generate request")
 
     # Validate request contains JSON data
-    if not request.json:
+    data = request.get_json(silent=True)
+    if not data:
         logger.warning("Generate request missing JSON data")
         return jsonify({
             'error': 'Invalid request',
@@ -1474,7 +1510,6 @@ def generate():
         }), 400
 
     # Extract request parameters
-    data = request.json
     user_input = data.get('input', '').strip()
     model_type = data.get('model', 'flux')  # Default to Flux if not specified
     ollama_model = data.get('ollama_model', OLLAMA_MODEL)  # Ollama model to use
@@ -1588,14 +1623,14 @@ def chat():
     logger.info("Received /chat request")
 
     # Validate request has JSON data
-    if not request.json:
+    data = request.get_json(silent=True)
+    if not data:
         logger.warning("Chat request missing JSON data")
         return jsonify({
             'error': 'Invalid request',
             'message': 'Request must contain JSON data'
         }), 400
 
-    data = request.json
     user_message = data.get('message', '').strip()
     model_type = data.get('model', 'flux')
     ollama_model = data.get('ollama_model', OLLAMA_MODEL)  # Ollama model to use
@@ -1630,7 +1665,7 @@ def chat():
     # Add system prompt if starting new conversation
     # System prompt instructs the AI on how to format responses
     if not session['conversation']:
-        system_prompt = SYSTEM_PROMPTS.get(model_type, SYSTEM_PROMPTS['flux'])
+        system_prompt = CHAT_SYSTEM_PROMPTS.get(model_type, CHAT_SYSTEM_PROMPTS['flux'])
         session['conversation'].append({
             "role": "system",
             "content": system_prompt
@@ -1702,14 +1737,14 @@ def generate_stream():
     logger.info("Received /generate-stream request")
 
     # Validate request has JSON data
-    if not request.json:
+    data = request.get_json(silent=True)
+    if not data:
         logger.warning("Generate-stream request missing JSON data")
         return jsonify({
             'error': 'Invalid request',
             'message': 'Request must contain JSON data'
         }), 400
 
-    data = request.json
     user_input = data.get('input', '').strip()
     model_type = data.get('model', 'flux')
     ollama_model = data.get('ollama_model', OLLAMA_MODEL)  # Ollama model to use
@@ -1796,14 +1831,14 @@ def chat_stream():
     logger.info("Received /chat-stream request")
 
     # Validate request has JSON data
-    if not request.json:
+    data = request.get_json(silent=True)
+    if not data:
         logger.warning("Chat-stream request missing JSON data")
         return jsonify({
             'error': 'Invalid request',
             'message': 'Request must contain JSON data'
         }), 400
 
-    data = request.json
     user_message = data.get('message', '').strip()
     model_type = data.get('model', 'flux')
     ollama_model = data.get('ollama_model', OLLAMA_MODEL)  # Ollama model to use
@@ -1835,7 +1870,7 @@ def chat_stream():
 
     # Add system prompt if starting new conversation
     if not session['conversation']:
-        system_prompt = SYSTEM_PROMPTS.get(model_type, SYSTEM_PROMPTS['flux'])
+        system_prompt = CHAT_SYSTEM_PROMPTS.get(model_type, CHAT_SYSTEM_PROMPTS['flux'])
         session['conversation'].append({
             "role": "system",
             "content": system_prompt
