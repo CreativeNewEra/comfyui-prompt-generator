@@ -72,3 +72,13 @@ flask_session/
 # Database files
 prompt_history.db
 *.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/

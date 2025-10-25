@@ -238,6 +238,7 @@ Frontend Architecture:
 |-------|--------|---------|----------------|
 | `/` | GET | Serve main HTML page | None |
 | `/presets` | GET | Return preset configurations | None |
+| `/models` | GET | Return list of installed Ollama models | None |
 | `/generate` | POST | One-shot prompt generation | None |
 | `/generate-stream` | POST | One-shot generation with SSE streaming | None |
 | `/chat` | POST | Conversational refinement | Session-based |
@@ -509,8 +510,9 @@ Final Prompt:
 - Easy to add/remove/modify presets
 
 **Extensibility**:
-- Add new categories by extending the PRESETS dict
-- No code changes needed for new presets
+- Add new categories by editing `presets.json`
+- No code changes needed for new presets - just edit the JSON file
+- Changes take effect immediately on next request (hot-reload)
 - Frontend automatically renders new categories (future enhancement)
 
 ---
@@ -913,43 +915,49 @@ def generate_stream():
 
 ---
 
-### 3. **Synchronous Ollama Calls**
+### 3. **Dual-Mode Ollama Calls**
 
-**Decision**: Block during AI generation instead of async/polling
+**Decision**: Support both synchronous and streaming modes
 
-**Rationale**:
-- ✅ Simpler implementation
-- ✅ No WebSocket complexity
-- ✅ No polling overhead
-- ✅ Easier error handling
-- ✅ User expects to wait for AI generation
+**Implementation**:
+- ✅ Synchronous endpoints (`/generate`, `/chat`) for simple use cases
+- ✅ Streaming endpoints (`/generate-stream`, `/chat-stream`) with Server-Sent Events (SSE)
+- ✅ Same backend logic, different response handling
+- ✅ No WebSocket complexity - SSE is simpler and works over HTTP
 
-**Trade-offs**:
-- ❌ Ties up Flask worker during generation
-- ❌ Cannot show progress indicators
-- ❌ Long timeout (120s) required
+**Benefits**:
+- ✅ Synchronous mode: Simple integration, complete responses
+- ✅ Streaming mode: Real-time feedback, better UX for long generations
+- ✅ User can choose based on preference
+- ✅ Both modes share the same `call_ollama()` function
 
-**Future**: Could add streaming with Server-Sent Events (SSE)
+**Implementation Details**:
+- Streaming uses Python generators to yield tokens
+- SSE format: `data: {JSON}\n\n`
+- Completion event: `{"done": true}`
+- Error events: `{"error": "...", "type": "..."}`
 
 ---
 
 ### 4. **Preset System**
 
-**Decision**: Hardcoded presets instead of database
+**Decision**: JSON file presets instead of database
 
 **Rationale**:
-- ✅ Fast access (no DB queries)
+- ✅ Fast access (loaded at startup, cached in memory)
 - ✅ Version controlled with code
-- ✅ Easy to review and modify
+- ✅ Easy to review and modify (simple JSON format)
 - ✅ No database dependency
 - ✅ Simple deployment
+- ✅ Hot-reload support (changes take effect immediately)
+- ✅ No server restart needed for preset changes
 
 **Trade-offs**:
 - ❌ Cannot add presets via UI
-- ❌ Requires code changes to modify
+- ❌ Requires file editing to modify
 - ❌ All users have same presets
 
-**Future**: Could add user-defined preset persistence
+**Future**: Could add user-defined preset persistence with database
 
 ---
 
@@ -1080,7 +1088,7 @@ eventSource.onmessage = (event) => {
 
 ### 3. **Preset Management UI**
 
-**Extension Point**: `prompt_generator.py:PRESETS`
+**Extension Point**: `presets.json` (currently) or database (future)
 
 **Future Implementation**:
 ```python
@@ -1428,9 +1436,11 @@ This architecture balances **simplicity** with **extensibility**. The modular de
 - ✅ Extensible at multiple points
 
 **Areas for Future Enhancement**:
-- Streaming responses
 - User authentication for multi-user scenarios
-- Advanced preset management
+- Advanced preset management (UI-based editing)
 - Performance optimizations for scale
+- Model auto-detection and selection UI
+- Batch prompt generation
+- Image upload for prompt analysis
 
 For specific implementation questions, refer to the inline code comments in `prompt_generator.py` and `templates/index.html`.

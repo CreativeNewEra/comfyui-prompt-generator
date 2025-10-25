@@ -122,19 +122,22 @@ Before submitting a PR:
 
 ## 🎨 Adding New Presets
 
-To add new presets, edit the `PRESETS` dictionary in `prompt_generator.py`:
+To add new presets, edit `presets.json` in the project root:
 
-```python
-PRESETS = {
-    "styles": {
-        "Your New Style": "style description, tags, keywords",
-        # ...
-    },
-    "artists": {
-        "Artist Name": "in the style of Artist Name, characteristics",
-        # ...
-    },
-    # ... other categories
+```json
+{
+  "styles": {
+    "Your New Style": "style description, tags, keywords"
+  },
+  "artists": {
+    "Artist Name": "in the style of Artist Name, characteristics"
+  },
+  "composition": {
+    "Your Composition": "composition description"
+  },
+  "lighting": {
+    "Your Lighting": "lighting description"
+  }
 }
 ```
 
@@ -143,6 +146,7 @@ Guidelines for presets:
 - Test with both Flux and SDXL
 - Ensure they integrate well with existing presets
 - Add to the appropriate category
+- **Hot-Reload**: Changes take effect on next request - just refresh the browser, no server restart needed!
 
 ## 🔧 Architecture Overview
 

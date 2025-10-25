@@ -630,17 +630,26 @@ OLLAMA_URL = os.getenv('OLLAMA_URL', 'http://localhost:11434/api/generate')
 
 ## 🎨 Customizing Presets
 
-Add your own presets by editing the `PRESETS` dictionary in `prompt_generator.py`:
+Add your own presets by editing `presets.json` in the project root:
 
-```python
-PRESETS = {
-    "styles": {
-        "Your Custom Style": "your, custom, tags, here",
-        # Add more...
-    },
-    # ... other categories
+```json
+{
+  "styles": {
+    "Your Custom Style": "style description, tags, keywords"
+  },
+  "artists": {
+    "Artist Name": "in the style of Artist Name"
+  },
+  "composition": {
+    "Your Composition": "composition description"
+  },
+  "lighting": {
+    "Your Lighting": "lighting description"
+  }
 }
 ```
+
+**Hot-Reload Feature**: Changes to `presets.json` take effect immediately on the next request - no server restart needed! Just refresh your browser to see the new presets.
 
 ## 🔌 API Reference
 
@@ -649,6 +658,7 @@ The application provides the following REST API endpoints:
 ### Core Generation
 - **`GET /`** - Serve the main web application
 - **`GET /presets`** - Return available preset configurations
+- **`GET /models`** - Return list of installed Ollama models
 - **`POST /generate`** - One-shot prompt generation (Quick Generate mode)
 - **`POST /chat`** - Conversational prompt refinement (Chat & Refine mode)
 - **`POST /reset`** - Clear chat conversation history
