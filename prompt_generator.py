@@ -612,109 +612,72 @@ class OllamaAPIError(Exception):
 # Each category provides dropdown options in the UI. When selected (not "None"),
 # the preset text is incorporated into the AI prompt generation context.
 #
-# Structure:
-#   PRESETS = {
-#       "category_name": {
-#           "Display Name": "prompt text/tags to inject",
-#           ...
-#       },
-#       ...
-#   }
+# NOTE: Presets have been moved to presets.json for easier editing.
+# The JSON file is loaded at startup and can be reloaded without restarting
+# the server (see /presets endpoint).
 #
 # All presets default to "None" (empty string), making them optional.
 # Users can mix and match presets across categories for creative control.
 # The AI model weaves these elements naturally into the final prompt.
 
-PRESETS = {
-    # Visual styles and artistic approaches
-    # Defines the overall aesthetic and rendering style
-    "styles": {
-        "None": "",
-        "Cinematic": "cinematic, dramatic, movie still, film grain",
-        "Anime": "anime style, manga, cel shaded, vibrant colors",
-        "Photorealistic": "photorealistic, highly detailed, 8k uhd, dslr, high quality",
-        "Oil Painting": "oil painting, brushstrokes, traditional art, painterly",
-        "Digital Art": "digital art, concept art, detailed, artstation trending",
-        "Watercolor": "watercolor painting, soft colors, artistic, flowing",
-        "Cyberpunk": "cyberpunk, neon lights, futuristic, dystopian, tech noir",
-        "Fantasy Art": "fantasy art, magical, epic, detailed, ethereal",
-        "Comic Book": "comic book style, bold lines, halftone dots, pop art",
-        "Minimalist": "minimalist, clean, simple, modern, elegant",
-        "Surreal": "surreal, dreamlike, abstract, unusual, imaginative",
-        "Vintage": "vintage, retro, nostalgic, aged, classic",
-        "3D Render": "3d render, octane render, unreal engine, ray tracing",
-        "Pencil Sketch": "pencil sketch, graphite, hand drawn, detailed shading"
-    },
+# Path to the presets configuration file
+PRESETS_FILE = 'presets.json'
 
-    # Artist and photographer styles
-    # Emulates the distinctive style of famous artists and photographers
-    # Helps achieve specific visual signatures and techniques
-    "artists": {
-        "None": "",
-        "Greg Rutkowski": "in the style of Greg Rutkowski",
-        "Artgerm": "in the style of Artgerm",
-        "Alphonse Mucha": "in the style of Alphonse Mucha, art nouveau",
-        "H.R. Giger": "in the style of H.R. Giger, biomechanical",
-        "Hayao Miyazaki": "Studio Ghibli style, Hayao Miyazaki",
-        "Ross Tran": "in the style of Ross Tran",
-        "Loish": "in the style of Loish",
-        "Makoto Shinkai": "in the style of Makoto Shinkai",
-        "James Gurney": "in the style of James Gurney",
-        "Ansel Adams": "Ansel Adams photography style",
-        "Annie Leibovitz": "Annie Leibovitz portrait photography style",
-        "Steve McCurry": "Steve McCurry documentary photography style",
-        "Peter Lindbergh": "Peter Lindbergh fashion photography style",
-        "Sebastião Salgado": "Sebastião Salgado black and white photography",
-        "Irving Penn": "Irving Penn studio photography style",
-        "Moebius": "in the style of Moebius, detailed linework",
-        "Simon Stålenhag": "in the style of Simon Stålenhag",
-        "Zdzisław Beksiński": "in the style of Zdzisław Beksiński, dystopian"
-    },
 
-    # Camera angles and framing composition
-    # Controls how the subject is positioned and framed in the image
-    # Affects perspective, viewer engagement, and visual hierarchy
-    "composition": {
-        "None": "",
-        "Portrait": "portrait composition, centered subject",
-        "Landscape": "landscape composition, wide view",
-        "Close-up": "close-up shot, detailed, intimate",
-        "Wide Shot": "wide shot, establishing shot, full scene",
-        "Medium Shot": "medium shot, waist up, balanced framing",
-        "Extreme Close-up": "extreme close-up, macro detail",
-        "Bird's Eye View": "bird's eye view, top-down perspective, aerial view",
-        "Low Angle": "low angle shot, looking up, dramatic perspective",
-        "High Angle": "high angle shot, looking down",
-        "Dutch Angle": "dutch angle, tilted, dynamic composition",
-        "Rule of Thirds": "rule of thirds composition, balanced",
-        "Symmetrical": "symmetrical composition, centered, balanced",
-        "Leading Lines": "leading lines composition, depth, perspective",
-        "Frame within Frame": "frame within frame composition",
-        "Golden Ratio": "golden ratio composition, fibonacci spiral"
-    },
+def load_presets():
+    """
+    Load presets from presets.json file.
 
-    # Lighting conditions and techniques
-    # Defines the mood, atmosphere, and time of day
-    # Critical for achieving professional, cinematic, or artistic looks
-    "lighting": {
-        "None": "",
-        "Golden Hour": "golden hour lighting, warm, soft sunlight",
-        "Blue Hour": "blue hour lighting, cool tones, twilight",
-        "Studio Lighting": "professional studio lighting, three point lighting",
-        "Dramatic Shadows": "dramatic shadows, high contrast, chiaroscuro",
-        "Soft Diffused": "soft diffused lighting, even, flattering",
-        "Neon Lighting": "neon lighting, vibrant colors, glowing",
-        "Candlelight": "candlelight, warm glow, intimate atmosphere",
-        "Backlit": "backlit, rim lighting, silhouette, halo effect",
-        "Natural Window Light": "natural window light, soft, directional",
-        "Harsh Sunlight": "harsh sunlight, strong shadows, high contrast",
-        "Overcast": "overcast lighting, soft shadows, even illumination",
-        "Volumetric Lighting": "volumetric lighting, god rays, atmospheric",
-        "Moonlight": "moonlight, cool tones, mysterious atmosphere",
-        "Fire Light": "firelight, warm orange glow, flickering",
-        "Underwater Light": "underwater lighting, caustics, diffused"
-    }
-}
+    Returns:
+        dict: Presets dictionary with categories (styles, artists, composition, lighting)
+
+    Raises:
+        FileNotFoundError: If presets.json is missing
+        json.JSONDecodeError: If presets.json contains invalid JSON
+
+    The function includes fallback presets in case the file is missing or invalid.
+    This ensures the application can still run even if the presets file is corrupted.
+    """
+    try:
+        with open(PRESETS_FILE, 'r', encoding='utf-8') as f:
+            presets = json.load(f)
+            logger.info(f"Successfully loaded presets from {PRESETS_FILE}")
+            return presets
+    except FileNotFoundError:
+        logger.error(f"Presets file not found: {PRESETS_FILE}")
+        logger.warning("Using minimal fallback presets")
+        # Return minimal fallback presets to keep app functional
+        return {
+            "styles": {"None": ""},
+            "artists": {"None": ""},
+            "composition": {"None": ""},
+            "lighting": {"None": ""}
+        }
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON in presets file: {e}")
+        logger.warning("Using minimal fallback presets")
+        # Return minimal fallback presets to keep app functional
+        return {
+            "styles": {"None": ""},
+            "artists": {"None": ""},
+            "composition": {"None": ""},
+            "lighting": {"None": ""}
+        }
+    except Exception as e:
+        logger.error(f"Unexpected error loading presets: {e}")
+        logger.warning("Using minimal fallback presets")
+        # Return minimal fallback presets to keep app functional
+        return {
+            "styles": {"None": ""},
+            "artists": {"None": ""},
+            "composition": {"None": ""},
+            "lighting": {"None": ""}
+        }
+
+
+# Load presets from JSON file at startup
+# This variable is used throughout the application for preset lookups
+PRESETS = load_presets()
 
 # ============================================================================
 # Model-Specific System Prompts
@@ -1365,6 +1328,10 @@ def get_presets():
     dropdown menus. Includes all categories: styles, artists,
     composition, and lighting.
 
+    NOTE: This endpoint reloads presets.json from disk on each request,
+    allowing hot-reload without server restart. This makes it easy to
+    edit presets and see changes immediately by refreshing the browser.
+
     Returns:
         JSON: PRESETS dictionary with all preset categories and options
 
@@ -1375,7 +1342,10 @@ def get_presets():
             ...
         }
     """
-    return jsonify(PRESETS)
+    logger.debug("Reloading presets from disk for hot-reload")
+    # Reload presets from file on each request to enable hot-reload
+    presets = load_presets()
+    return jsonify(presets)
 
 
 @app.route('/models', methods=['GET'])
