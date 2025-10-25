@@ -1168,7 +1168,7 @@ def get_models():
             f"2. Verify it's running: curl http://localhost:11434\n"
             f"3. Check your OLLAMA_URL setting in .env"
         )
-    except Timeout:
+    except requests.exceptions.Timeout:
         logger.error("Timeout fetching models from Ollama")
         raise OllamaTimeoutError(
             f"Timeout fetching models from Ollama.\n\n"
