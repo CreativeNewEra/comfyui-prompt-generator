@@ -1703,16 +1703,15 @@
         function initializeQuickPresets() {
             renderQuickPresets();
 
+            // Set up change listeners for preset selects
+            // Note: This function is called once during initialization, so no need to track listeners
             Object.entries(quickPresetCategoryConfig).forEach(([category, config]) => {
                 const select = document.getElementById(config.selectId);
                 if (!select) return;
 
-                if (!select.dataset.quickPresetListener) {
-                    select.addEventListener('change', () => {
-                        syncQuickPresetButtons(category, select.value);
-                    });
-                    select.dataset.quickPresetListener = 'true';
-                }
+                select.addEventListener('change', () => {
+                    syncQuickPresetButtons(category, select.value);
+                });
 
                 syncQuickPresetButtons(category, select.value);
             });
