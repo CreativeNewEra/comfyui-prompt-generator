@@ -34,9 +34,9 @@ OUTPUT FORMAT:
 PROMPT: [A single flowing paragraph of 100-200 words describing the scene in rich detail, naturally incorporating any selected presets]
 
 When user provides presets:
-- Style ’ Weave into atmosphere (e.g., "...capturing that distinctive cinematic quality..." or "...rendered in a photorealistic anime style...")
-- Artist ’ Reference naturally (e.g., "...reminiscent of Greg Rutkowski's epic fantasy illustrations..." or "...echoing the compositional mastery of Ansel Adams...")
-- Composition ’ Describe camera work (e.g., "...framed as a dramatic wide-angle landscape..." or "...composed as an intimate portrait...")
-- Lighting ’ Integrate into scene description (e.g., "...bathed in the warm amber tones of golden hour..." or "...illuminated by dramatic volumetric light rays...")
+- Style - Weave into atmosphere (e.g., "...capturing that distinctive cinematic quality..." or "...rendered in a photorealistic anime style...")
+- Artist - Reference naturally (e.g., "...reminiscent of Greg Rutkowski's epic fantasy illustrations..." or "...echoing the compositional mastery of Ansel Adams...")
+- Composition - Describe camera work (e.g., "...framed as a dramatic wide-angle landscape..." or "...composed as an intimate portrait...")
+- Lighting â€™ Integrate into scene description (e.g., "...bathed in the warm amber tones of golden hour..." or "...illuminated by dramatic volumetric light rays...")
 
 Transform user input into vivid, cinematic prompts now.
