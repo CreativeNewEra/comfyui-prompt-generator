@@ -625,6 +625,16 @@ class OllamaAPIError(Exception):
 # regardless of where the script is run from
 PRESETS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'presets.json')
 
+# Paths to the system prompt files
+# These allow prompts to be edited without modifying the Python code
+PROMPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'prompts')
+PROMPT_FILES = {
+    'sdxl_oneshot': os.path.join(PROMPTS_DIR, 'sdxl_oneshot.txt'),
+    'flux_oneshot': os.path.join(PROMPTS_DIR, 'flux_oneshot.txt'),
+    'sdxl_chat': os.path.join(PROMPTS_DIR, 'sdxl_chat.txt'),
+    'flux_chat': os.path.join(PROMPTS_DIR, 'flux_chat.txt')
+}
+
 
 def load_presets():
     """
@@ -677,31 +687,23 @@ def load_presets():
         }
 
 
-# Load presets from JSON file at startup
-# This variable is used throughout the application for preset lookups
-PRESETS = load_presets()
+def load_prompts():
+    """
+    Load system prompts from text files in the prompts/ directory.
 
-# ============================================================================
-# Model-Specific System Prompts
-# ============================================================================
-# Different AI image generation models have different prompting requirements.
-# These system prompts instruct the Ollama LLM on how to format output
-# appropriately for each model type.
-#
-# SDXL (Stable Diffusion XL):
-#   - Requires quality tags and structured format
-#   - Needs separate negative prompt for things to avoid
-#   - Uses comma-separated tag style prompts
-#
-# Flux:
-#   - Prefers natural language descriptions
-#   - No need for quality tags or negative prompts
-#   - Works best with conversational, detailed narratives
-#
-# When adding new models, define their optimal prompting strategy here.
+    Returns:
+        tuple: (SYSTEM_PROMPTS dict, CHAT_SYSTEM_PROMPTS dict)
 
-SYSTEM_PROMPTS = {
-    "sdxl": """You are an expert prompt engineer for Stable Diffusion XL (SDXL). When users describe an image idea, you expand it into a detailed, effective prompt.
+    This function attempts to load prompts from external text files, enabling
+    prompt editing without code changes. If files are missing or unreadable,
+    it falls back to hardcoded default prompts to ensure the app remains functional.
+
+    The function logs all operations for debugging and provides helpful error
+    messages if files are missing.
+    """
+    # Hardcoded fallback prompts (original defaults)
+    fallback_system_prompts = {
+        "sdxl": """You are an expert prompt engineer for Stable Diffusion XL (SDXL). When users describe an image idea, you expand it into a detailed, effective prompt.
 
 The user may provide preset selections for style, artist/photographer, composition, and lighting. When these are provided, incorporate them naturally into the prompt.
 
@@ -717,7 +719,7 @@ NEGATIVE: [negative prompt with things to avoid]
 
 Be creative, specific, and detailed. Weave the preset selections naturally into the description.""",
 
-    "flux": """You are an expert prompt engineer for Flux models. When users describe an image idea, you expand it into a detailed, effective prompt.
+        "flux": """You are an expert prompt engineer for Flux models. When users describe an image idea, you expand it into a detailed, effective prompt.
 
 The user may provide preset selections for style, artist/photographer, composition, and lighting. When these are provided, incorporate them naturally and seamlessly into the prompt description.
 
@@ -733,13 +735,10 @@ Format your response as:
 PROMPT: [single detailed natural language prompt incorporating any presets naturally]
 
 Be extremely descriptive and creative. Write like you're describing a photograph or painting in detail. Integrate the preset selections seamlessly into the narrative."""
-}
+    }
 
-# System prompts specifically tailored for conversational chat mode. These
-# emphasize brainstorming, collaborative refinement, and follow-up questions
-# rather than returning a single one-shot "PROMPT:" response.
-CHAT_SYSTEM_PROMPTS = {
-    "sdxl": """You are a collaborative prompt engineering partner helping the user craft prompts for Stable Diffusion XL (SDXL). Use a conversational tone and work iteratively.
+    fallback_chat_prompts = {
+        "sdxl": """You are a collaborative prompt engineering partner helping the user craft prompts for Stable Diffusion XL (SDXL). Use a conversational tone and work iteratively.
 
 For each user message:
 - Briefly acknowledge the request and how it fits the ongoing concept.
@@ -749,7 +748,7 @@ For each user message:
 
 Do not reply with a single "PROMPT:" line. Keep responses friendly, structured, and easy to skim in chat format.""",
 
-    "flux": """You are a creative brainstorming partner for Flux image models. Respond conversationally and iterate with the user.
+        "flux": """You are a creative brainstorming partner for Flux image models. Respond conversationally and iterate with the user.
 
 For each reply:
 - Offer 2-3 distinct creative directions or prompt variations, each clearly labeled (e.g., Option 1, Option 2) and written in vivid natural language.
@@ -757,7 +756,107 @@ For each reply:
 - Ask at least one clarifying or exploratory question to encourage further refinement, or suggest what the user might try next.
 
 Avoid emitting a single "PROMPT:" response. Keep the tone collaborative and idea-focused."""
-}
+    }
+
+    system_prompts = {}
+    chat_prompts = {}
+
+    # Try to load SDXL oneshot prompt
+    try:
+        with open(PROMPT_FILES['sdxl_oneshot'], 'r', encoding='utf-8') as f:
+            content = f.read().strip()
+            if content:
+                system_prompts['sdxl'] = content
+                logger.info("Loaded SDXL oneshot prompt from prompts/sdxl_oneshot.txt")
+            else:
+                logger.warning("prompts/sdxl_oneshot.txt is empty, using fallback")
+                system_prompts['sdxl'] = fallback_system_prompts['sdxl']
+    except FileNotFoundError:
+        logger.warning("prompts/sdxl_oneshot.txt not found, using fallback")
+        system_prompts['sdxl'] = fallback_system_prompts['sdxl']
+    except Exception as e:
+        logger.error(f"Error loading prompts/sdxl_oneshot.txt: {e}, using fallback")
+        system_prompts['sdxl'] = fallback_system_prompts['sdxl']
+
+    # Try to load Flux oneshot prompt
+    try:
+        with open(PROMPT_FILES['flux_oneshot'], 'r', encoding='utf-8') as f:
+            content = f.read().strip()
+            if content:
+                system_prompts['flux'] = content
+                logger.info("Loaded Flux oneshot prompt from prompts/flux_oneshot.txt")
+            else:
+                logger.warning("prompts/flux_oneshot.txt is empty, using fallback")
+                system_prompts['flux'] = fallback_system_prompts['flux']
+    except FileNotFoundError:
+        logger.warning("prompts/flux_oneshot.txt not found, using fallback")
+        system_prompts['flux'] = fallback_system_prompts['flux']
+    except Exception as e:
+        logger.error(f"Error loading prompts/flux_oneshot.txt: {e}, using fallback")
+        system_prompts['flux'] = fallback_system_prompts['flux']
+
+    # Try to load SDXL chat prompt
+    try:
+        with open(PROMPT_FILES['sdxl_chat'], 'r', encoding='utf-8') as f:
+            content = f.read().strip()
+            if content:
+                chat_prompts['sdxl'] = content
+                logger.info("Loaded SDXL chat prompt from prompts/sdxl_chat.txt")
+            else:
+                logger.warning("prompts/sdxl_chat.txt is empty, using fallback")
+                chat_prompts['sdxl'] = fallback_chat_prompts['sdxl']
+    except FileNotFoundError:
+        logger.warning("prompts/sdxl_chat.txt not found, using fallback")
+        chat_prompts['sdxl'] = fallback_chat_prompts['sdxl']
+    except Exception as e:
+        logger.error(f"Error loading prompts/sdxl_chat.txt: {e}, using fallback")
+        chat_prompts['sdxl'] = fallback_chat_prompts['sdxl']
+
+    # Try to load Flux chat prompt
+    try:
+        with open(PROMPT_FILES['flux_chat'], 'r', encoding='utf-8') as f:
+            content = f.read().strip()
+            if content:
+                chat_prompts['flux'] = content
+                logger.info("Loaded Flux chat prompt from prompts/flux_chat.txt")
+            else:
+                logger.warning("prompts/flux_chat.txt is empty, using fallback")
+                chat_prompts['flux'] = fallback_chat_prompts['flux']
+    except FileNotFoundError:
+        logger.warning("prompts/flux_chat.txt not found, using fallback")
+        chat_prompts['flux'] = fallback_chat_prompts['flux']
+    except Exception as e:
+        logger.error(f"Error loading prompts/flux_chat.txt: {e}, using fallback")
+        chat_prompts['flux'] = fallback_chat_prompts['flux']
+
+    logger.info("System prompts loaded successfully")
+    return system_prompts, chat_prompts
+
+
+# Load presets from JSON file at startup
+# This variable is used throughout the application for preset lookups
+PRESETS = load_presets()
+
+# ============================================================================
+# Model-Specific System Prompts
+# ============================================================================
+# Different AI image generation models have different prompting requirements.
+# These system prompts instruct the Ollama LLM on how to format output
+# appropriately for each model type.
+#
+# System prompts are now loaded from text files in the prompts/ directory:
+#   - prompts/sdxl_oneshot.txt - SDXL quick generate mode
+#   - prompts/flux_oneshot.txt - Flux quick generate mode
+#   - prompts/sdxl_chat.txt - SDXL conversational mode
+#   - prompts/flux_chat.txt - Flux conversational mode
+#
+# This allows prompt editing without modifying code. If files are missing,
+# the application falls back to hardcoded defaults in load_prompts().
+#
+# When adding new models, add corresponding text files to prompts/ directory.
+
+# Load system prompts from text files (with fallback to hardcoded defaults)
+SYSTEM_PROMPTS, CHAT_SYSTEM_PROMPTS = load_prompts()
 
 # ============================================================================
 # Ollama API Integration
@@ -1348,6 +1447,67 @@ def get_presets():
     # Reload presets from file on each request to enable hot-reload
     presets = load_presets()
     return jsonify(presets)
+
+
+@app.route('/admin/reload-prompts', methods=['POST'])
+def reload_prompts():
+    """
+    Reload system prompts from text files without restarting the server.
+
+    This endpoint allows administrators to reload all system prompts
+    (SDXL oneshot, Flux oneshot, SDXL chat, Flux chat) from their
+    respective text files in the prompts/ directory. This enables
+    rapid iteration on prompt engineering without server downtime.
+
+    Security Note:
+        This is a simple reload endpoint without authentication.
+        For production use, consider adding authentication or
+        restricting access by IP/network. Currently logs all reload
+        attempts for monitoring.
+
+    Returns:
+        JSON: Success message with list of reloaded prompts
+
+    Example Response:
+        {
+            "success": true,
+            "message": "System prompts reloaded successfully",
+            "reloaded": ["sdxl_oneshot", "flux_oneshot", "sdxl_chat", "flux_chat"]
+        }
+
+    Example curl:
+        curl -X POST http://localhost:5000/admin/reload-prompts
+    """
+    global SYSTEM_PROMPTS, CHAT_SYSTEM_PROMPTS
+
+    logger.warning("System prompts reload requested via /admin/reload-prompts endpoint")
+
+    try:
+        # Reload prompts from files
+        new_system_prompts, new_chat_prompts = load_prompts()
+
+        # Update global variables
+        SYSTEM_PROMPTS = new_system_prompts
+        CHAT_SYSTEM_PROMPTS = new_chat_prompts
+
+        reloaded_prompts = list(SYSTEM_PROMPTS.keys()) + [f"{k}_chat" for k in CHAT_SYSTEM_PROMPTS.keys()]
+
+        logger.info(f"System prompts reloaded successfully: {reloaded_prompts}")
+
+        return jsonify({
+            'success': True,
+            'message': 'System prompts reloaded successfully',
+            'reloaded': reloaded_prompts,
+            'timestamp': datetime.utcnow().isoformat() + 'Z'
+        })
+
+    except Exception as e:
+        logger.error(f"Failed to reload system prompts: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to reload prompts',
+            'message': str(e)
+        }), 500
 
 
 @app.route('/models', methods=['GET'])
