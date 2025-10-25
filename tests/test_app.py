@@ -139,7 +139,10 @@ class TestChatRoute:
     def test_chat_with_valid_message(self, client, monkeypatch):
         """Verify POST /chat with valid message"""
         # Mock the call_ollama function
+        captured = {}
+
         def mock_call_ollama(messages, model=None):
+            captured['messages'] = messages
             return "Mocked chat response"
 
         import prompt_generator
@@ -162,6 +165,8 @@ class TestChatRoute:
         data = json.loads(response.data)
         assert 'result' in data
         assert 'model' in data
+        assert captured['messages'][0]['role'] == 'system'
+        assert 'Avoid emitting a single "PROMPT:" response' in captured['messages'][0]['content']
 
     def test_chat_without_message_returns_400(self, client):
         """Verify POST /chat without message returns 400"""
