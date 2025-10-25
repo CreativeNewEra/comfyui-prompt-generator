@@ -28,7 +28,7 @@ from logging.handlers import RotatingFileHandler
 from dotenv import load_dotenv
 from requests.exceptions import ConnectionError, Timeout, RequestException
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Load environment variables from .env file if it exists
@@ -434,7 +434,7 @@ def save_to_history(user_input, output, model, presets, mode):
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
-        timestamp = datetime.now(datetime.UTC).isoformat()
+        timestamp = datetime.now(timezone.utc).isoformat()
         presets_json = json.dumps(presets)
 
         cursor.execute('''
