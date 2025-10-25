@@ -19,12 +19,17 @@ import requests
 import json
 import secrets
 import os
+import sys
+import socket
+import ipaddress
 import logging
+from typing import Optional
 from logging.handlers import RotatingFileHandler
 from dotenv import load_dotenv
 from requests.exceptions import ConnectionError, Timeout, RequestException
 import sqlite3
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Load environment variables from .env file if it exists
 # This allows users to customize configuration without modifying code
@@ -129,6 +134,238 @@ def setup_logging():
 
 # Initialize logging system
 logger = setup_logging()
+
+
+# ============================================================================
+# Ollama Connection Helpers
+# ============================================================================
+
+def get_ollama_base_url(url: str) -> str:
+    """Return the base URL for the Ollama server without the /api suffix.
+
+    Handles URLs with path prefixes correctly by working from right to left.
+    Examples:
+        'http://localhost:11434/api/generate' -> 'http://localhost:11434'
+        'https://example.com/api/ollama/api/generate' -> 'https://example.com/api/ollama'
+    """
+    if not url:
+        return ''
+
+    stripped = url.rstrip('/')
+
+    # Work from right to left to handle prefixed paths correctly
+    if stripped.endswith('/api/generate'):
+        return stripped[:-len('/api/generate')]
+    if stripped.endswith('/api'):
+        return stripped[:-len('/api')]
+
+    return stripped
+
+
+def build_generate_url(base_url: str) -> str:
+    """Ensure the provided base URL targets the /api/generate endpoint."""
+    if not base_url:
+        return ''
+
+    url = base_url.strip()
+    if not url.startswith('http://') and not url.startswith('https://'):
+        url = f'http://{url}'
+
+    url = url.rstrip('/')
+
+    if url.endswith('/api/generate'):
+        return url
+    if url.endswith('/api'):
+        return f'{url}/generate'
+    if url.endswith('/api/'):
+        return f'{url}generate'
+
+    return f'{url}/api/generate'
+
+
+def check_ollama_connection(base_url: str, timeout: float = 2.0) -> bool:
+    """Attempt to contact the Ollama server and confirm it is reachable.
+
+    Validates the response contains Ollama-specific fields to ensure we're
+    actually connecting to an Ollama server, not just any HTTP endpoint.
+    """
+    if not base_url:
+        return False
+
+    test_url = f'{base_url.rstrip("/")}/api/version'
+    try:
+        response = requests.get(test_url, timeout=timeout)
+        response.raise_for_status()
+
+        # Validate this is actually an Ollama server by checking response structure
+        try:
+            data = response.json()
+            # Ollama's /api/version endpoint returns {"version": "..."}
+            if not isinstance(data, dict) or 'version' not in data:
+                logger.debug(f"Response from {base_url} doesn't match Ollama API structure")
+                return False
+        except (json.JSONDecodeError, ValueError):
+            logger.debug(f"Response from {base_url} is not valid JSON")
+            return False
+
+        logger.debug(f"Successfully connected to Ollama at {base_url}")
+        return True
+    except RequestException as exc:
+        logger.debug(f"Ollama connection test failed for {base_url}: {exc}")
+        return False
+
+
+def get_local_ip() -> Optional[str]:
+    """Determine the local IP address used for outbound connections."""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            # The address is irrelevant; we just need to trigger socket assignment
+            sock.connect(('8.8.8.8', 80))
+            return sock.getsockname()[0]
+    except OSError as exc:
+        logger.debug(f"Unable to determine local IP address: {exc}")
+        return None
+
+
+def auto_discover_ollama_server(timeout: float = 0.75, max_workers: int = 20) -> Optional[str]:
+    """Scan the local /24 network for an Ollama instance on port 11434.
+
+    Uses parallel scanning to check multiple hosts simultaneously, reducing
+    total scan time from ~3 minutes to under 10 seconds for a /24 network.
+
+    Args:
+        timeout: Connection timeout per host in seconds
+        max_workers: Maximum number of parallel connection attempts
+    """
+    local_ip = get_local_ip()
+    if not local_ip:
+        logger.warning("Unable to detect local network configuration for discovery")
+        return None
+
+    try:
+        network = ipaddress.ip_network(f'{local_ip}/24', strict=False)
+    except ValueError as exc:
+        logger.debug(f"Invalid network definition for discovery: {exc}")
+        return None
+
+    logger.info(f"Scanning {network} for Ollama servers on port 11434 (parallel mode)")
+
+    # Build list of candidate IPs to scan (exclude local IP)
+    all_hosts = [str(host) for host in network.hosts()]
+    candidates = [ip for ip in all_hosts if ip != local_ip]
+
+    def check_host(host_ip: str) -> Optional[str]:
+        """Check a single host for Ollama service."""
+        candidate_base = f'http://{host_ip}:11434'
+        if check_ollama_connection(candidate_base, timeout=timeout):
+            return build_generate_url(candidate_base)
+        return None
+
+    # Scan hosts in parallel
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Submit all tasks
+        future_to_host = {executor.submit(check_host, ip): ip for ip in candidates}
+
+        # Return the first successful result
+        for future in as_completed(future_to_host):
+            result = future.result()
+            if result:
+                host_ip = future_to_host[future]
+                logger.info(f"Discovered Ollama server at http://{host_ip}:11434")
+                # Cancel remaining pending tasks since we found a server
+                for f in future_to_host:
+                    if not f.done():
+                        f.cancel()
+                return result
+
+    logger.info("Ollama auto-discovery scan completed without finding a server")
+    return None
+
+
+def _update_ollama_url(new_url: str) -> None:
+    """Helper function to update both global OLLAMA_URL and environment variable.
+
+    Centralizes URL updates to follow DRY principle and maintain consistency.
+    """
+    global OLLAMA_URL
+    OLLAMA_URL = new_url
+    os.environ['OLLAMA_URL'] = new_url
+
+
+def ensure_ollama_connection() -> Optional[str]:
+    """Confirm Ollama is reachable or prompt the user for updated settings.
+
+    Returns:
+        The validated Ollama URL if connection is successful, None otherwise.
+
+    For non-interactive environments (Docker, systemd), set OLLAMA_STARTUP_CHECK=false
+    in your environment to skip this check and allow the application to start.
+    """
+    global OLLAMA_URL
+
+    base_url = get_ollama_base_url(OLLAMA_URL)
+    if check_ollama_connection(base_url):
+        return OLLAMA_URL
+
+    logger.warning(
+        "Failed to connect to Ollama at %s. You can set OLLAMA_URL in your .env file.",
+        OLLAMA_URL,
+    )
+
+    # Allow bypassing startup check for non-interactive deployments
+    if os.getenv('OLLAMA_STARTUP_CHECK', 'true').lower() == 'false':
+        logger.info(
+            "OLLAMA_STARTUP_CHECK is disabled; continuing startup without Ollama connection."
+        )
+        return None
+
+    if not sys.stdin.isatty():
+        logger.error(
+            "Unable to connect to Ollama and standard input is not interactive. "
+            "Set OLLAMA_URL correctly in .env or set OLLAMA_STARTUP_CHECK=false to skip this check."
+        )
+        return None
+
+    print("\nUnable to reach Ollama at the configured URL.")
+    print("You can update the address here, or press Enter to keep the current setting.")
+
+    while True:
+        user_choice = input(
+            "Enter a new Ollama host/IP (e.g. 192.168.1.50:11434), "
+            "type 'scan' to search your network, or press Enter to retry: "
+        ).strip()
+
+        if user_choice.lower() == 'scan':
+            discovered_url = auto_discover_ollama_server()
+            if discovered_url:
+                _update_ollama_url(discovered_url)
+                print(f"Discovered Ollama server at {get_ollama_base_url(discovered_url)}")
+                return discovered_url
+            print("No Ollama server found during network scan. You can try again or enter an IP manually.")
+            continue
+
+        if not user_choice:
+            # Retry the currently configured URL once more
+            if check_ollama_connection(base_url):
+                return OLLAMA_URL
+            print(
+                f"Still unable to reach Ollama at {base_url}. "
+                "Provide a new address or type 'scan' to search."
+            )
+            continue
+
+        new_url = build_generate_url(user_choice)
+        new_base = get_ollama_base_url(new_url)
+        if check_ollama_connection(new_base):
+            _update_ollama_url(new_url)
+            print(f"Ollama connection updated to {new_base}")
+            return new_url
+
+        print(
+            f"Could not connect to Ollama at {new_base}. "
+            "Please verify the address or try again."
+        )
+
 
 # Initialize Flask application
 app = Flask(__name__)
@@ -1817,6 +2054,9 @@ def delete_prompt_history(history_id):
 if __name__ == '__main__':
     # Initialize the SQLite database (creates tables if they don't exist)
     init_db()
+
+    # Ensure we can reach Ollama or gather updated connection details
+    ensure_ollama_connection()
 
     # Display startup banner to console with configuration details
     print("\n" + "="*60)
