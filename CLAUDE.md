@@ -122,12 +122,14 @@ All routes return JSON error responses with `error`, `message`, `status`, and `t
 - Trimming happens in `/chat` route when conversation exceeds 21 messages
 
 ### Preset System
-The application includes 61 curated presets in the `PRESETS` dictionary (lines 391-480):
+The application includes 61 curated presets stored in `presets.json`:
 - **styles**: 14 options (Cinematic, Anime, Photorealistic, etc.)
 - **artists**: 18 options (Greg Rutkowski, Ansel Adams, Studio Ghibli, etc.)
 - **composition**: 15 options (Portrait, Landscape, Rule of Thirds, etc.)
 - **lighting**: 15 options (Golden Hour, Neon, Volumetric, etc.)
 
+Presets are loaded from the JSON file at startup by the `load_presets()` function (lines ~627-675).
+The `/presets` endpoint reloads the file on each request, enabling hot-reload without server restart.
 Each preset is optional - all default to "None" with empty string value.
 
 ### Database System
@@ -199,18 +201,20 @@ make logs-follow   # Follow logs in real-time
 ## Development Guidelines
 
 ### Adding New Presets
-Edit `PRESETS` dictionary in `prompt_generator.py` (lines 108-186):
-```python
-PRESETS = {
-    "styles": {
-        "Your New Style": "style description, tags, keywords",
-        # ...
-    },
-    # ... other categories
+Edit `presets.json` in the project root directory:
+```json
+{
+  "styles": {
+    "Your New Style": "style description, tags, keywords"
+  }
 }
 ```
 
+Changes take effect immediately on next request - no server restart needed!
+The `/presets` endpoint reloads the JSON file on each request (hot-reload).
 Presets are automatically available via `/presets` endpoint and frontend dropdowns.
+
+Note: The file is loaded by `load_presets()` function in `prompt_generator.py` (~line 627).
 
 ### Adding New Routes
 Follow the RESTful pattern:
@@ -287,7 +291,8 @@ All frontend code is in `templates/index.html` (single file):
 
 ```
 .
-├── prompt_generator.py      # Main Flask application (630 lines)
+├── prompt_generator.py      # Main Flask application (~1,760 lines)
+├── presets.json            # Preset configurations (styles, artists, composition, lighting)
 ├── templates/
 │   └── index.html          # Single-page frontend
 ├── tests/

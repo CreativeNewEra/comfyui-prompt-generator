@@ -621,7 +621,9 @@ class OllamaAPIError(Exception):
 # The AI model weaves these elements naturally into the final prompt.
 
 # Path to the presets configuration file
-PRESETS_FILE = 'presets.json'
+# Use absolute path based on script location to ensure it works
+# regardless of where the script is run from
+PRESETS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'presets.json')
 
 
 def load_presets():
