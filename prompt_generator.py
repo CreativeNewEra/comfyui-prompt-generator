@@ -1195,7 +1195,7 @@ def not_found_error(error):
 @app.errorhandler(405)
 def method_not_allowed_error(error):
     """Handle HTTP 405 Method Not Allowed errors."""
-    logger.warning(f"Method not allowed: {request.method} {request.path}")
+    logger.warning("Method not allowed: %s %s", request.method, request.path)
     return jsonify({
         'error': 'Method not allowed',
         'message': 'The requested URL does not support this HTTP method.',

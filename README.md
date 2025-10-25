@@ -170,7 +170,7 @@ a cyberpunk street market at night
 
 > **Option 1 – Neon Bazaar Snapshot:** A bustling cyberpunk street market illuminated by layers of pink, teal, and amber neon signage. Vendors with holographic displays crowd the narrow alley while rain-slick pavement mirrors the lights. Dense crowds in reflective jackets weave between steam rising from food stalls, creating cinematic atmosphere.
 > **Option 2 – Elevated Transit Walkway:** From an overhead walkway, the market stretches below in cascading tiers of stalls and glowing kanji billboards. Drones zip past, casting streaks of light across metallic awnings and intricate cables, giving the scene depth and motion.
-> **Option 3 – Vendor Alley Close-Up:** Tight composition focusing on a single aisle of neon umbrellas and stacked crates of tech curiosities, with neon smoke drifting across the frame for mood.
+> **Option 3 – Vendor Alley Close-Up:** Tight composition focusing on a single aisle of neon umbrellas and stacked crates of tech curiosities, with smoke illuminated by neon drifting across the frame for mood.
 > _Negative prompt cues:_ blurry, low detail, washed-out colors, empty street, daylight.
 > _Follow-up question:_ Should we emphasize a particular vendor or keep the view broad for now?
 
