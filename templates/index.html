@@ -1449,6 +1449,7 @@
                         localStorage.setItem('favoritePresets', JSON.stringify(validExisting));
                         favorites = validExisting;
                     }
+                    // Default initialization of favorites is skipped here because valid favorites already exist in storage.
                     return;
                 } catch (error) {
                     console.error('Error validating existing favorites:', error);
