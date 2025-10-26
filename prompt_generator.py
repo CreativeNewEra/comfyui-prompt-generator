@@ -2543,6 +2543,15 @@ def generate():
     artist = data.get('artist', 'None')
     composition = data.get('composition', 'None')
     lighting = data.get('lighting', 'None')
+    selections = data.get('selections')
+
+    hierarchical_prompt = None
+    using_hierarchical = False
+    if ENABLE_HIERARCHICAL_PRESETS and isinstance(selections, dict) and selections:
+        logger.debug("Applying hierarchical selections to oneshot generation request")
+        presets_data = load_presets()
+        hierarchical_prompt = build_hierarchical_prompt(user_input, selections, presets_data)
+        using_hierarchical = bool(hierarchical_prompt and hierarchical_prompt.strip())
 
     # Validate user provided some input
     if not user_input:
@@ -2555,26 +2564,29 @@ def generate():
     logger.info(f"Generating prompt for model: {model_type}")
     logger.debug(f"User input preview: {user_input[:50]}...")
 
-    # Build preset context by looking up selected preset values
-    # Only include presets that aren't "None" or empty
-    preset_context = []
-    if style and style != 'None' and style in PRESETS['styles']:
-        preset_context.append(f"Style: {PRESETS['styles'][style]}")
-    if artist and artist != 'None' and artist in PRESETS['artists']:
-        preset_context.append(f"Artist/Style: {PRESETS['artists'][artist]}")
-    if composition and composition != 'None' and composition in PRESETS['composition']:
-        preset_context.append(f"Composition: {PRESETS['composition'][composition]}")
-    if lighting and lighting != 'None' and lighting in PRESETS['lighting']:
-        preset_context.append(f"Lighting: {PRESETS['lighting'][lighting]}")
-
-    # Build the full user message with presets incorporated
-    if preset_context:
-        # If presets are selected, format them clearly for the AI
-        preset_info = "\n".join(preset_context)
-        full_input = f"User's image idea: {user_input}\n\nSelected presets:\n{preset_info}\n\nPlease create a detailed prompt incorporating these elements."
+    if using_hierarchical:
+        full_input = hierarchical_prompt
     else:
-        # No presets selected, use input as-is
-        full_input = user_input
+        # Build preset context by looking up selected preset values
+        # Only include presets that aren't "None" or empty
+        preset_context = []
+        if style and style != 'None' and style in PRESETS['styles']:
+            preset_context.append(f"Style: {PRESETS['styles'][style]}")
+        if artist and artist != 'None' and artist in PRESETS['artists']:
+            preset_context.append(f"Artist/Style: {PRESETS['artists'][artist]}")
+        if composition and composition != 'None' and composition in PRESETS['composition']:
+            preset_context.append(f"Composition: {PRESETS['composition'][composition]}")
+        if lighting and lighting != 'None' and lighting in PRESETS['lighting']:
+            preset_context.append(f"Lighting: {PRESETS['lighting'][lighting]}")
+
+        # Build the full user message with presets incorporated
+        if preset_context:
+            # If presets are selected, format them clearly for the AI
+            preset_info = "\n".join(preset_context)
+            full_input = f"User's image idea: {user_input}\n\nSelected presets:\n{preset_info}\n\nPlease create a detailed prompt incorporating these elements."
+        else:
+            # No presets selected, use input as-is
+            full_input = user_input
 
     # Get the appropriate system prompt for this model type
     # Falls back to Flux prompt if model type is unknown
@@ -2597,6 +2609,8 @@ def generate():
         'composition': composition,
         'lighting': lighting
     }
+    if using_hierarchical:
+        presets_dict['hierarchical'] = selections
     save_to_history(user_input, result, model_type, presets_dict, 'oneshot')
 
     return jsonify({
@@ -2665,6 +2679,15 @@ def chat():
     artist = data.get('artist', 'None')
     composition = data.get('composition', 'None')
     lighting = data.get('lighting', 'None')
+    selections = data.get('selections')
+
+    hierarchical_message = None
+    using_hierarchical = False
+    if ENABLE_HIERARCHICAL_PRESETS and isinstance(selections, dict) and selections:
+        logger.debug("Applying hierarchical selections to chat request")
+        presets_data = load_presets()
+        hierarchical_message = build_hierarchical_prompt(user_message, selections, presets_data)
+        using_hierarchical = bool(hierarchical_message and hierarchical_message.strip())
 
     if not user_message:
         logger.warning("Chat request with empty message")
@@ -2696,23 +2719,26 @@ def chat():
 
     logger.debug(f"Chat message preview: {user_message[:50]}...")
 
-    # Build context with presets
-    preset_context = []
-    if style and style != 'None' and style in PRESETS['styles']:
-        preset_context.append(f"Style: {PRESETS['styles'][style]}")
-    if artist and artist != 'None' and artist in PRESETS['artists']:
-        preset_context.append(f"Artist/Style: {PRESETS['artists'][artist]}")
-    if composition and composition != 'None' and composition in PRESETS['composition']:
-        preset_context.append(f"Composition: {PRESETS['composition'][composition]}")
-    if lighting and lighting != 'None' and lighting in PRESETS['lighting']:
-        preset_context.append(f"Lighting: {PRESETS['lighting'][lighting]}")
-
-    # Build the full user message
-    if preset_context:
-        preset_info = "\n".join(preset_context)
-        full_message = f"{user_message}\n\n[Selected presets: {preset_info}]"
+    if using_hierarchical:
+        full_message = hierarchical_message
     else:
-        full_message = user_message
+        # Build context with presets
+        preset_context = []
+        if style and style != 'None' and style in PRESETS['styles']:
+            preset_context.append(f"Style: {PRESETS['styles'][style]}")
+        if artist and artist != 'None' and artist in PRESETS['artists']:
+            preset_context.append(f"Artist/Style: {PRESETS['artists'][artist]}")
+        if composition and composition != 'None' and composition in PRESETS['composition']:
+            preset_context.append(f"Composition: {PRESETS['composition'][composition]}")
+        if lighting and lighting != 'None' and lighting in PRESETS['lighting']:
+            preset_context.append(f"Lighting: {PRESETS['lighting'][lighting]}")
+
+        # Build the full user message
+        if preset_context:
+            preset_info = "\n".join(preset_context)
+            full_message = f"{user_message}\n\n[Selected presets: {preset_info}]"
+        else:
+            full_message = user_message
 
     # Add user message
     conversation.append({
@@ -2743,13 +2769,14 @@ def chat():
         'composition': composition,
         'lighting': lighting
     }
+    if using_hierarchical:
+        presets_dict['hierarchical'] = selections
     save_to_history(user_message, result, model_type, presets_dict, 'chat')
 
     return jsonify({
         'result': result,
         'model': model_type
     })
-
 @app.route('/generate-stream', methods=['POST'])
 def generate_stream():
     """Generate a prompt with streaming (one-shot mode)"""
@@ -2773,6 +2800,15 @@ def generate_stream():
     artist = data.get('artist', 'None')
     composition = data.get('composition', 'None')
     lighting = data.get('lighting', 'None')
+    selections = data.get('selections')
+
+    hierarchical_prompt = None
+    using_hierarchical = False
+    if ENABLE_HIERARCHICAL_PRESETS and isinstance(selections, dict) and selections:
+        logger.debug("Applying hierarchical selections to streaming oneshot request")
+        presets_data = load_presets()
+        hierarchical_prompt = build_hierarchical_prompt(user_input, selections, presets_data)
+        using_hierarchical = bool(hierarchical_prompt and hierarchical_prompt.strip())
 
     if not user_input:
         logger.warning("Generate-stream request with empty input")
@@ -2784,23 +2820,26 @@ def generate_stream():
     logger.info(f"Generating streaming prompt for model: {model_type}, ollama_model: {ollama_model}")
     logger.debug(f"User input preview: {user_input[:50]}...")
 
-    # Build context with presets
-    preset_context = []
-    if style and style != 'None' and style in PRESETS['styles']:
-        preset_context.append(f"Style: {PRESETS['styles'][style]}")
-    if artist and artist != 'None' and artist in PRESETS['artists']:
-        preset_context.append(f"Artist/Style: {PRESETS['artists'][artist]}")
-    if composition and composition != 'None' and composition in PRESETS['composition']:
-        preset_context.append(f"Composition: {PRESETS['composition'][composition]}")
-    if lighting and lighting != 'None' and lighting in PRESETS['lighting']:
-        preset_context.append(f"Lighting: {PRESETS['lighting'][lighting]}")
-
-    # Build the full user message
-    if preset_context:
-        preset_info = "\n".join(preset_context)
-        full_input = f"User's image idea: {user_input}\n\nSelected presets:\n{preset_info}\n\nPlease create a detailed prompt incorporating these elements."
+    if using_hierarchical:
+        full_input = hierarchical_prompt
     else:
-        full_input = user_input
+        # Build context with presets
+        preset_context = []
+        if style and style != 'None' and style in PRESETS['styles']:
+            preset_context.append(f"Style: {PRESETS['styles'][style]}")
+        if artist and artist != 'None' and artist in PRESETS['artists']:
+            preset_context.append(f"Artist/Style: {PRESETS['artists'][artist]}")
+        if composition and composition != 'None' and composition in PRESETS['composition']:
+            preset_context.append(f"Composition: {PRESETS['composition'][composition]}")
+        if lighting and lighting != 'None' and lighting in PRESETS['lighting']:
+            preset_context.append(f"Lighting: {PRESETS['lighting'][lighting]}")
+
+        # Build the full user message
+        if preset_context:
+            preset_info = "\n".join(preset_context)
+            full_input = f"User's image idea: {user_input}\n\nSelected presets:\n{preset_info}\n\nPlease create a detailed prompt incorporating these elements."
+        else:
+            full_input = user_input
 
     # Get appropriate system prompt
     system_prompt = SYSTEM_PROMPTS.get(model_type, SYSTEM_PROMPTS['flux'])
@@ -2809,6 +2848,15 @@ def generate_stream():
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": full_input}
     ]
+
+    presets_dict = {
+        'style': style,
+        'artist': artist,
+        'composition': composition,
+        'lighting': lighting
+    }
+    if using_hierarchical:
+        presets_dict['hierarchical'] = selections
 
     def generate():
         """Generator function for SSE streaming"""
@@ -2823,12 +2871,6 @@ def generate_stream():
             yield f"data: {json.dumps({'done': True})}\n\n"
 
             # Save to history after completion
-            presets_dict = {
-                'style': style,
-                'artist': artist,
-                'composition': composition,
-                'lighting': lighting
-            }
             save_to_history(user_input, full_response, model_type, presets_dict, 'oneshot')
             logger.info("Successfully generated streaming prompt")
 
@@ -2842,8 +2884,6 @@ def generate_stream():
             logger.error(f"Unexpected error during streaming: {str(e)}", exc_info=True)
 
     return app.response_class(generate(), mimetype='text/event-stream')
-
-
 @app.route('/chat-stream', methods=['POST'])
 def chat_stream():
     """Conversational mode with streaming - refine ideas back and forth"""
@@ -2867,6 +2907,15 @@ def chat_stream():
     artist = data.get('artist', 'None')
     composition = data.get('composition', 'None')
     lighting = data.get('lighting', 'None')
+    selections = data.get('selections')
+
+    hierarchical_message = None
+    using_hierarchical = False
+    if ENABLE_HIERARCHICAL_PRESETS and isinstance(selections, dict) and selections:
+        logger.debug("Applying hierarchical selections to streaming chat request")
+        presets_data = load_presets()
+        hierarchical_message = build_hierarchical_prompt(user_message, selections, presets_data)
+        using_hierarchical = bool(hierarchical_message and hierarchical_message.strip())
 
     if not user_message:
         logger.warning("Chat-stream request with empty message")
@@ -2897,23 +2946,26 @@ def chat_stream():
 
     logger.debug(f"Chat message preview: {user_message[:50]}...")
 
-    # Build context with presets
-    preset_context = []
-    if style and style != 'None' and style in PRESETS['styles']:
-        preset_context.append(f"Style: {PRESETS['styles'][style]}")
-    if artist and artist != 'None' and artist in PRESETS['artists']:
-        preset_context.append(f"Artist/Style: {PRESETS['artists'][artist]}")
-    if composition and composition != 'None' and composition in PRESETS['composition']:
-        preset_context.append(f"Composition: {PRESETS['composition'][composition]}")
-    if lighting and lighting != 'None' and lighting in PRESETS['lighting']:
-        preset_context.append(f"Lighting: {PRESETS['lighting'][lighting]}")
-
-    # Build the full user message
-    if preset_context:
-        preset_info = "\n".join(preset_context)
-        full_message = f"{user_message}\n\n[Selected presets: {preset_info}]"
+    if using_hierarchical:
+        full_message = hierarchical_message
     else:
-        full_message = user_message
+        # Build context with presets
+        preset_context = []
+        if style and style != 'None' and style in PRESETS['styles']:
+            preset_context.append(f"Style: {PRESETS['styles'][style]}")
+        if artist and artist != 'None' and artist in PRESETS['artists']:
+            preset_context.append(f"Artist/Style: {PRESETS['artists'][artist]}")
+        if composition and composition != 'None' and composition in PRESETS['composition']:
+            preset_context.append(f"Composition: {PRESETS['composition'][composition]}")
+        if lighting and lighting != 'None' and lighting in PRESETS['lighting']:
+            preset_context.append(f"Lighting: {PRESETS['lighting'][lighting]}")
+
+        # Build the full user message
+        if preset_context:
+            preset_info = "\n".join(preset_context)
+            full_message = f"{user_message}\n\n[Selected presets: {preset_info}]"
+        else:
+            full_message = user_message
 
     conversation.append({
         "role": "user",
@@ -2923,6 +2975,15 @@ def chat_stream():
     conversation = conversation_store.save_messages(conversation_id, conversation, model_type)
 
     conversation_snapshot = list(conversation)
+
+    presets_dict = {
+        'style': style,
+        'artist': artist,
+        'composition': composition,
+        'lighting': lighting
+    }
+    if using_hierarchical:
+        presets_dict['hierarchical'] = selections
 
     def generate():
         """Generator function for SSE streaming"""
@@ -2959,17 +3020,9 @@ def chat_stream():
                 conversation = conversation_store.save_messages(conversation_id, conversation, model_type)
 
                 # Save to history after completion
-                presets_dict = {
-                    'style': style,
-                    'artist': artist,
-                    'composition': composition,
-                    'lighting': lighting
-                }
                 save_to_history(user_message, full_response, model_type, presets_dict, 'chat')
 
     return app.response_class(generate(), mimetype='text/event-stream')
-
-
 @app.route('/reset', methods=['POST'])
 def reset():
     """

@@ -231,6 +231,149 @@ class TestResetRoute:
         assert 'status' in data
 
 
+class TestHierarchicalSelections:
+    """Tests that hierarchical selections reach the backend helpers."""
+
+    @staticmethod
+    def _sample_presets():
+        return {
+            'categories': {
+                'photography': {
+                    'name': 'Photography',
+                    'level2_types': {
+                        'portrait': {
+                            'name': 'Portrait',
+                            'level3_artists': {
+                                'annie_leibovitz': {
+                                    'name': 'Annie Leibovitz',
+                                    'description': 'Iconic portrait photographer.',
+                                    'signature': 'Bold lighting and dramatic poses.',
+                                    'level4_technical': {
+                                        'lighting': {
+                                            'name': 'Lighting',
+                                            'options': [
+                                                {
+                                                    'id': 'rembrandt',
+                                                    'name': 'Rembrandt lighting',
+                                                    'description': 'Classic triangle lighting setup.'
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            'preset_packs': {'packs': []},
+            'universal_options': {},
+            'quality_tags': {'flux': {}, 'sdxl': {}}
+        }
+
+    @staticmethod
+    def _sample_selections():
+        return {
+            'level1': 'photography',
+            'level2': 'portrait',
+            'level3': 'annie_leibovitz',
+            'level4': {'lighting': 'rembrandt'},
+            'level5': {'subject': 'warrior princess'},
+            'universal': {'mood': ['dramatic', 'elegant']}
+        }
+
+    def test_generate_uses_hierarchical_prompt(self, client, monkeypatch):
+        import prompt_generator
+
+        selections = self._sample_selections()
+        captured = {}
+
+        def fake_load_presets():
+            captured['load_called'] = True
+            return self._sample_presets()
+
+        def fake_call_ollama(messages, model=None, stream=False):
+            captured['messages'] = messages
+            return 'Mocked hierarchical response'
+
+        monkeypatch.setattr(prompt_generator, 'ENABLE_HIERARCHICAL_PRESETS', True)
+        monkeypatch.setattr(prompt_generator, 'load_presets', fake_load_presets)
+        monkeypatch.setattr(prompt_generator, 'call_ollama', fake_call_ollama)
+
+        payload = {
+            'input': 'A heroic figure in the forest',
+            'model': 'flux',
+            'selections': selections
+        }
+
+        response = client.post(
+            '/generate',
+            data=json.dumps(payload),
+            content_type='application/json'
+        )
+
+        assert response.status_code == 200
+        assert captured.get('load_called') is True
+        assert 'messages' in captured
+        enhanced = captured['messages'][1]['content']
+        assert 'Style: Photography > Portrait' in enhanced
+        assert 'Mood: dramatic, elegant' in enhanced
+
+        history = prompt_generator.get_history(limit=10)
+        matching = next((item for item in history if item['user_input'] == payload['input']), None)
+        assert matching is not None
+        assert matching['presets'].get('hierarchical') == selections
+
+    def test_chat_uses_hierarchical_prompt(self, client, monkeypatch):
+        import prompt_generator
+
+        selections = self._sample_selections()
+        captured = {}
+
+        def fake_load_presets():
+            captured['load_called'] = True
+            return self._sample_presets()
+
+        def fake_call_ollama(messages, model=None, stream=False):
+            captured['messages'] = messages
+            return 'Mocked chat response'
+
+        monkeypatch.setattr(prompt_generator, 'ENABLE_HIERARCHICAL_PRESETS', True)
+        monkeypatch.setattr(prompt_generator, 'load_presets', fake_load_presets)
+        monkeypatch.setattr(prompt_generator, 'call_ollama', fake_call_ollama)
+
+        payload = {
+            'message': 'Can you make it moodier?',
+            'model': 'flux',
+            'selections': selections
+        }
+
+        response = client.post(
+            '/chat',
+            data=json.dumps(payload),
+            content_type='application/json'
+        )
+
+        assert response.status_code == 200
+        assert captured.get('load_called') is True
+        assert 'messages' in captured
+        chat_request = captured['messages'][1]['content']
+        assert 'Style: Photography > Portrait' in chat_request
+
+        with client.session_transaction() as flask_session:
+            conversation_id = flask_session['conversation_id']
+
+        stored_conversation, stored_model = prompt_generator.conversation_store.get_conversation(conversation_id)
+        assert stored_model == 'flux'
+        user_messages = [msg['content'] for msg in stored_conversation if msg['role'] == 'user']
+        assert any('Style: Photography > Portrait' in message for message in user_messages)
+
+        history = prompt_generator.get_history(limit=10)
+        matching = next((item for item in history if item['user_input'] == payload['message']), None)
+        assert matching is not None
+        assert matching['presets'].get('hierarchical') == selections
+
+
 class TestConversationStore:
     """Direct tests for the server-side conversation storage."""
 
