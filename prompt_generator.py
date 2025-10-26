@@ -2564,6 +2564,9 @@ def generate():
     logger.info(f"Generating prompt for model: {model_type}")
     logger.debug(f"User input preview: {user_input[:50]}...")
 
+    # Initialize full_input (defensive programming)
+    full_input = user_input
+
     if using_hierarchical:
         full_input = hierarchical_prompt
     else:
@@ -2584,9 +2587,6 @@ def generate():
             # If presets are selected, format them clearly for the AI
             preset_info = "\n".join(preset_context)
             full_input = f"User's image idea: {user_input}\n\nSelected presets:\n{preset_info}\n\nPlease create a detailed prompt incorporating these elements."
-        else:
-            # No presets selected, use input as-is
-            full_input = user_input
 
     # Get the appropriate system prompt for this model type
     # Falls back to Flux prompt if model type is unknown
@@ -2719,6 +2719,9 @@ def chat():
 
     logger.debug(f"Chat message preview: {user_message[:50]}...")
 
+    # Initialize full_message (defensive programming)
+    full_message = user_message
+
     if using_hierarchical:
         full_message = hierarchical_message
     else:
@@ -2737,8 +2740,6 @@ def chat():
         if preset_context:
             preset_info = "\n".join(preset_context)
             full_message = f"{user_message}\n\n[Selected presets: {preset_info}]"
-        else:
-            full_message = user_message
 
     # Add user message
     conversation.append({
@@ -2820,6 +2821,9 @@ def generate_stream():
     logger.info(f"Generating streaming prompt for model: {model_type}, ollama_model: {ollama_model}")
     logger.debug(f"User input preview: {user_input[:50]}...")
 
+    # Initialize full_input (defensive programming)
+    full_input = user_input
+
     if using_hierarchical:
         full_input = hierarchical_prompt
     else:
@@ -2838,8 +2842,6 @@ def generate_stream():
         if preset_context:
             preset_info = "\n".join(preset_context)
             full_input = f"User's image idea: {user_input}\n\nSelected presets:\n{preset_info}\n\nPlease create a detailed prompt incorporating these elements."
-        else:
-            full_input = user_input
 
     # Get appropriate system prompt
     system_prompt = SYSTEM_PROMPTS.get(model_type, SYSTEM_PROMPTS['flux'])
@@ -2946,6 +2948,9 @@ def chat_stream():
 
     logger.debug(f"Chat message preview: {user_message[:50]}...")
 
+    # Initialize full_message (defensive programming)
+    full_message = user_message
+
     if using_hierarchical:
         full_message = hierarchical_message
     else:
@@ -2964,8 +2969,6 @@ def chat_stream():
         if preset_context:
             preset_info = "\n".join(preset_context)
             full_message = f"{user_message}\n\n[Selected presets: {preset_info}]"
-        else:
-            full_message = user_message
 
     conversation.append({
         "role": "user",
