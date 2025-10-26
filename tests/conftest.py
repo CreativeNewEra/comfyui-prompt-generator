@@ -5,7 +5,6 @@ Pytest configuration and fixtures for testing
 import pytest
 import sys
 import os
-import tempfile
 
 # Add parent directory to path so we can import prompt_generator
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
