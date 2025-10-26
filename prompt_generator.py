@@ -381,7 +381,8 @@ app.secret_key = FLASK_SECRET_KEY  # Required for session management
 # ============================================================================
 # SQLite database for storing prompt generation history
 # Allows users to browse, search, and reuse previous prompts
-DB_PATH = 'prompt_history.db'
+# Can be overridden via DB_PATH environment variable (useful for testing)
+DB_PATH = os.getenv('DB_PATH', 'prompt_history.db')
 
 
 def init_db():
