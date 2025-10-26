@@ -2564,7 +2564,7 @@ def generate():
     logger.info(f"Generating prompt for model: {model_type}")
     logger.debug(f"User input preview: {user_input[:50]}...")
 
-    # Initialize full_input (defensive programming)
+    # Initialize full_input with default value (used as fallback when no presets selected)
     full_input = user_input
 
     if using_hierarchical:
@@ -2719,7 +2719,7 @@ def chat():
 
     logger.debug(f"Chat message preview: {user_message[:50]}...")
 
-    # Initialize full_message (defensive programming)
+    # Initialize full_message with default value (used as fallback when no presets selected)
     full_message = user_message
 
     if using_hierarchical:
@@ -2821,7 +2821,7 @@ def generate_stream():
     logger.info(f"Generating streaming prompt for model: {model_type}, ollama_model: {ollama_model}")
     logger.debug(f"User input preview: {user_input[:50]}...")
 
-    # Initialize full_input (defensive programming)
+    # Initialize full_input with default value (used as fallback when no presets selected)
     full_input = user_input
 
     if using_hierarchical:
@@ -2948,7 +2948,7 @@ def chat_stream():
 
     logger.debug(f"Chat message preview: {user_message[:50]}...")
 
-    # Initialize full_message (defensive programming)
+    # Initialize full_message with default value (used as fallback when no presets selected)
     full_message = user_message
 
     if using_hierarchical:
