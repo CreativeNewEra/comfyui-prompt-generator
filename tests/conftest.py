@@ -9,7 +9,7 @@ import os
 # Add parent directory to path so we can import prompt_generator
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from prompt_generator import app, PRESETS
+from prompt_generator import app, PRESETS, conversation_store
 
 
 @pytest.fixture
@@ -36,3 +36,14 @@ def presets():
     Provide access to PRESETS for testing
     """
     return PRESETS
+
+
+@pytest.fixture(autouse=True)
+def cleanup_conversation_store():
+    """Ensure conversation store is cleared between tests."""
+    import prompt_generator
+
+    prompt_generator.init_db()
+    conversation_store.clear_all()
+    yield
+    conversation_store.clear_all()
