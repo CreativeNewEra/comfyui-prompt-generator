@@ -421,6 +421,12 @@ def init_db():
     logger.info("Database initialized successfully")
 
 
+# Ensure the database is ready as soon as the module is imported. This allows
+# all application entrypoints (CLI, gunicorn, tests, etc.) to interact with the
+# history database without requiring additional setup steps.
+init_db()
+
+
 def save_to_history(user_input, output, model, presets, mode):
     """
     Save a generated prompt to the history database
@@ -2857,9 +2863,6 @@ def delete_prompt_history(history_id):
 # ============================================================================
 
 if __name__ == '__main__':
-    # Initialize the SQLite database (creates tables if they don't exist)
-    init_db()
-
     # Ensure we can reach Ollama or gather updated connection details
     ensure_ollama_connection()
 

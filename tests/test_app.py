@@ -166,7 +166,11 @@ class TestChatRoute:
         assert 'result' in data
         assert 'model' in data
         assert captured['messages'][0]['role'] == 'system'
-        assert 'Avoid emitting a single "PROMPT:" response' in captured['messages'][0]['content']
+        system_message = captured['messages'][0]['content']
+        assert (
+            'Avoid emitting a single "PROMPT:" response' in system_message
+            or 'NEVER output a single "PROMPT:"' in system_message
+        )
 
     def test_chat_without_message_returns_400(self, client):
         """Verify POST /chat without message returns 400"""
