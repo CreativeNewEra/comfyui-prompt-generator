@@ -109,10 +109,21 @@ lint-all: ## Run comprehensive linting (strict mode)
 	$(VENV_BIN)/flake8 . --count --exit-zero --max-complexity=10 --max-line-length=120 --statistics
 	@echo "$(GREEN)✓ Comprehensive linting complete!$(NC)"
 
+.PHONY: format
+format: ## Format code using black and isort
+        @echo "$(BLUE)Formatting code with isort...$(NC)"
+        $(VENV_BIN)/isort prompt_generator.py tests/
+        @echo "$(BLUE)Formatting code with black...$(NC)"
+        $(VENV_BIN)/black prompt_generator.py tests/
+        @echo "$(GREEN)✓ Formatting complete!$(NC)"
+
 .PHONY: format-check
-format-check: ## Check code formatting (placeholder for black/autopep8)
-	@echo "$(YELLOW)No formatter configured yet.$(NC)"
-	@echo "Consider adding black or autopep8 to requirements-dev.txt"
+format-check: ## Check code formatting with black and isort
+        @echo "$(BLUE)Checking import order with isort...$(NC)"
+        $(VENV_BIN)/isort --check-only --diff prompt_generator.py tests/
+        @echo "$(BLUE)Checking code style with black...$(NC)"
+        $(VENV_BIN)/black --check prompt_generator.py tests/
+        @echo "$(GREEN)✓ Formatting looks good!$(NC)"
 
 .PHONY: clean
 clean: ## Remove cache files, logs, and build artifacts
