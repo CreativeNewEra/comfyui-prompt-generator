@@ -75,6 +75,18 @@ LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
 # Set to 'false' to use legacy flat presets
 ENABLE_HIERARCHICAL_PRESETS = os.getenv('ENABLE_HIERARCHICAL_PRESETS', 'false').lower() in ('true', '1', 'yes')
 
+# Administrative API key required for sensitive operations (e.g. reloading prompts)
+# If unset, access to the admin endpoint is limited to loopback/localhost clients
+ADMIN_API_KEY = os.getenv('ADMIN_API_KEY')
+
+# Optional comma separated list of additional IPs allowed to access admin endpoints
+# Example: ADMIN_ALLOWED_IPS="192.168.1.10,10.0.0.5"
+ADMIN_ALLOWED_IPS = {
+    ip.strip()
+    for ip in os.getenv('ADMIN_ALLOWED_IPS', '').split(',')
+    if ip.strip()
+}
+
 # ============================================================================
 # Logging Configuration
 # ============================================================================
@@ -139,6 +151,54 @@ def setup_logging():
 
 # Initialize logging system
 logger = setup_logging()
+
+
+# ============================================================================
+# Admin Security Helpers
+# ============================================================================
+
+def get_client_ip(req) -> str:
+    """Return the best-effort client IP for the current request."""
+    if not req:
+        return ''
+
+    forwarded_for = req.headers.get('X-Forwarded-For', '') if hasattr(req, 'headers') else ''
+    if forwarded_for:
+        return forwarded_for.split(',')[0].strip()
+
+    return getattr(req, 'remote_addr', '') or ''
+
+
+def is_loopback_ip(ip: str) -> bool:
+    """Return True if the provided IP address is a loopback/localhost address."""
+    if not ip:
+        return False
+
+    try:
+        return ipaddress.ip_address(ip).is_loopback
+    except ValueError:
+        return False
+
+
+def authorize_admin_request(req):
+    """Evaluate whether the incoming request may access admin-only endpoints."""
+    client_ip = get_client_ip(req)
+    forwarded_for = req.headers.get('X-Forwarded-For', '') if hasattr(req, 'headers') else ''
+
+    if ADMIN_API_KEY:
+        args = getattr(req, 'args', {})
+        provided_key = (req.headers.get('X-Admin-API-Key') if hasattr(req, 'headers') else None) or args.get('admin_api_key')
+        if provided_key and secrets.compare_digest(str(provided_key), str(ADMIN_API_KEY)):
+            return True, client_ip, forwarded_for, 'valid API key'
+        return False, client_ip, forwarded_for, 'missing or invalid API key'
+
+    if client_ip and (is_loopback_ip(client_ip) or client_ip in ADMIN_ALLOWED_IPS):
+        return True, client_ip, forwarded_for, 'allowed client IP'
+
+    if not client_ip:
+        return False, client_ip, forwarded_for, 'unable to determine client IP'
+
+    return False, client_ip, forwarded_for, 'client IP not permitted'
 
 
 # ============================================================================
@@ -2098,10 +2158,11 @@ def reload_prompts():
     rapid iteration on prompt engineering without server downtime.
 
     Security Note:
-        This is a simple reload endpoint without authentication.
-        For production use, consider adding authentication or
-        restricting access by IP/network. Currently logs all reload
-        attempts for monitoring.
+        Access requires either a valid ADMIN_API_KEY provided via the
+        X-Admin-API-Key header (or admin_api_key query param) or that the
+        request originates from a loopback/localhost IP address. Additional
+        IPs can be whitelisted through the ADMIN_ALLOWED_IPS environment
+        variable.
 
     Returns:
         JSON: Success message with list of reloaded prompts
@@ -2118,7 +2179,24 @@ def reload_prompts():
     """
     global SYSTEM_PROMPTS, CHAT_SYSTEM_PROMPTS
 
-    logger.warning("System prompts reload requested via /admin/reload-prompts endpoint")
+    authorized, client_ip, forwarded_for, reason = authorize_admin_request(request)
+    if not authorized:
+        logger.warning(
+            "Denied /admin/reload-prompts request from %s (forwarded_for=%s, reason=%s)",
+            client_ip or 'unknown',
+            forwarded_for or 'none',
+            reason,
+        )
+        return jsonify({
+            'success': False,
+            'error': 'forbidden',
+            'message': 'Unauthorized access to admin endpoint'
+        }), 403
+
+    logger.warning(
+        "Authorized system prompts reload request via /admin/reload-prompts endpoint from %s",
+        client_ip or 'unknown'
+    )
 
     try:
         # Reload prompts from files

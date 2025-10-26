@@ -166,7 +166,11 @@ class TestChatRoute:
         assert 'result' in data
         assert 'model' in data
         assert captured['messages'][0]['role'] == 'system'
-        assert 'Avoid emitting a single "PROMPT:" response' in captured['messages'][0]['content']
+        system_message = captured['messages'][0]['content']
+        assert (
+            'Avoid emitting a single "PROMPT:" response' in system_message
+            or 'NEVER output a single "PROMPT:"' in system_message
+        )
 
     def test_chat_without_message_returns_400(self, client):
         """Verify POST /chat without message returns 400"""
@@ -230,3 +234,23 @@ class TestErrorHandling:
         # Try POST to / which only accepts GET
         response = client.post('/')
         assert response.status_code == 405
+
+
+class TestAdminSecurity:
+    """Test security controls on admin endpoints"""
+
+    def test_reload_prompts_rejects_unauthorized_request(self, client, monkeypatch):
+        """Verify /admin/reload-prompts requires authentication"""
+        import prompt_generator
+
+        monkeypatch.setattr(prompt_generator, 'ADMIN_API_KEY', 'super-secret-key')
+
+        response = client.post(
+            '/admin/reload-prompts',
+            environ_overrides={'REMOTE_ADDR': '203.0.113.10'}
+        )
+
+        assert response.status_code == 403
+        data = json.loads(response.data)
+        assert data['success'] is False
+        assert data['error'] == 'forbidden'
