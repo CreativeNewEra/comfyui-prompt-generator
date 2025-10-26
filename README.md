@@ -47,6 +47,7 @@ python prompt_generator.py
 | **Technical deep-dive?** | [Architecture docs →](ARCHITECTURE.md) |
 | **Using Claude Code?** | [Development guide →](CLAUDE.md) |
 | **API integration?** | [API Reference ↓](#-api-reference) |
+| **Using NSFW/adult presets?** | [NSFW Presets Guide →](NSFW_PRESETS_GUIDE.md) |
 
 ---
 
@@ -102,7 +103,7 @@ Your complete project package includes:
 
 ✅ Complete, working Flask application
 ✅ Beautiful, responsive UI
-✅ 50+ curated presets
+✅ 70+ curated presets (including NSFW/adult content options)
 ✅ Dual-mode operation (Quick Generate + Chat)
 ✅ Comprehensive documentation
 ✅ MIT License
@@ -120,7 +121,7 @@ Your complete project package includes:
 - **SDXL (Juggernaut)**: Quality-tagged prompts with negative prompt generation
 
 ### 🎨 Hierarchical Preset System
-Choose from **50+ professional artists and styles** across 6 main categories with intelligent cascading selection:
+Choose from **70+ professional artists and styles** across 7 main categories with intelligent cascading selection:
 
 **Main Categories:**
 - **📸 Photography**: Portrait, Landscape, Street, Fashion, Wildlife, Macro
@@ -129,10 +130,11 @@ Choose from **50+ professional artists and styles** across 6 main categories wit
 - **🐉 Fantasy Art**: High Fantasy, Dark Fantasy, Fairy Tale
 - **😱 Horror**: Gothic, Body Horror, Cosmic Horror, Folk Horror
 - **🤖 Sci-Fi Art**: Cyberpunk, Space Opera, Hard Sci-Fi, Retro-Futurism
+- **🔞 Adult/NSFW Photography**: Boudoir, Artistic Nude, Glamour, Pin-up, Sensual Portrait ([Guide](NSFW_PRESETS_GUIDE.md))
 
 **Smart Features:**
 - **Cascading Dropdowns**: Category → Type → Artist (progressive loading)
-- **⚡ Preset Packs**: One-click professional setups (90s X-Men, Studio Ghibli, Blade Runner, etc.)
+- **⚡ Preset Packs**: One-click professional setups (90s X-Men, Studio Ghibli, Blade Runner, Newton Bold Fashion, Vintage Pin-up, etc.)
 - **🌟 Universal Options**: Mood, Time of Day, Lighting, Weather, Color Palettes, Camera Effects
 - **🔥 Popular Indicators**: Highly-rated options marked for easy discovery
 - **Feature Flag**: Toggle between hierarchical and legacy flat presets

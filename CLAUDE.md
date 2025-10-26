@@ -128,11 +128,13 @@ All routes return JSON error responses with `error`, `message`, `status`, and `t
 The application supports **two preset systems** (toggled via feature flag):
 
 #### **Legacy Preset System** (Default for backward compatibility)
-The application includes 61 curated presets stored in `presets.json`:
-- **styles**: 14 options (Cinematic, Anime, Photorealistic, etc.)
-- **artists**: 18 options (Greg Rutkowski, Ansel Adams, Studio Ghibli, etc.)
-- **composition**: 15 options (Portrait, Landscape, Rule of Thirds, etc.)
-- **lighting**: 15 options (Golden Hour, Neon, Volumetric, etc.)
+The application includes 80+ curated presets stored in `presets.json`:
+- **styles**: 19 options (Cinematic, Anime, Photorealistic, Boudoir, Pin-up, Artistic Nude, etc.)
+- **artists**: 24 options (Greg Rutkowski, Ansel Adams, Helmut Newton, Ellen von Unwerth, etc.)
+- **composition**: 21 options (Portrait, Landscape, Rule of Thirds, Reclining Pose, Figure Study, etc.)
+- **lighting**: 20 options (Golden Hour, Neon, Volumetric, Boudoir Soft, Silk Lighting, etc.)
+
+**Note**: Includes NSFW/adult content presets (boudoir, artistic nude, glamour, pin-up styles)
 
 Presets are loaded from the JSON file at startup by the `load_presets()` function (line 629).
 The `/presets` endpoint reloads the file on each request, enabling hot-reload without server restart.
@@ -150,11 +152,14 @@ Set `ENABLE_HIERARCHICAL_PRESETS=true` in `.env` file and restart the applicatio
 - **Hierarchical**: `hierarchical_presets.json` (5-level nested structure)
 
 **Key Features**:
-- **50+ Professional Artists** across 6 main categories (Photography, Comic Art, Anime, Fantasy, Horror, Sci-Fi)
+- **70+ Professional Artists** across 7 main categories (Photography, Comic Art, Anime, Fantasy, Horror, Sci-Fi, Adult/NSFW)
 - **Progressive Loading**: 3 cascading dropdowns (Category → Type → Artist)
-- **Preset Packs**: 5 quick-start professional combinations (one-click setup)
+- **Preset Packs**: 9 quick-start professional combinations (one-click setup)
 - **Universal Options**: Mood, time, lighting, weather, colors, camera effects (works across all categories)
 - **Feature Flag Toggle**: Switch between systems without code changes
+- **NSFW Content**: Full Adult/NSFW Photography category with Boudoir, Artistic Nude, Glamour, Pin-up, and Sensual Portrait subcategories
+
+**Note**: The hierarchical system includes mature content. See [NSFW_PRESETS_GUIDE.md](NSFW_PRESETS_GUIDE.md) for details.
 
 **New API Routes** (lines 1671-2087):
 ```python

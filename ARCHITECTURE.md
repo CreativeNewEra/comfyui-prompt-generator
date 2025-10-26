@@ -123,40 +123,45 @@ comfyui-prompt-generator/
 
 The application supports **two preset systems** (toggled via `ENABLE_HIERARCHICAL_PRESETS` flag):
 
-#### **Legacy Preset System** (61 curated presets)
+#### **Legacy Preset System** (80+ curated presets)
 
-1. **Styles (14 presets)**
+1. **Styles (19 presets)**
    - Cinematic, Anime, Photorealistic, Oil Painting, Digital Art
    - Watercolor, Cyberpunk, Fantasy Art, Comic Book, Minimalist
    - Surreal, Vintage, 3D Render, Pencil Sketch
+   - **NSFW**: Boudoir, Pin-up, Artistic Nude, Glamour, Sensual Portrait
 
-2. **Artists/Photographers (18 presets)**
+2. **Artists/Photographers (24 presets)**
    - Digital Artists: Greg Rutkowski, Artgerm, Ross Tran, Loish
    - Traditional: Alphonse Mucha, H.R. Giger, Moebius, Zdzisław Beksiński
    - Photographers: Ansel Adams, Annie Leibovitz, Steve McCurry, Peter Lindbergh, Sebastião Salgado, Irving Penn
    - Animation: Hayao Miyazaki, Makoto Shinkai, Simon Stålenhag
+   - **NSFW**: Helmut Newton, Ellen von Unwerth, Rankin, David LaChapelle, Patrick Demarchelier, Luis Royo
 
-3. **Composition (15 presets)**
+3. **Composition (21 presets)**
    - Portrait, Landscape, Close-up, Wide Shot, Medium Shot
    - Extreme Close-up, Bird's Eye View, Low Angle, High Angle
    - Dutch Angle, Rule of Thirds, Symmetrical, Leading Lines
    - Frame within Frame, Golden Ratio
+   - **NSFW**: Reclining Pose, Over Shoulder, Back View, Figure Study, Intimate Close
 
-4. **Lighting (15 presets)**
+4. **Lighting (20 presets)**
    - Natural: Golden Hour, Blue Hour, Natural Window Light, Harsh Sunlight, Overcast
    - Studio: Professional Studio Lighting, Soft Diffused
    - Creative: Neon, Volumetric, Backlit, Dramatic Shadows
    - Atmospheric: Moonlight, Candlelight, Fire Light, Underwater Light
+   - **NSFW**: Silk Lighting, Low Key Dramatic, Boudoir Soft, Rim Light Silhouette, Warm Amber Glow
 
-#### **Hierarchical Preset System** (50+ professional artists across 6 categories)
+#### **Hierarchical Preset System** (70+ professional artists across 7 categories)
 
-**Level 1 - Main Categories (6):**
+**Level 1 - Main Categories (7):**
 - 📸 Photography
 - 🎨 Comic Book Art
 - 🎌 Anime/Manga
 - 🐉 Fantasy Art
 - 😱 Horror
 - 🤖 Sci-Fi Art
+- 🔞 Adult/NSFW Photography
 
 **Level 2 - Types** (varies by category, 3-8 per category):
 - Photography: Portrait, Landscape, Street, Fashion, Wildlife, Macro
@@ -165,21 +170,27 @@ The application supports **two preset systems** (toggled via `ENABLE_HIERARCHICA
 - Fantasy Art: High Fantasy, Dark Fantasy, Fairy Tale
 - Horror: Gothic, Body Horror, Cosmic Horror, Folk Horror
 - Sci-Fi: Cyberpunk, Space Opera, Hard Sci-Fi, Retro-Futurism
+- **Adult/NSFW**: Boudoir, Artistic Nude, Glamour, Pin-up, Sensual Portrait
 
-**Level 3 - Artists** (50+ total, 3-20 per type):
+**Level 3 - Artists** (70+ total, 3-20 per type):
 - Photography/Portrait: Annie Leibovitz, Irving Penn, Richard Avedon, etc.
 - Comic Book/Marvel: Jim Lee, Jack Kirby, John Romita Sr., etc.
 - Fantasy: Greg Rutkowski, Frank Frazetta, Boris Vallejo, etc.
 - Horror: H.R. Giger, Bernie Wrightson, Zdzisław Beksiński, etc.
+- **Adult/NSFW**: Helmut Newton, Ellen von Unwerth, Rankin, etc.
 - And many more...
 
 **Additional Features:**
-- **Preset Packs**: 5 quick-start professional combinations
+- **Preset Packs**: 9 quick-start professional combinations
   - 90s X-Men Comic (Jim Lee)
   - Studio Ghibli Magic
   - Blade Runner Street Scene (Syd Mead)
   - Epic Fantasy Battle (Greg Rutkowski)
   - Leibovitz Portrait Session
+  - **Newton Bold Fashion** (NSFW - Helmut Newton style)
+  - **Vintage Pin-up Classic** (NSFW - 1950s retro)
+  - **Artistic Figure Study** (NSFW - Classical nude)
+  - **Playful Boudoir** (NSFW - Ellen von Unwerth style)
 
 - **Universal Options**: Cross-cutting atmospheric enhancements
   - Mood (multi-select): Dramatic, Peaceful, Mysterious, Epic, etc.

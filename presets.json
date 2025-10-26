@@ -14,7 +14,12 @@
     "Surreal": "surreal, dreamlike, abstract, unusual, imaginative",
     "Vintage": "vintage, retro, nostalgic, aged, classic",
     "3D Render": "3d render, octane render, unreal engine, ray tracing",
-    "Pencil Sketch": "pencil sketch, graphite, hand drawn, detailed shading"
+    "Pencil Sketch": "pencil sketch, graphite, hand drawn, detailed shading",
+    "Boudoir": "boudoir photography, intimate, sensual, elegant, romantic lighting",
+    "Pin-up": "pin-up style, retro glamour, classic curves, vintage aesthetic",
+    "Artistic Nude": "artistic nude, fine art photography, tasteful, elegant, classical figure study",
+    "Glamour": "glamour photography, sophisticated, alluring, high fashion beauty",
+    "Sensual Portrait": "sensual portrait, intimate atmosphere, romantic mood, soft focus"
   },
   "artists": {
     "None": "",
@@ -35,7 +40,13 @@
     "Irving Penn": "Irving Penn studio photography style",
     "Moebius": "in the style of Moebius, detailed linework",
     "Simon Stålenhag": "in the style of Simon Stålenhag",
-    "Zdzisław Beksiński": "in the style of Zdzisław Beksiński, dystopian"
+    "Zdzisław Beksiński": "in the style of Zdzisław Beksiński, dystopian",
+    "Helmut Newton": "Helmut Newton photography style, bold contrast, provocative, high fashion edge",
+    "Ellen von Unwerth": "Ellen von Unwerth style, playful sensuality, vintage glamour, feminine empowerment",
+    "Rankin": "Rankin photography style, bold fashion, intimate portraits, contemporary edge",
+    "David LaChapelle": "David LaChapelle style, surreal glamour, vibrant colors, pop art aesthetic",
+    "Patrick Demarchelier": "Patrick Demarchelier style, elegant beauty, soft sophistication, timeless glamour",
+    "Luis Royo": "Luis Royo fantasy art style, sensual fantasy figures, dramatic poses, rich colors"
   },
   "composition": {
     "None": "",
@@ -53,7 +64,12 @@
     "Symmetrical": "symmetrical composition, centered, balanced",
     "Leading Lines": "leading lines composition, depth, perspective",
     "Frame within Frame": "frame within frame composition",
-    "Golden Ratio": "golden ratio composition, fibonacci spiral"
+    "Golden Ratio": "golden ratio composition, fibonacci spiral",
+    "Reclining Pose": "reclining pose, relaxed, horizontal composition, elegant curves",
+    "Over Shoulder": "over the shoulder view, intimate perspective, suggestive framing",
+    "Back View": "back view composition, elegant spine and curves, artistic silhouette",
+    "Figure Study": "classical figure study composition, artistic form, balanced pose",
+    "Intimate Close": "intimate close framing, sensual detail, personal space"
   },
   "lighting": {
     "None": "",
@@ -71,6 +87,11 @@
     "Volumetric Lighting": "volumetric lighting, god rays, atmospheric",
     "Moonlight": "moonlight, cool tones, mysterious atmosphere",
     "Fire Light": "firelight, warm orange glow, flickering",
-    "Underwater Light": "underwater lighting, caustics, diffused"
+    "Underwater Light": "underwater lighting, caustics, diffused",
+    "Silk Lighting": "silk diffused lighting, soft wrapping light, flattering glow, sensual mood",
+    "Low Key Dramatic": "low key lighting, dramatic shadows, moody atmosphere, selective illumination",
+    "Boudoir Soft": "soft boudoir lighting, warm and intimate, flattering shadows, romantic ambiance",
+    "Rim Light Silhouette": "rim lighting, glowing edges, sensual silhouette, dramatic outline",
+    "Warm Amber Glow": "warm amber glow, sunset tones, intimate warmth, golden skin tones"
   }
 }

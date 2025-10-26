@@ -91,6 +91,79 @@
             "environment": "conceptual_set"
           }
         }
+      },
+      {
+        "name": "Newton Bold Fashion",
+        "icon": "🔞",
+        "selections": {
+          "level1": "adult_photography",
+          "level2": "boudoir",
+          "level3": "helmut_newton",
+          "level4": {
+            "lighting": "harsh_dramatic",
+            "film_type": "bw_high_contrast",
+            "composition": "power_pose"
+          },
+          "level5": {
+            "mood": "bold_confident",
+            "environment": "studio_minimal"
+          }
+        }
+      },
+      {
+        "name": "Vintage Pin-up Classic",
+        "icon": "💄",
+        "selections": {
+          "level1": "adult_photography",
+          "level2": "pin_up",
+          "level3": "retro_glamour",
+          "level4": {
+            "era_style": "1950s_classic",
+            "color_grading": "vibrant_saturated",
+            "prop_theme": "classic_pin_up"
+          },
+          "level5": {
+            "pose_style": "classic_over_shoulder",
+            "wardrobe": "vintage_lingerie",
+            "makeup_hair": "red_lips_classic"
+          }
+        }
+      },
+      {
+        "name": "Artistic Figure Study",
+        "icon": "🎨",
+        "selections": {
+          "level1": "adult_photography",
+          "level2": "artistic_nude",
+          "level3": "classical_style",
+          "level4": {
+            "lighting": "chiaroscuro",
+            "composition": "figure_study",
+            "film_style": "bw_grain"
+          },
+          "level5": {
+            "pose_type": "reclining_classical",
+            "mood": "serene_peaceful",
+            "environment": "draped_fabric"
+          }
+        }
+      },
+      {
+        "name": "Playful Boudoir",
+        "icon": "💋",
+        "selections": {
+          "level1": "adult_photography",
+          "level2": "boudoir",
+          "level3": "ellen_von_unwerth",
+          "level4": {
+            "lighting": "vintage_soft",
+            "mood": "playful_fun"
+          },
+          "level5": {
+            "pose_style": "playful_movement",
+            "wardrobe": "lingerie_vintage"
+          }
+        }
       }
     ]
   },
@@ -1621,6 +1694,530 @@
           "name": "Realistic 3D",
           "description": "Modern AAA game graphics",
           "level3_artists": {}
+        }
+      }
+    },
+
+    "adult_photography": {
+      "name": "Adult/NSFW Photography",
+      "icon": "🔞",
+      "description": "Mature content - artistic figure, boudoir, and sensual photography",
+      "best_for": ["figure studies", "intimate portraits", "artistic nude", "glamour"],
+      "popularity": "medium",
+
+      "level2_types": {
+        "boudoir": {
+          "name": "Boudoir Photography",
+          "description": "Intimate, romantic, bedroom-style portraiture",
+          "icon": "💋",
+          "popularity": "high",
+
+          "level3_artists": {
+            "helmut_newton": {
+              "name": "Helmut Newton",
+              "description": "Bold, provocative, high-contrast fashion nude photography",
+              "signature": "Dramatic lighting, powerful poses, edgy elegance",
+              "best_for": ["fashion nude", "bold statements", "dramatic shots"],
+              "popularity": "high",
+
+              "level4_technical": {
+                "lighting": {
+                  "name": "Lighting Setup",
+                  "options": [
+                    {
+                      "id": "harsh_dramatic",
+                      "name": "Harsh dramatic",
+                      "description": "Strong shadows, bold contrast - his signature",
+                      "recommended": true
+                    },
+                    {
+                      "id": "studio_strobe",
+                      "name": "Studio strobe",
+                      "description": "Powerful controlled lighting"
+                    },
+                    {
+                      "id": "natural_hard",
+                      "name": "Natural hard light",
+                      "description": "Direct sunlight, strong shadows"
+                    }
+                  ]
+                },
+                "film_type": {
+                  "name": "Film Type",
+                  "options": [
+                    {
+                      "id": "bw_high_contrast",
+                      "name": "B&W high contrast",
+                      "description": "His signature look",
+                      "recommended": true
+                    },
+                    {
+                      "id": "color_vibrant",
+                      "name": "Color vibrant",
+                      "description": "Bold colors, his later work"
+                    }
+                  ]
+                },
+                "composition": {
+                  "name": "Composition Style",
+                  "options": [
+                    {
+                      "id": "power_pose",
+                      "name": "Power pose",
+                      "description": "Strong, confident, dominant",
+                      "recommended": true
+                    },
+                    {
+                      "id": "architectural",
+                      "name": "Architectural",
+                      "description": "Using environment geometry"
+                    },
+                    {
+                      "id": "confrontational",
+                      "name": "Confrontational",
+                      "description": "Direct gaze, bold presence"
+                    }
+                  ]
+                }
+              },
+
+              "level5_specifics": {
+                "mood": {
+                  "name": "Mood",
+                  "options": ["powerful", "provocative", "elegant_dangerous", "sophisticated_edge", "bold_confident"]
+                },
+                "environment": {
+                  "name": "Environment",
+                  "options": ["studio_minimal", "urban_architecture", "luxury_interior", "poolside", "hotel_room"]
+                }
+              }
+            },
+            "ellen_von_unwerth": {
+              "name": "Ellen von Unwerth",
+              "description": "Playful, joyful, feminine sensuality with vintage glamour",
+              "signature": "Fun, energetic, empowering femininity",
+              "best_for": ["playful boudoir", "feminine power", "joyful sensuality"],
+              "popularity": "high",
+
+              "level4_technical": {
+                "lighting": {
+                  "name": "Lighting Setup",
+                  "options": [
+                    {
+                      "id": "soft_natural",
+                      "name": "Soft natural",
+                      "description": "Flattering, warm, romantic"
+                    },
+                    {
+                      "id": "golden_hour",
+                      "name": "Golden hour",
+                      "description": "Warm sunset glow"
+                    },
+                    {
+                      "id": "vintage_soft",
+                      "name": "Vintage soft",
+                      "description": "Classic Hollywood glamour lighting",
+                      "recommended": true
+                    }
+                  ]
+                },
+                "mood": {
+                  "name": "Mood & Energy",
+                  "options": [
+                    {
+                      "id": "playful_fun",
+                      "name": "Playful & fun",
+                      "description": "Her signature joyful energy",
+                      "recommended": true
+                    },
+                    {
+                      "id": "romantic_dreamy",
+                      "name": "Romantic dreamy",
+                      "description": "Soft and feminine"
+                    },
+                    {
+                      "id": "vintage_pin_up",
+                      "name": "Vintage pin-up",
+                      "description": "Retro glamour aesthetic"
+                    }
+                  ]
+                }
+              },
+
+              "level5_specifics": {
+                "pose_style": {
+                  "name": "Pose Style",
+                  "options": ["laughing_candid", "playful_movement", "lounging_relaxed", "flirtatious_glance", "dancing_dynamic"]
+                },
+                "wardrobe": {
+                  "name": "Wardrobe",
+                  "options": ["lingerie_vintage", "minimal_tasteful", "silk_robe", "vintage_corset", "natural_implied"]
+                }
+              }
+            }
+          }
+        },
+
+        "artistic_nude": {
+          "name": "Artistic Nude/Figure Study",
+          "description": "Classical fine art nude photography, tasteful and artistic",
+          "icon": "🎨",
+          "popularity": "medium",
+
+          "level3_artists": {
+            "classical_style": {
+              "name": "Classical Style",
+              "description": "Traditional fine art nude in the style of great masters",
+              "signature": "Timeless, elegant, sculptural",
+              "best_for": ["fine art", "gallery work", "classical beauty"],
+              "popularity": "high",
+
+              "level4_technical": {
+                "lighting": {
+                  "name": "Lighting Setup",
+                  "options": [
+                    {
+                      "id": "chiaroscuro",
+                      "name": "Chiaroscuro",
+                      "description": "Renaissance-style dramatic light/shadow",
+                      "recommended": true
+                    },
+                    {
+                      "id": "soft_diffused",
+                      "name": "Soft diffused",
+                      "description": "Even, flattering, gentle"
+                    },
+                    {
+                      "id": "rembrandt",
+                      "name": "Rembrandt lighting",
+                      "description": "Classic triangle on cheek"
+                    },
+                    {
+                      "id": "natural_window",
+                      "name": "Natural window light",
+                      "description": "Soft directional light"
+                    }
+                  ]
+                },
+                "composition": {
+                  "name": "Composition",
+                  "options": [
+                    {
+                      "id": "figure_study",
+                      "name": "Figure study",
+                      "description": "Full or partial figure, sculptural",
+                      "recommended": true
+                    },
+                    {
+                      "id": "silhouette",
+                      "name": "Silhouette",
+                      "description": "Backlit form and outline"
+                    },
+                    {
+                      "id": "detail_fragment",
+                      "name": "Detail/fragment",
+                      "description": "Artistic close-ups of form"
+                    }
+                  ]
+                },
+                "film_style": {
+                  "name": "Film Style",
+                  "options": [
+                    {
+                      "id": "bw_grain",
+                      "name": "B&W with grain",
+                      "description": "Timeless, artistic"
+                    },
+                    {
+                      "id": "warm_tones",
+                      "name": "Warm tones",
+                      "description": "Sepia or golden hues"
+                    },
+                    {
+                      "id": "high_key",
+                      "name": "High key",
+                      "description": "Bright, ethereal"
+                    },
+                    {
+                      "id": "low_key",
+                      "name": "Low key",
+                      "description": "Dark, dramatic, sculptural"
+                    }
+                  ]
+                }
+              },
+
+              "level5_specifics": {
+                "pose_type": {
+                  "name": "Pose Type",
+                  "options": ["reclining_classical", "standing_sculptural", "seated_contemplative", "contorted_artistic", "back_view_elegant"]
+                },
+                "mood": {
+                  "name": "Mood",
+                  "options": ["serene_peaceful", "dramatic_intense", "vulnerable_raw", "powerful_strong", "ethereal_dreamy"]
+                },
+                "environment": {
+                  "name": "Environment",
+                  "options": ["studio_minimal", "natural_outdoor", "architectural_space", "draped_fabric", "rustic_interior"]
+                }
+              }
+            }
+          }
+        },
+
+        "glamour": {
+          "name": "Glamour Photography",
+          "description": "High-fashion beauty and allure, sophisticated sensuality",
+          "icon": "✨",
+          "popularity": "high",
+
+          "level3_artists": {
+            "rankin": {
+              "name": "Rankin",
+              "description": "Contemporary glamour, bold fashion-forward, intimate portraits",
+              "signature": "Modern, bold, editorial edge",
+              "best_for": ["fashion glamour", "celebrity style", "contemporary beauty"],
+              "popularity": "medium",
+
+              "level4_technical": {
+                "lighting": {
+                  "name": "Lighting",
+                  "options": [
+                    {
+                      "id": "beauty_dish",
+                      "name": "Beauty dish",
+                      "description": "Glamorous, even, flattering"
+                    },
+                    {
+                      "id": "ring_light",
+                      "name": "Ring light",
+                      "description": "Signature catchlights, modern"
+                    },
+                    {
+                      "id": "hard_editorial",
+                      "name": "Hard editorial",
+                      "description": "Bold, fashion-forward"
+                    }
+                  ]
+                },
+                "color_palette": {
+                  "name": "Color Palette",
+                  "options": [
+                    {
+                      "id": "vibrant_bold",
+                      "name": "Vibrant & bold",
+                      "description": "High saturation, impactful"
+                    },
+                    {
+                      "id": "monochrome",
+                      "name": "Monochrome",
+                      "description": "Single color theme"
+                    },
+                    {
+                      "id": "natural_skin",
+                      "name": "Natural skin focus",
+                      "description": "Minimal background, skin tones"
+                    }
+                  ]
+                }
+              },
+
+              "level5_specifics": {
+                "expression": {
+                  "name": "Expression",
+                  "options": ["intense_gaze", "soft_sensual", "confident_powerful", "playful_flirt", "mysterious_allure"]
+                },
+                "styling": {
+                  "name": "Styling",
+                  "options": ["high_fashion_minimal", "glamour_lingerie", "implied_artistic", "wet_look", "leather_edge"]
+                }
+              }
+            }
+          }
+        },
+
+        "pin_up": {
+          "name": "Pin-up Style",
+          "description": "Vintage-inspired retro glamour, playful and nostalgic",
+          "icon": "💄",
+          "popularity": "medium",
+
+          "level3_artists": {
+            "retro_glamour": {
+              "name": "Retro Glamour Style",
+              "description": "1940s-1960s pin-up aesthetic, classic curves and poses",
+              "signature": "Nostalgic, playful, feminine curves",
+              "best_for": ["vintage shoots", "retro themes", "playful glamour"],
+              "popularity": "high",
+
+              "level4_technical": {
+                "era_style": {
+                  "name": "Era Style",
+                  "options": [
+                    {
+                      "id": "1940s_victory",
+                      "name": "1940s Victory",
+                      "description": "War-era pin-up, patriotic"
+                    },
+                    {
+                      "id": "1950s_classic",
+                      "name": "1950s Classic",
+                      "description": "Golden age, hourglass curves",
+                      "recommended": true
+                    },
+                    {
+                      "id": "1960s_mod",
+                      "name": "1960s Mod",
+                      "description": "Swinging sixties, go-go style"
+                    },
+                    {
+                      "id": "rockabilly",
+                      "name": "Rockabilly",
+                      "description": "1950s rock & roll edge"
+                    }
+                  ]
+                },
+                "color_grading": {
+                  "name": "Color Grading",
+                  "options": [
+                    {
+                      "id": "vintage_faded",
+                      "name": "Vintage faded",
+                      "description": "Aged photo look"
+                    },
+                    {
+                      "id": "vibrant_saturated",
+                      "name": "Vibrant saturated",
+                      "description": "Bold retro colors",
+                      "recommended": true
+                    },
+                    {
+                      "id": "sepia_warm",
+                      "name": "Sepia warm",
+                      "description": "Classic old-time feel"
+                    }
+                  ]
+                },
+                "prop_theme": {
+                  "name": "Props & Theme",
+                  "options": [
+                    {
+                      "id": "classic_pin_up",
+                      "name": "Classic pin-up",
+                      "description": "Telephone, vanity, classic props"
+                    },
+                    {
+                      "id": "automotive",
+                      "name": "Automotive",
+                      "description": "Hot rods, vintage cars"
+                    },
+                    {
+                      "id": "nautical",
+                      "name": "Nautical",
+                      "description": "Sailor theme, anchors"
+                    },
+                    {
+                      "id": "domestic",
+                      "name": "Domestic",
+                      "description": "Kitchen, housewife theme"
+                    }
+                  ]
+                }
+              },
+
+              "level5_specifics": {
+                "pose_style": {
+                  "name": "Pose Style",
+                  "options": ["classic_over_shoulder", "legs_up_playful", "sitting_coy", "kneeling_flirt", "reclining_curves"]
+                },
+                "wardrobe": {
+                  "name": "Wardrobe",
+                  "options": ["vintage_lingerie", "retro_swimsuit", "polka_dot_bikini", "corset_stockings", "pin_up_dress"]
+                },
+                "makeup_hair": {
+                  "name": "Makeup & Hair",
+                  "options": ["victory_rolls", "pin_curls", "bandana_style", "red_lips_classic", "cat_eye_dramatic"]
+                }
+              }
+            }
+          }
+        },
+
+        "sensual_portrait": {
+          "name": "Sensual Portrait",
+          "description": "Intimate, emotional, romantic portraiture",
+          "icon": "🌹",
+          "popularity": "medium",
+
+          "level3_artists": {
+            "contemporary_intimate": {
+              "name": "Contemporary Intimate Style",
+              "description": "Modern sensual portraiture with emotional depth",
+              "signature": "Intimate, emotive, authentic connection",
+              "best_for": ["couples", "intimate portraits", "emotional storytelling"],
+              "popularity": "medium",
+
+              "level4_technical": {
+                "lighting": {
+                  "name": "Lighting",
+                  "options": [
+                    {
+                      "id": "natural_soft",
+                      "name": "Natural soft",
+                      "description": "Window light, gentle",
+                      "recommended": true
+                    },
+                    {
+                      "id": "candlelight",
+                      "name": "Candlelight",
+                      "description": "Warm intimate glow"
+                    },
+                    {
+                      "id": "golden_hour",
+                      "name": "Golden hour",
+                      "description": "Warm sunset romance"
+                    },
+                    {
+                      "id": "low_key_mood",
+                      "name": "Low key mood",
+                      "description": "Dark, intimate shadows"
+                    }
+                  ]
+                },
+                "depth_of_field": {
+                  "name": "Depth of Field",
+                  "options": [
+                    {
+                      "id": "shallow_dreamy",
+                      "name": "Shallow dreamy",
+                      "description": "Soft bokeh, romantic",
+                      "recommended": true
+                    },
+                    {
+                      "id": "medium_balanced",
+                      "name": "Medium balanced",
+                      "description": "Some context visible"
+                    }
+                  ]
+                }
+              },
+
+              "level5_specifics": {
+                "mood": {
+                  "name": "Mood",
+                  "options": ["romantic_tender", "passionate_intense", "dreamy_soft", "intimate_quiet", "playful_loving"]
+                },
+                "subject": {
+                  "name": "Subject",
+                  "options": ["single_person", "couple_intimate", "implied_anonymous"]
+                },
+                "environment": {
+                  "name": "Environment",
+                  "options": ["bedroom_intimate", "natural_outdoor", "bath_water", "sheets_fabric", "window_lit"]
+                }
+              }
+            }
+          }
         }
       }
     }
