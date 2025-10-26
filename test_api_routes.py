@@ -13,6 +13,10 @@ Usage:
 import requests
 import json
 import sys
+import pytest
+
+
+pytestmark = pytest.mark.skip(reason="Integration helper that requires a running server")
 
 # Base URL for the Flask app
 BASE_URL = "http://localhost:5000"
