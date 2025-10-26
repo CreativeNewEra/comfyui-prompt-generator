@@ -28,7 +28,7 @@ from logging.handlers import RotatingFileHandler
 from dotenv import load_dotenv
 from requests.exceptions import ConnectionError, Timeout, RequestException
 import sqlite3
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Load environment variables from .env file if it exists
@@ -74,6 +74,23 @@ LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
 # Set to 'true' to enable new 5-level hierarchical presets
 # Set to 'false' to use legacy flat presets
 ENABLE_HIERARCHICAL_PRESETS = os.getenv('ENABLE_HIERARCHICAL_PRESETS', 'false').lower() in ('true', '1', 'yes')
+
+# Administrative API key required for sensitive operations (e.g. reloading prompts)
+# If unset, access to the admin endpoint is limited to loopback/localhost clients
+ADMIN_API_KEY = os.getenv('ADMIN_API_KEY')
+
+# Optional comma separated list of additional IPs allowed to access admin endpoints
+# Example: ADMIN_ALLOWED_IPS="192.168.1.10,10.0.0.5"
+ADMIN_ALLOWED_IPS = {
+    ip.strip()
+    for ip in os.getenv('ADMIN_ALLOWED_IPS', '').split(',')
+    if ip.strip()
+}
+
+# Trust X-Forwarded-For header for IP detection (only enable if behind a trusted proxy)
+# WARNING: Only set to 'true' if your app is behind a reverse proxy (nginx, etc.)
+# that properly strips untrusted X-Forwarded-For headers from clients
+TRUST_PROXY_HEADERS = os.getenv('TRUST_PROXY_HEADERS', 'false').lower() in ('true', '1', 'yes')
 
 # ============================================================================
 # Logging Configuration
@@ -139,6 +156,62 @@ def setup_logging():
 
 # Initialize logging system
 logger = setup_logging()
+
+
+# ============================================================================
+# Admin Security Helpers
+# ============================================================================
+
+def get_client_ip(req) -> str:
+    """
+    Return the best-effort client IP for the current request.
+
+    Security note: Only trusts X-Forwarded-For if TRUST_PROXY_HEADERS is enabled.
+    By default, uses req.remote_addr which cannot be spoofed by clients.
+    """
+    if not req:
+        return ''
+
+    # Only trust X-Forwarded-For if explicitly enabled (i.e., behind a trusted proxy)
+    if TRUST_PROXY_HEADERS:
+        forwarded_for = req.headers.get('X-Forwarded-For', '') if hasattr(req, 'headers') else ''
+        if forwarded_for:
+            return forwarded_for.split(',')[0].strip()
+
+    # Default to remote_addr which is set by the WSGI server and cannot be spoofed
+    return getattr(req, 'remote_addr', '') or ''
+
+
+def is_loopback_ip(ip: str) -> bool:
+    """Return True if the provided IP address is a loopback/localhost address."""
+    if not ip:
+        return False
+
+    try:
+        return ipaddress.ip_address(ip).is_loopback
+    except ValueError:
+        return False
+
+
+def authorize_admin_request(req):
+    """Evaluate whether the incoming request may access admin-only endpoints."""
+    client_ip = get_client_ip(req)
+    forwarded_for = req.headers.get('X-Forwarded-For', '') if hasattr(req, 'headers') else ''
+
+    if ADMIN_API_KEY:
+        args = getattr(req, 'args', {})
+        provided_key = (req.headers.get('X-Admin-API-Key') if hasattr(req, 'headers') else None) or args.get('admin_api_key')
+        if provided_key and secrets.compare_digest(str(provided_key), str(ADMIN_API_KEY)):
+            return True, client_ip, forwarded_for, 'valid API key'
+        return False, client_ip, forwarded_for, 'missing or invalid API key'
+
+    if client_ip and (is_loopback_ip(client_ip) or client_ip in ADMIN_ALLOWED_IPS):
+        return True, client_ip, forwarded_for, 'allowed client IP'
+
+    if not client_ip:
+        return False, client_ip, forwarded_for, 'unable to determine client IP'
+
+    return False, client_ip, forwarded_for, 'client IP not permitted'
 
 
 # ============================================================================
@@ -381,7 +454,8 @@ app.secret_key = FLASK_SECRET_KEY  # Required for session management
 # ============================================================================
 # SQLite database for storing prompt generation history
 # Allows users to browse, search, and reuse previous prompts
-DB_PATH = 'prompt_history.db'
+# Can be overridden via DB_PATH environment variable (useful for testing)
+DB_PATH = os.getenv('DB_PATH', 'prompt_history.db')
 
 
 def init_db():
@@ -416,9 +490,171 @@ def init_db():
         )
     ''')
 
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS conversation_store (
+            session_id TEXT PRIMARY KEY,
+            model_type TEXT NOT NULL,
+            conversation TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )
+    ''')
+
+    cursor.execute('''
+        CREATE INDEX IF NOT EXISTS idx_conversation_updated
+        ON conversation_store (updated_at)
+    ''')
+
     conn.commit()
     conn.close()
     logger.info("Database initialized successfully")
+
+
+class ConversationStore:
+    """Persist chat transcripts on the server side."""
+
+    def __init__(self, db_path: str, max_messages: int = 21, max_age_hours: int = 24):
+        self.db_path = db_path
+        self.max_messages = max_messages
+        self.max_age_hours = max_age_hours
+        self._ensure_table()
+
+    def _connect(self):
+        return sqlite3.connect(self.db_path)
+
+    def _ensure_table(self):
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS conversation_store (
+                    session_id TEXT PRIMARY KEY,
+                    model_type TEXT NOT NULL,
+                    conversation TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+            ''')
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_conversation_updated
+                ON conversation_store (updated_at)
+            ''')
+            conn.commit()
+
+    def _trim_messages(self, messages):
+        if not messages or len(messages) <= self.max_messages:
+            return list(messages)
+
+        # Extract system prompt if present
+        system_msg = None
+        conv_messages = messages
+        if messages[0].get('role') == 'system':
+            system_msg = messages[0]
+            conv_messages = messages[1:]
+
+        # Calculate how many conversation messages we can keep
+        max_conv_messages = self.max_messages - (1 if system_msg else 0)
+
+        # If we need to trim, ensure we preserve complete user-assistant pairs
+        if len(conv_messages) > max_conv_messages:
+            # Count back from the end, ensuring we keep complete pairs
+            # Each pair is user + assistant, so pairs are at indices (0,1), (2,3), (4,5), etc.
+            # If the last message is 'user', we need to be careful not to orphan it
+
+            # Start from the end and count backwards in pairs
+            keep_count = max_conv_messages
+
+            # If we would end on an assistant message (even index from end), that's good
+            # If we would end on a user message (odd index from end), reduce by 1 to keep the pair
+            if keep_count < len(conv_messages):
+                # Check what role we'd be starting with after the trim
+                start_index = len(conv_messages) - keep_count
+                # If we're starting with an 'assistant' message, that means we're breaking a pair
+                if start_index < len(conv_messages) and conv_messages[start_index].get('role') == 'assistant':
+                    # Move forward to the next user message to preserve the pair
+                    keep_count -= 1
+
+            conv_messages = conv_messages[-keep_count:] if keep_count > 0 else []
+            # Ensure the last message is always an assistant response
+            if conv_messages and conv_messages[-1].get('role') == 'user':
+                conv_messages = conv_messages[:-1]
+
+        # Reconstruct the message list
+        result = []
+        if system_msg:
+            result.append(system_msg)
+        result.extend(conv_messages)
+        return result
+
+    def _cleanup(self, conn):
+        if not self.max_age_hours:
+            return
+
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=self.max_age_hours)
+        conn.execute(
+            'DELETE FROM conversation_store WHERE updated_at < ?',
+            (cutoff.isoformat(),)
+        )
+
+    def create_session(self, model_type: str, initial_messages=None) -> str:
+        session_id = secrets.token_urlsafe(16)
+        messages = initial_messages or []
+        self.save_messages(session_id, messages, model_type)
+        return session_id
+
+    def get_conversation(self, session_id: Optional[str]):
+        if not session_id:
+            return [], None
+
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                'SELECT conversation, model_type FROM conversation_store WHERE session_id = ?',
+                (session_id,)
+            )
+            row = cursor.fetchone()
+
+        if not row:
+            return [], None
+
+        try:
+            conversation = json.loads(row[0])
+        except json.JSONDecodeError:
+            conversation = []
+
+        return conversation, row[1]
+
+    def save_messages(self, session_id: str, messages, model_type: str):
+        trimmed = self._trim_messages(messages)
+        serialized = json.dumps(trimmed)
+        timestamp = datetime.now(timezone.utc).isoformat()
+
+        with self._connect() as conn:
+            conn.execute('''
+                INSERT INTO conversation_store (session_id, model_type, conversation, updated_at)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(session_id) DO UPDATE SET
+                    model_type=excluded.model_type,
+                    conversation=excluded.conversation,
+                    updated_at=excluded.updated_at
+            ''', (session_id, model_type, serialized, timestamp))
+            self._cleanup(conn)
+            conn.commit()
+
+        return trimmed
+
+    def delete_session(self, session_id: Optional[str]):
+        if not session_id:
+            return
+
+        with self._connect() as conn:
+            conn.execute('DELETE FROM conversation_store WHERE session_id = ?', (session_id,))
+            conn.commit()
+
+    def clear_all(self):
+        with self._connect() as conn:
+            conn.execute('DELETE FROM conversation_store')
+            conn.commit()
+
+
+conversation_store = ConversationStore(DB_PATH)
 
 
 def save_to_history(user_input, output, model, presets, mode):
@@ -2098,10 +2334,11 @@ def reload_prompts():
     rapid iteration on prompt engineering without server downtime.
 
     Security Note:
-        This is a simple reload endpoint without authentication.
-        For production use, consider adding authentication or
-        restricting access by IP/network. Currently logs all reload
-        attempts for monitoring.
+        Access requires either a valid ADMIN_API_KEY provided via the
+        X-Admin-API-Key header (or admin_api_key query param) or that the
+        request originates from a loopback/localhost IP address. Additional
+        IPs can be whitelisted through the ADMIN_ALLOWED_IPS environment
+        variable.
 
     Returns:
         JSON: Success message with list of reloaded prompts
@@ -2118,7 +2355,24 @@ def reload_prompts():
     """
     global SYSTEM_PROMPTS, CHAT_SYSTEM_PROMPTS
 
-    logger.warning("System prompts reload requested via /admin/reload-prompts endpoint")
+    authorized, client_ip, forwarded_for, reason = authorize_admin_request(request)
+    if not authorized:
+        logger.warning(
+            "Denied /admin/reload-prompts request from %s (forwarded_for=%s, reason=%s)",
+            client_ip or 'unknown',
+            forwarded_for or 'none',
+            reason,
+        )
+        return jsonify({
+            'success': False,
+            'error': 'forbidden',
+            'message': 'Unauthorized access to admin endpoint'
+        }), 403
+
+    logger.warning(
+        "Authorized system prompts reload request via /admin/reload-prompts endpoint from %s",
+        client_ip or 'unknown'
+    )
 
     try:
         # Reload prompts from files
@@ -2385,8 +2639,9 @@ def chat():
         502: Ollama API error
 
     Notes:
-        - Conversation history stored in session['conversation']
-        - Changing model resets conversation
+        - Conversation history persisted in server-side store keyed by session ID
+        - Session cookie keeps only the conversation identifier
+        - Changing model resets the stored conversation
         - History limited to 21 messages (system + 20 exchanges)
         - Each message saved to database with mode='chat'
     """
@@ -2418,28 +2673,26 @@ def chat():
             'message': 'Please provide a message'
         }), 400
 
-    # Get or initialize conversation history from Flask session
-    # Session is stored as signed cookie, persists across requests
-    if 'conversation' not in session:
-        logger.info("Starting new chat conversation")
-        session['conversation'] = []
-        session['model_type'] = model_type
+    conversation_id = session.get('conversation_id')
+    conversation, stored_model = conversation_store.get_conversation(conversation_id)
 
-    # If model type changed, reset conversation
-    # Different models need different prompting strategies
-    if session.get('model_type') != model_type:
-        logger.info(f"Model changed to {model_type}, resetting conversation")
-        session['conversation'] = []
-        session['model_type'] = model_type
+    if stored_model and stored_model != model_type:
+        logger.info("Model changed, starting new stored conversation")
+        conversation_store.delete_session(conversation_id)
+        conversation_id = None
+        conversation = []
+        stored_model = None
 
-    # Add system prompt if starting new conversation
-    # System prompt instructs the AI on how to format responses
-    if not session['conversation']:
+    if not conversation:
         system_prompt = CHAT_SYSTEM_PROMPTS.get(model_type, CHAT_SYSTEM_PROMPTS['flux'])
-        session['conversation'].append({
+        conversation = [{
             "role": "system",
             "content": system_prompt
-        })
+        }]
+        conversation_id = conversation_store.create_session(model_type, conversation)
+        session['conversation_id'] = conversation_id
+    else:
+        session['conversation_id'] = conversation_id
 
     logger.debug(f"Chat message preview: {user_message[:50]}...")
 
@@ -2462,29 +2715,25 @@ def chat():
         full_message = user_message
 
     # Add user message
-    session['conversation'].append({
+    conversation.append({
         "role": "user",
         "content": full_message
     })
 
+    conversation = conversation_store.save_messages(conversation_id, conversation, model_type)
+
+    conversation_snapshot = list(conversation)
+
     # Get response from Ollama
-    result = call_ollama(session['conversation'], model=ollama_model)
+    result = call_ollama(conversation_snapshot, model=ollama_model)
 
     # Add assistant response to history
-    session['conversation'].append({
+    conversation.append({
         "role": "assistant",
         "content": result
     })
 
-    # Keep conversation manageable to prevent session bloat and token limits
-    # Retain system message (index 0) + last 20 messages (10 exchanges)
-    if len(session['conversation']) > 21:  # system + 20 messages
-        logger.debug("Trimming conversation history to maintain manageable size")
-        # Keep first message (system) and last 20 messages
-        session['conversation'] = [session['conversation'][0]] + session['conversation'][-20:]
-
-    # Mark session as modified to ensure Flask saves changes
-    session.modified = True
+    conversation_store.save_messages(conversation_id, conversation, model_type)
     logger.info("Successfully processed chat message")
 
     # Save to history
@@ -2626,25 +2875,25 @@ def chat_stream():
             'message': 'Please provide a message'
         }), 400
 
-    # Get or initialize conversation history
-    if 'conversation' not in session:
-        logger.info("Starting new chat conversation")
-        session['conversation'] = []
-        session['model_type'] = model_type
+    conversation_id = session.get('conversation_id')
+    conversation, stored_model = conversation_store.get_conversation(conversation_id)
 
-    # If model changed, reset conversation
-    if session.get('model_type') != model_type:
-        logger.info(f"Model changed to {model_type}, resetting conversation")
-        session['conversation'] = []
-        session['model_type'] = model_type
+    if stored_model and stored_model != model_type:
+        logger.info("Model changed, starting new stored conversation")
+        conversation_store.delete_session(conversation_id)
+        conversation_id = None
+        conversation = []
+        stored_model = None
 
-    # Add system prompt if starting new conversation
-    if not session['conversation']:
+    if not conversation:
         system_prompt = CHAT_SYSTEM_PROMPTS.get(model_type, CHAT_SYSTEM_PROMPTS['flux'])
-        session['conversation'].append({
+        conversation = [{
             "role": "system",
             "content": system_prompt
-        })
+        }]
+        conversation_id = conversation_store.create_session(model_type, conversation)
+
+    session['conversation_id'] = conversation_id
 
     logger.debug(f"Chat message preview: {user_message[:50]}...")
 
@@ -2666,20 +2915,18 @@ def chat_stream():
     else:
         full_message = user_message
 
-    # Add user message
-    session['conversation'].append({
+    conversation.append({
         "role": "user",
         "content": full_message
     })
 
-    # Make a copy of the conversation for the request
-    conversation_snapshot = list(session['conversation'])
+    conversation = conversation_store.save_messages(conversation_id, conversation, model_type)
 
-    # Store session data that we'll need after streaming
-    session_conversation = session['conversation']
+    conversation_snapshot = list(conversation)
 
     def generate():
         """Generator function for SSE streaming"""
+        nonlocal conversation
         full_response = ""
         try:
             for token in call_ollama(conversation_snapshot, model=ollama_model, stream=True):
@@ -2704,19 +2951,12 @@ def chat_stream():
             # Update session after streaming completes
             # Note: This happens after the response is sent, so we update via a background task
             if full_response:
-                # Add assistant response to session history
-                session_conversation.append({
+                conversation.append({
                     "role": "assistant",
                     "content": full_response
                 })
 
-                # Keep conversation manageable (last 10 messages + system)
-                if len(session_conversation) > 21:  # system + 20 messages
-                    logger.debug("Trimming conversation history to maintain manageable size")
-                    # Trim but keep the reference valid
-                    trimmed = [session_conversation[0]] + session_conversation[-20:]
-                    session_conversation.clear()
-                    session_conversation.extend(trimmed)
+                conversation = conversation_store.save_messages(conversation_id, conversation, model_type)
 
                 # Save to history after completion
                 presets_dict = {
@@ -2749,8 +2989,9 @@ def reset():
         200: Success (always)
     """
     logger.info("Resetting conversation history")
-    session.pop('conversation', None)
-    session.pop('model_type', None)
+    conversation_id = session.pop('conversation_id', None)
+    if conversation_id:
+        conversation_store.delete_session(conversation_id)
     return jsonify({'status': 'reset'})
 
 
