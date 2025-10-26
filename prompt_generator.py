@@ -572,6 +572,9 @@ class ConversationStore:
                     keep_count -= 1
 
             conv_messages = conv_messages[-keep_count:] if keep_count > 0 else []
+            # Ensure the last message is always an assistant response
+            if conv_messages and conv_messages[-1].get('role') == 'user':
+                conv_messages = conv_messages[:-1]
 
         # Reconstruct the message list
         result = []
