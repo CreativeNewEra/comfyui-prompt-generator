@@ -468,13 +468,43 @@ class ConversationStore:
         if not messages or len(messages) <= self.max_messages:
             return list(messages)
 
-        trimmed = []
+        # Extract system prompt if present
+        system_msg = None
+        conv_messages = messages
         if messages[0].get('role') == 'system':
-            trimmed.append(messages[0])
-            remaining = list(messages)[- (self.max_messages - 1):]
-            return trimmed + remaining
+            system_msg = messages[0]
+            conv_messages = messages[1:]
 
-        return list(messages)[-self.max_messages:]
+        # Calculate how many conversation messages we can keep
+        max_conv_messages = self.max_messages - (1 if system_msg else 0)
+
+        # If we need to trim, ensure we preserve complete user-assistant pairs
+        if len(conv_messages) > max_conv_messages:
+            # Count back from the end, ensuring we keep complete pairs
+            # Each pair is user + assistant, so pairs are at indices (0,1), (2,3), (4,5), etc.
+            # If the last message is 'user', we need to be careful not to orphan it
+
+            # Start from the end and count backwards in pairs
+            keep_count = max_conv_messages
+
+            # If we would end on an assistant message (even index from end), that's good
+            # If we would end on a user message (odd index from end), reduce by 1 to keep the pair
+            if keep_count < len(conv_messages):
+                # Check what role we'd be starting with after the trim
+                start_index = len(conv_messages) - keep_count
+                # If we're starting with an 'assistant' message, that means we're breaking a pair
+                if start_index < len(conv_messages) and conv_messages[start_index].get('role') == 'assistant':
+                    # Move forward to the next user message to preserve the pair
+                    keep_count -= 1
+
+            conv_messages = conv_messages[-keep_count:] if keep_count > 0 else []
+
+        # Reconstruct the message list
+        result = []
+        if system_msg:
+            result.append(system_msg)
+        result.extend(conv_messages)
+        return result
 
     def _cleanup(self, conn):
         if not self.max_age_hours:
