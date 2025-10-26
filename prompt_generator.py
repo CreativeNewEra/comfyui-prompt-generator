@@ -87,6 +87,11 @@ ADMIN_ALLOWED_IPS = {
     if ip.strip()
 }
 
+# Trust X-Forwarded-For header for IP detection (only enable if behind a trusted proxy)
+# WARNING: Only set to 'true' if your app is behind a reverse proxy (nginx, etc.)
+# that properly strips untrusted X-Forwarded-For headers from clients
+TRUST_PROXY_HEADERS = os.getenv('TRUST_PROXY_HEADERS', 'false').lower() in ('true', '1', 'yes')
+
 # ============================================================================
 # Logging Configuration
 # ============================================================================
@@ -158,14 +163,22 @@ logger = setup_logging()
 # ============================================================================
 
 def get_client_ip(req) -> str:
-    """Return the best-effort client IP for the current request."""
+    """
+    Return the best-effort client IP for the current request.
+
+    Security note: Only trusts X-Forwarded-For if TRUST_PROXY_HEADERS is enabled.
+    By default, uses req.remote_addr which cannot be spoofed by clients.
+    """
     if not req:
         return ''
 
-    forwarded_for = req.headers.get('X-Forwarded-For', '') if hasattr(req, 'headers') else ''
-    if forwarded_for:
-        return forwarded_for.split(',')[0].strip()
+    # Only trust X-Forwarded-For if explicitly enabled (i.e., behind a trusted proxy)
+    if TRUST_PROXY_HEADERS:
+        forwarded_for = req.headers.get('X-Forwarded-For', '') if hasattr(req, 'headers') else ''
+        if forwarded_for:
+            return forwarded_for.split(',')[0].strip()
 
+    # Default to remote_addr which is set by the WSGI server and cannot be spoofed
     return getattr(req, 'remote_addr', '') or ''
 
 
