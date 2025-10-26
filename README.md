@@ -471,6 +471,8 @@ make lint
 | `make test` | Run the test suite |
 | `make test-cov` | Run tests with coverage report |
 | `make lint` | Run flake8 linting |
+| `make format` | Auto-format code with black and isort |
+| `make format-check` | Verify formatting without making changes |
 | `make clean` | Remove cache files and logs |
 | `make clean-all` | Remove everything including venv |
 | `make setup-ollama` | Show Ollama setup instructions |
@@ -514,16 +516,31 @@ make test
 
 # Lint your code before committing
 make lint
+
+# Format your code (optional but recommended)
+make format
 ```
 
 **Before committing:**
 ```bash
+# Ensure formatting checks pass
+make format-check
+
 # Validate everything
 make validate
 
 # Clean up
 make clean
 ```
+
+### Code Formatting
+
+We use [black](https://black.readthedocs.io/en/stable/) and [isort](https://pycqa.github.io/isort/) to keep the codebase consistent.
+
+- `make format` runs isort followed by black to apply automatic fixes.
+- `make format-check` runs both tools in check-only mode and fails if reformatting is required.
+
+Both tools are installed when you run `make install` or `pip install -r requirements-dev.txt`. If you prefer to invoke them directly, use `black prompt_generator.py tests/` and `isort prompt_generator.py tests/` from your virtual environment.
 
 ### Manual Setup (Alternative)
 
