@@ -10,9 +10,13 @@ Usage:
     2. In another terminal: python test_api_routes.py
 """
 
-import requests
 import json
 import sys
+
+import pytest
+import requests
+
+pytestmark = pytest.mark.skip("Integration script requires running server manually")
 
 # Base URL for the Flask app
 BASE_URL = "http://localhost:5000"
