@@ -638,6 +638,18 @@ The easiest way to configure the application is using a `.env` file:
    - `FLASK_DEBUG`: Debug mode - `true` for development, `false` for production
    - `FLASK_SECRET_KEY`: Secret key for session management (generate a random one for production)
    - `LOG_LEVEL`: Logging verbosity - `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL` (default: INFO)
+   - `ADMIN_API_KEY`: (Recommended for production) Required API key for `/admin/reload-prompts`. Provide via the `X-Admin-API-Key` header or `admin_api_key` query parameter.
+   - `ADMIN_ALLOWED_IPS`: Optional comma-separated list of additional IPs permitted to access `/admin/reload-prompts` when no API key is configured.
+   - `TRUST_PROXY_HEADERS`: Set to `true` if behind a trusted reverse proxy (nginx, Apache, etc.) that strips client-provided headers. Only enable if your proxy properly sanitizes X-Forwarded-For. Default: `false` (uses direct connection IP).
+
+#### Admin Endpoint Security
+
+The `/admin/reload-prompts` endpoint hot-reloads system prompt files without restarting the server. To prevent unauthorized use:
+
+- **Set `ADMIN_API_KEY`** and include the same value in the `X-Admin-API-Key` header when calling the endpoint.
+- If no API key is configured, only loopback addresses (e.g., `127.0.0.1`, `::1`) are permitted by default. Add trusted IPs to `ADMIN_ALLOWED_IPS` to extend access.
+- Every denied attempt is logged with the source IP so you can monitor suspicious traffic.
+- **Security Note**: By default, client IP detection uses `remote_addr` which cannot be spoofed. Only enable `TRUST_PROXY_HEADERS` if you're behind a reverse proxy that properly strips untrusted X-Forwarded-For headers.
 
 ### Manual Configuration (Alternative)
 

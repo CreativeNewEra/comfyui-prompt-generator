@@ -18,6 +18,14 @@ import pytest
 
 pytestmark = pytest.mark.skip(reason="Integration helper that requires a running server")
 
+if 'pytest' in sys.modules:
+    import pytest as _pytest
+
+    _pytest.skip(
+        "test_api_routes.py is an integration script and should be run manually",
+        allow_module_level=True,
+    )
+
 # Base URL for the Flask app
 BASE_URL = "http://localhost:5000"
 
