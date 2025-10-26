@@ -1056,6 +1056,251 @@ def build_hierarchical_prompt(user_input, selections, presets_data):
 # This variable is used throughout the application for preset lookups
 PRESETS = load_presets()
 
+
+def _format_identifier(identifier):
+    """Convert an identifier string like 'golden_hour' to 'Golden Hour'."""
+    if isinstance(identifier, str):
+        return identifier.replace('_', ' ').title()
+    return str(identifier)
+
+
+def _format_generic_value(value):
+    """Format preset selection values (str/list/dict) into human-friendly text."""
+    if value is None:
+        return ''
+
+    if isinstance(value, list):
+        formatted_items = [item for item in (_format_generic_value(v) for v in value) if item]
+        return ', '.join(formatted_items)
+
+    if isinstance(value, dict):
+        parts = []
+        for key, val in value.items():
+            formatted_val = _format_generic_value(val)
+            if formatted_val:
+                parts.append(f"{_format_identifier(key)}: {formatted_val}")
+        return '; '.join(parts)
+
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped or stripped == 'None':
+            return ''
+        if ' ' in stripped or any(char.isupper() for char in stripped):
+            return stripped
+        return stripped.replace('_', ' ').title()
+
+    return str(value)
+
+
+def _unique_join(values):
+    """Join values preserving order while removing duplicates and empty strings."""
+    seen = []
+    for item in values:
+        if item and item not in seen:
+            seen.append(item)
+    return '; '.join(seen)
+
+
+def _is_composition_key(key):
+    return isinstance(key, str) and 'composition' in key
+
+
+def _is_lighting_key(key):
+    return isinstance(key, str) and 'lighting' in key
+
+
+def _resolve_level4_value(technical_data, key, selected_value):
+    """Resolve a level4 technical selection to (label, value) tuple."""
+    category = technical_data.get(key, {}) if isinstance(technical_data, dict) else {}
+    label = category.get('name') or _format_identifier(key)
+
+    options = category.get('options', []) if isinstance(category, dict) else []
+    value_text = ''
+    description = None
+
+    if options:
+        first_option = options[0]
+        if isinstance(first_option, dict):
+            option = next((opt for opt in options if opt.get('id') == selected_value), None)
+            if option:
+                value_text = option.get('name') or _format_identifier(option.get('id'))
+                description = option.get('description')
+        else:
+            if selected_value in options:
+                value_text = _format_identifier(selected_value)
+
+    if not value_text:
+        if isinstance(selected_value, list):
+            value_text = ', '.join(_format_identifier(v) for v in selected_value)
+        elif isinstance(selected_value, dict):
+            value_text = _format_generic_value(selected_value)
+        elif isinstance(selected_value, str):
+            value_text = _format_identifier(selected_value)
+        else:
+            value_text = str(selected_value)
+
+    if description:
+        value_text = f"{value_text} ({description})"
+
+    return label, value_text
+
+
+def _flatten_legacy_preset_context(payload, presets):
+    """Extract legacy preset selections into context lines and summary."""
+    context_lines = []
+    summary = {
+        'style': payload.get('style', 'None'),
+        'artist': payload.get('artist', 'None'),
+        'composition': payload.get('composition', 'None'),
+        'lighting': payload.get('lighting', 'None')
+    }
+
+    styles = presets.get('styles', {}) if isinstance(presets, dict) else {}
+    artists = presets.get('artists', {}) if isinstance(presets, dict) else {}
+    compositions = presets.get('composition', {}) if isinstance(presets, dict) else {}
+    lighting = presets.get('lighting', {}) if isinstance(presets, dict) else {}
+
+    style_key = summary['style']
+    if style_key and style_key != 'None':
+        style_text = styles.get(style_key)
+        if style_text:
+            context_lines.append(f"Style: {style_text}")
+
+    artist_key = summary['artist']
+    if artist_key and artist_key != 'None':
+        artist_text = artists.get(artist_key)
+        if artist_text:
+            context_lines.append(f"Artist/Style: {artist_text}")
+
+    composition_key = summary['composition']
+    if composition_key and composition_key != 'None':
+        composition_text = compositions.get(composition_key)
+        if composition_text:
+            context_lines.append(f"Composition: {composition_text}")
+
+    lighting_key = summary['lighting']
+    if lighting_key and lighting_key != 'None':
+        lighting_text = lighting.get(lighting_key)
+        if lighting_text:
+            context_lines.append(f"Lighting: {lighting_text}")
+
+    return context_lines, summary
+
+
+def _flatten_hierarchical_preset_context(payload, presets):
+    """Convert hierarchical selections into legacy-style context lines."""
+    summary = {
+        'style': 'None',
+        'artist': 'None',
+        'composition': 'None',
+        'lighting': 'None'
+    }
+
+    selections = payload.get('selections') if isinstance(payload, dict) else None
+    if not selections:
+        # Fall back to legacy handling if selections are missing
+        return _flatten_legacy_preset_context(payload, presets)
+
+    context_lines = []
+    composition_values = []
+    lighting_values = []
+
+    categories = presets.get('categories', {}) if isinstance(presets, dict) else {}
+    category_id = selections.get('level1')
+    category_data = categories.get(category_id, {}) if category_id else {}
+    category_name = category_data.get('name') or _format_identifier(category_id) if category_id else ''
+
+    type_id = selections.get('level2')
+    type_data = category_data.get('level2_types', {}).get(type_id, {}) if category_data and type_id else {}
+    type_name = type_data.get('name') or _format_identifier(type_id) if type_id else ''
+
+    style_parts = [part for part in (category_name, type_name) if part]
+    if style_parts:
+        style_text = ' > '.join(style_parts)
+        context_lines.append(f"Style: {style_text}")
+        summary['style'] = style_text
+
+    artist_data = {}
+    artist_id = selections.get('level3')
+    if type_data and artist_id:
+        artist_data = type_data.get('level3_artists', {}).get(artist_id, {}) or {}
+        artist_name = artist_data.get('name') or _format_identifier(artist_id)
+        summary['artist'] = artist_name
+
+        artist_line = artist_name
+        detail_parts = []
+        if artist_data.get('description'):
+            detail_parts.append(artist_data['description'])
+        if artist_data.get('signature'):
+            detail_parts.append(artist_data['signature'])
+        if detail_parts:
+            artist_line = f"{artist_line} — {' | '.join(detail_parts)}"
+        context_lines.append(f"Artist/Style: {artist_line}")
+
+    level4_selections = selections.get('level4', {}) if isinstance(selections, dict) else {}
+    if level4_selections and artist_data:
+        technical = artist_data.get('level4_technical', {})
+        for tech_key, tech_value in level4_selections.items():
+            label, value_text = _resolve_level4_value(technical, tech_key, tech_value)
+            if not value_text:
+                continue
+
+            if _is_composition_key(tech_key):
+                composition_values.append(value_text)
+            elif _is_lighting_key(tech_key):
+                lighting_values.append(value_text)
+            else:
+                context_lines.append(f"{label}: {value_text}")
+
+    level5_selections = selections.get('level5', {}) if isinstance(selections, dict) else {}
+    if isinstance(level5_selections, dict):
+        for key, value in level5_selections.items():
+            formatted_value = _format_generic_value(value)
+            if not formatted_value:
+                continue
+
+            if _is_composition_key(key):
+                composition_values.append(formatted_value)
+            elif _is_lighting_key(key):
+                lighting_values.append(formatted_value)
+            else:
+                context_lines.append(f"{_format_identifier(key)}: {formatted_value}")
+
+    universal_selections = selections.get('universal', {}) if isinstance(selections, dict) else {}
+    if isinstance(universal_selections, dict):
+        for key, value in universal_selections.items():
+            formatted_value = _format_generic_value(value)
+            if not formatted_value:
+                continue
+
+            if _is_composition_key(key):
+                composition_values.append(formatted_value)
+            elif _is_lighting_key(key):
+                lighting_values.append(formatted_value)
+            else:
+                context_lines.append(f"{_format_identifier(key)}: {formatted_value}")
+
+    if composition_values:
+        composition_text = _unique_join(composition_values)
+        if composition_text:
+            summary['composition'] = composition_text
+            context_lines.append(f"Composition: {composition_text}")
+
+    if lighting_values:
+        lighting_text = _unique_join(lighting_values)
+        if lighting_text:
+            summary['lighting'] = lighting_text
+            context_lines.append(f"Lighting: {lighting_text}")
+
+    return context_lines, summary
+
+
+def build_preset_context(payload, presets):
+    """Return preset context lines and summary based on current preset mode."""
+    if ENABLE_HIERARCHICAL_PRESETS:
+        return _flatten_hierarchical_preset_context(payload, presets)
+    return _flatten_legacy_preset_context(payload, presets)
+
 # ============================================================================
 # Model-Specific System Prompts
 # ============================================================================
@@ -2284,11 +2529,8 @@ def generate():
     model_type = data.get('model', 'flux')  # Default to Flux if not specified
     ollama_model = data.get('ollama_model', OLLAMA_MODEL)  # Ollama model to use
 
-    # Extract preset selections (all default to 'None' if not provided)
-    style = data.get('style', 'None')
-    artist = data.get('artist', 'None')
-    composition = data.get('composition', 'None')
-    lighting = data.get('lighting', 'None')
+    # Build preset context (legacy or hierarchical)
+    preset_context_lines, preset_summary = build_preset_context(data, PRESETS)
 
     # Validate user provided some input
     if not user_input:
@@ -2301,22 +2543,10 @@ def generate():
     logger.info(f"Generating prompt for model: {model_type}")
     logger.debug(f"User input preview: {user_input[:50]}...")
 
-    # Build preset context by looking up selected preset values
-    # Only include presets that aren't "None" or empty
-    preset_context = []
-    if style and style != 'None' and style in PRESETS['styles']:
-        preset_context.append(f"Style: {PRESETS['styles'][style]}")
-    if artist and artist != 'None' and artist in PRESETS['artists']:
-        preset_context.append(f"Artist/Style: {PRESETS['artists'][artist]}")
-    if composition and composition != 'None' and composition in PRESETS['composition']:
-        preset_context.append(f"Composition: {PRESETS['composition'][composition]}")
-    if lighting and lighting != 'None' and lighting in PRESETS['lighting']:
-        preset_context.append(f"Lighting: {PRESETS['lighting'][lighting]}")
-
     # Build the full user message with presets incorporated
-    if preset_context:
+    if preset_context_lines:
         # If presets are selected, format them clearly for the AI
-        preset_info = "\n".join(preset_context)
+        preset_info = "\n".join(preset_context_lines)
         full_input = f"User's image idea: {user_input}\n\nSelected presets:\n{preset_info}\n\nPlease create a detailed prompt incorporating these elements."
     else:
         # No presets selected, use input as-is
@@ -2337,13 +2567,7 @@ def generate():
     logger.info(f"Successfully generated prompt using model: {ollama_model}")
 
     # Save the generation to history database for later retrieval
-    presets_dict = {
-        'style': style,
-        'artist': artist,
-        'composition': composition,
-        'lighting': lighting
-    }
-    save_to_history(user_input, result, model_type, presets_dict, 'oneshot')
+    save_to_history(user_input, result, model_type, preset_summary, 'oneshot')
 
     return jsonify({
         'result': result,
@@ -2405,11 +2629,8 @@ def chat():
     model_type = data.get('model', 'flux')
     ollama_model = data.get('ollama_model', OLLAMA_MODEL)  # Ollama model to use
 
-    # Get preset selections
-    style = data.get('style', 'None')
-    artist = data.get('artist', 'None')
-    composition = data.get('composition', 'None')
-    lighting = data.get('lighting', 'None')
+    # Build preset context (legacy or hierarchical)
+    preset_context_lines, preset_summary = build_preset_context(data, PRESETS)
 
     if not user_message:
         logger.warning("Chat request with empty message")
@@ -2444,15 +2665,7 @@ def chat():
     logger.debug(f"Chat message preview: {user_message[:50]}...")
 
     # Build context with presets
-    preset_context = []
-    if style and style != 'None' and style in PRESETS['styles']:
-        preset_context.append(f"Style: {PRESETS['styles'][style]}")
-    if artist and artist != 'None' and artist in PRESETS['artists']:
-        preset_context.append(f"Artist/Style: {PRESETS['artists'][artist]}")
-    if composition and composition != 'None' and composition in PRESETS['composition']:
-        preset_context.append(f"Composition: {PRESETS['composition'][composition]}")
-    if lighting and lighting != 'None' and lighting in PRESETS['lighting']:
-        preset_context.append(f"Lighting: {PRESETS['lighting'][lighting]}")
+    preset_context = preset_context_lines
 
     # Build the full user message
     if preset_context:
@@ -2488,13 +2701,7 @@ def chat():
     logger.info("Successfully processed chat message")
 
     # Save to history
-    presets_dict = {
-        'style': style,
-        'artist': artist,
-        'composition': composition,
-        'lighting': lighting
-    }
-    save_to_history(user_message, result, model_type, presets_dict, 'chat')
+    save_to_history(user_message, result, model_type, preset_summary, 'chat')
 
     return jsonify({
         'result': result,
@@ -2519,11 +2726,8 @@ def generate_stream():
     model_type = data.get('model', 'flux')
     ollama_model = data.get('ollama_model', OLLAMA_MODEL)  # Ollama model to use
 
-    # Get preset selections
-    style = data.get('style', 'None')
-    artist = data.get('artist', 'None')
-    composition = data.get('composition', 'None')
-    lighting = data.get('lighting', 'None')
+    # Build preset context (legacy or hierarchical)
+    preset_context_lines, preset_summary = build_preset_context(data, PRESETS)
 
     if not user_input:
         logger.warning("Generate-stream request with empty input")
@@ -2535,20 +2739,9 @@ def generate_stream():
     logger.info(f"Generating streaming prompt for model: {model_type}, ollama_model: {ollama_model}")
     logger.debug(f"User input preview: {user_input[:50]}...")
 
-    # Build context with presets
-    preset_context = []
-    if style and style != 'None' and style in PRESETS['styles']:
-        preset_context.append(f"Style: {PRESETS['styles'][style]}")
-    if artist and artist != 'None' and artist in PRESETS['artists']:
-        preset_context.append(f"Artist/Style: {PRESETS['artists'][artist]}")
-    if composition and composition != 'None' and composition in PRESETS['composition']:
-        preset_context.append(f"Composition: {PRESETS['composition'][composition]}")
-    if lighting and lighting != 'None' and lighting in PRESETS['lighting']:
-        preset_context.append(f"Lighting: {PRESETS['lighting'][lighting]}")
-
     # Build the full user message
-    if preset_context:
-        preset_info = "\n".join(preset_context)
+    if preset_context_lines:
+        preset_info = "\n".join(preset_context_lines)
         full_input = f"User's image idea: {user_input}\n\nSelected presets:\n{preset_info}\n\nPlease create a detailed prompt incorporating these elements."
     else:
         full_input = user_input
@@ -2574,13 +2767,7 @@ def generate_stream():
             yield f"data: {json.dumps({'done': True})}\n\n"
 
             # Save to history after completion
-            presets_dict = {
-                'style': style,
-                'artist': artist,
-                'composition': composition,
-                'lighting': lighting
-            }
-            save_to_history(user_input, full_response, model_type, presets_dict, 'oneshot')
+            save_to_history(user_input, full_response, model_type, preset_summary, 'oneshot')
             logger.info("Successfully generated streaming prompt")
 
         except (OllamaConnectionError, OllamaTimeoutError, OllamaModelNotFoundError, OllamaAPIError) as e:
@@ -2613,11 +2800,8 @@ def chat_stream():
     model_type = data.get('model', 'flux')
     ollama_model = data.get('ollama_model', OLLAMA_MODEL)  # Ollama model to use
 
-    # Get preset selections
-    style = data.get('style', 'None')
-    artist = data.get('artist', 'None')
-    composition = data.get('composition', 'None')
-    lighting = data.get('lighting', 'None')
+    # Build preset context (legacy or hierarchical)
+    preset_context_lines, preset_summary = build_preset_context(data, PRESETS)
 
     if not user_message:
         logger.warning("Chat-stream request with empty message")
@@ -2649,15 +2833,7 @@ def chat_stream():
     logger.debug(f"Chat message preview: {user_message[:50]}...")
 
     # Build context with presets
-    preset_context = []
-    if style and style != 'None' and style in PRESETS['styles']:
-        preset_context.append(f"Style: {PRESETS['styles'][style]}")
-    if artist and artist != 'None' and artist in PRESETS['artists']:
-        preset_context.append(f"Artist/Style: {PRESETS['artists'][artist]}")
-    if composition and composition != 'None' and composition in PRESETS['composition']:
-        preset_context.append(f"Composition: {PRESETS['composition'][composition]}")
-    if lighting and lighting != 'None' and lighting in PRESETS['lighting']:
-        preset_context.append(f"Lighting: {PRESETS['lighting'][lighting]}")
+    preset_context = preset_context_lines
 
     # Build the full user message
     if preset_context:
@@ -2719,13 +2895,7 @@ def chat_stream():
                     session_conversation.extend(trimmed)
 
                 # Save to history after completion
-                presets_dict = {
-                    'style': style,
-                    'artist': artist,
-                    'composition': composition,
-                    'lighting': lighting
-                }
-                save_to_history(user_message, full_response, model_type, presets_dict, 'chat')
+                save_to_history(user_message, full_response, model_type, preset_summary, 'chat')
 
     return app.response_class(generate(), mimetype='text/event-stream')
 
