@@ -1198,8 +1198,8 @@ def _flatten_hierarchical_preset_context(payload, presets):
 
     selections = payload.get('selections') if isinstance(payload, dict) else None
     if not selections:
-        # Fall back to legacy handling if selections are missing
-        return _flatten_legacy_preset_context(payload, presets)
+        logging.warning("Hierarchical presets enabled but 'selections' missing in payload. Returning empty context.")
+        return [], summary
 
     context_lines = []
     composition_values = []
