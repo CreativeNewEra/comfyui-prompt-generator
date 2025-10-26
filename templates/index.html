@@ -2613,17 +2613,24 @@
         function addChatMessage(role, content) {
             const chatHistory = document.getElementById('chatHistory');
             chatHistory.classList.add('visible');
-            
+
             const messageDiv = document.createElement('div');
             messageDiv.className = `chat-message ${role}`;
-            messageDiv.innerHTML = `
-                <div class="role">${role === 'user' ? '👤 You' : '🤖 Assistant'}</div>
-                <div class="content">${content}</div>
-            `;
-            
+
+            const roleDiv = document.createElement('div');
+            roleDiv.className = 'role';
+            roleDiv.textContent = role === 'user' ? '👤 You' : '🤖 Assistant';
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'content';
+            contentDiv.textContent = content;
+
+            messageDiv.appendChild(roleDiv);
+            messageDiv.appendChild(contentDiv);
+
             chatHistory.appendChild(messageDiv);
             chatHistory.scrollTop = chatHistory.scrollHeight;
-            
+
             if (role === 'assistant') {
                 showOutput(content);
             }
