@@ -1,0 +1,2014 @@
+{
+  "version": "1.0",
+  "description": "Hierarchical 5-level image generation preset system",
+  
+  "preset_packs": {
+    "description": "Pre-configured combinations for quick start",
+    "packs": [
+      {
+        "name": "90s X-Men Comic",
+        "icon": "🦸",
+        "selections": {
+          "level1": "comic_book",
+          "level2": "marvel_style",
+          "level3": "jim_lee",
+          "level4": {
+            "inking": "heavy_crosshatch",
+            "coloring": "modern_gradient",
+            "detail": "maximum"
+          },
+          "level5": {
+            "scene_type": "character",
+            "action": "dynamic_action",
+            "composition": "low_angle"
+          }
+        }
+      },
+      {
+        "name": "Studio Ghibli Magic",
+        "icon": "🎌",
+        "selections": {
+          "level1": "anime",
+          "level2": "slice_of_life",
+          "level3": "studio_ghibli",
+          "level4": {
+            "technique": "painted_backgrounds",
+            "color": "soft_pastel"
+          },
+          "level5": {
+            "mood": "whimsical",
+            "atmosphere": "peaceful"
+          }
+        }
+      },
+      {
+        "name": "Blade Runner Street",
+        "icon": "🌃",
+        "selections": {
+          "level1": "scifi",
+          "level2": "cyberpunk",
+          "level3": "syd_mead",
+          "level4": {
+            "color": "muted_industrial",
+            "detail": "highly_technical"
+          },
+          "level5": {
+            "setting": "rain_soaked_streets",
+            "time": "night_neon"
+          }
+        }
+      },
+      {
+        "name": "Epic Fantasy Battle",
+        "icon": "🐉",
+        "selections": {
+          "level1": "fantasy",
+          "level2": "high_fantasy",
+          "level3": "greg_rutkowski",
+          "level4": {
+            "lighting": "dramatic_volumetric",
+            "detail": "highly_detailed"
+          },
+          "level5": {
+            "scene_type": "action_battle",
+            "atmosphere": "epic_golden_hour"
+          }
+        }
+      },
+      {
+        "name": "Leibovitz Portrait",
+        "icon": "📸",
+        "selections": {
+          "level1": "photography",
+          "level2": "portrait",
+          "level3": "annie_leibovitz",
+          "level4": {
+            "camera": "medium_format",
+            "lighting": "conceptual_theatrical"
+          },
+          "level5": {
+            "pose": "conceptual_theatrical",
+            "environment": "conceptual_set"
+          }
+        }
+      }
+    ]
+  },
+
+  "categories": {
+    "photography": {
+      "name": "Photography",
+      "icon": "📸",
+      "description": "Realistic camera-based imagery",
+      "best_for": ["portraits", "landscapes", "realistic scenes"],
+      "popularity": "high",
+      
+      "level2_types": {
+        "portrait": {
+          "name": "Portrait Photography",
+          "description": "People-focused, faces & emotion",
+          "icon": "👤",
+          "popularity": "high",
+          
+          "level3_artists": {
+            "annie_leibovitz": {
+              "name": "Annie Leibovitz",
+              "description": "Celebrity portraits, dramatic concepts, theatrical",
+              "signature": "Bold, theatrical, narrative-driven",
+              "best_for": ["editorial", "iconic portraits", "conceptual"],
+              "popularity": "high",
+              
+              "level4_technical": {
+                "camera_lens": {
+                  "name": "Camera & Lens",
+                  "options": [
+                    {
+                      "id": "medium_format",
+                      "name": "Medium format (Hasselblad)",
+                      "description": "Her signature camera",
+                      "recommended": true
+                    },
+                    {
+                      "id": "35mm_full_frame",
+                      "name": "35mm full frame",
+                      "description": "Standard professional"
+                    },
+                    {
+                      "id": "85mm_portrait",
+                      "name": "85mm portrait lens",
+                      "description": "Classic portrait focal length"
+                    },
+                    {
+                      "id": "50mm_standard",
+                      "name": "50mm standard",
+                      "description": "Natural perspective"
+                    },
+                    {
+                      "id": "24_70mm_zoom",
+                      "name": "24-70mm zoom",
+                      "description": "Versatile range"
+                    }
+                  ]
+                },
+                "film_digital": {
+                  "name": "Film vs Digital",
+                  "options": [
+                    {
+                      "id": "digital_modern",
+                      "name": "Digital (modern)",
+                      "description": "Contemporary clean look"
+                    },
+                    {
+                      "id": "film_portra",
+                      "name": "Film - Kodak Portra",
+                      "description": "Warm skin tones, classic"
+                    },
+                    {
+                      "id": "film_bw",
+                      "name": "Film - Black & white",
+                      "description": "Timeless, dramatic"
+                    },
+                    {
+                      "id": "expired_film",
+                      "name": "Expired film",
+                      "description": "Vintage unpredictable look"
+                    }
+                  ]
+                },
+                "aperture": {
+                  "name": "Aperture / Depth of Field",
+                  "options": [
+                    {
+                      "id": "f1_4",
+                      "name": "f/1.4",
+                      "description": "Very shallow, dreamy bokeh"
+                    },
+                    {
+                      "id": "f2_8",
+                      "name": "f/2.8",
+                      "description": "Moderate blur, professional"
+                    },
+                    {
+                      "id": "f5_6",
+                      "name": "f/5.6",
+                      "description": "Balanced depth"
+                    },
+                    {
+                      "id": "f11",
+                      "name": "f/11",
+                      "description": "Mostly sharp throughout"
+                    }
+                  ]
+                },
+                "lighting": {
+                  "name": "Lighting Setup",
+                  "options": [
+                    {
+                      "id": "natural_window",
+                      "name": "Natural window light",
+                      "description": "Soft, flattering"
+                    },
+                    {
+                      "id": "studio_strobe",
+                      "name": "Studio strobe",
+                      "description": "Dramatic, controlled"
+                    },
+                    {
+                      "id": "golden_hour",
+                      "name": "Golden hour outdoor",
+                      "description": "Warm, natural"
+                    },
+                    {
+                      "id": "theatrical",
+                      "name": "Conceptual/theatrical",
+                      "description": "Her specialty - narrative lighting",
+                      "recommended": true
+                    },
+                    {
+                      "id": "rembrandt",
+                      "name": "Rembrandt lighting",
+                      "description": "Triangle on cheek, dramatic"
+                    },
+                    {
+                      "id": "butterfly",
+                      "name": "Butterfly lighting",
+                      "description": "Shadow under nose, glamorous"
+                    }
+                  ]
+                }
+              },
+              
+              "level5_specifics": {
+                "subject_type": {
+                  "name": "Subject Type",
+                  "options": [
+                    {
+                      "id": "single_person",
+                      "name": "Single person",
+                      "sub_options": {
+                        "age": ["child", "teen", "young_adult", "middle_aged", "senior"],
+                        "type": ["celebrity", "athlete", "artist", "professional", "casual"]
+                      }
+                    },
+                    {
+                      "id": "couple",
+                      "name": "Couple",
+                      "description": "Romantic or partnership"
+                    },
+                    {
+                      "id": "group",
+                      "name": "Group",
+                      "description": "Friends or team"
+                    },
+                    {
+                      "id": "family",
+                      "name": "Family",
+                      "description": "Family portrait"
+                    }
+                  ]
+                },
+                "pose_expression": {
+                  "name": "Pose & Expression",
+                  "options": [
+                    "direct_gaze_confident",
+                    "looking_away_contemplative",
+                    "laughing_joyful",
+                    "serious_intense",
+                    "natural_candid",
+                    "conceptual_theatrical"
+                  ],
+                  "recommended": "conceptual_theatrical"
+                },
+                "wardrobe": {
+                  "name": "Wardrobe",
+                  "options": [
+                    "formal_elegant",
+                    "casual_everyday",
+                    "fashion_high_end",
+                    "costume_conceptual",
+                    "minimal_artistic"
+                  ]
+                },
+                "environment": {
+                  "name": "Environment",
+                  "options": [
+                    {
+                      "id": "studio_backdrop",
+                      "name": "Studio (solid backdrop)",
+                      "description": "Controlled, simple"
+                    },
+                    {
+                      "id": "environmental",
+                      "name": "Environmental",
+                      "description": "Location adds context"
+                    },
+                    {
+                      "id": "conceptual_set",
+                      "name": "Conceptual set",
+                      "description": "Narrative scene - her specialty",
+                      "recommended": true
+                    },
+                    {
+                      "id": "outdoor_natural",
+                      "name": "Outdoor natural",
+                      "description": "Nature setting"
+                    },
+                    {
+                      "id": "urban_architectural",
+                      "name": "Urban/architectural",
+                      "description": "City environment"
+                    }
+                  ]
+                },
+                "framing": {
+                  "name": "Framing",
+                  "options": [
+                    "extreme_closeup",
+                    "head_shoulders",
+                    "three_quarter",
+                    "full_body",
+                    "environmental_wide"
+                  ]
+                }
+              }
+            },
+            "richard_avedon": {
+              "name": "Richard Avedon",
+              "description": "White backdrop minimalist portraits, powerful, raw emotion",
+              "signature": "Simple, powerful, stark white backgrounds",
+              "best_for": ["character studies", "dramatic simplicity"],
+              "popularity": "medium",
+              "level4_technical": {},
+              "level5_specifics": {}
+            },
+            "steve_mccurry": {
+              "name": "Steve McCurry",
+              "description": "Environmental portraits, vibrant colors, cultural context",
+              "signature": "Rich colors, storytelling, cultural depth",
+              "best_for": ["travel", "cultural", "environmental"],
+              "popularity": "medium",
+              "level4_technical": {},
+              "level5_specifics": {}
+            }
+          }
+        },
+        "landscape": {
+          "name": "Landscape Photography",
+          "description": "Nature & scenery, grand vistas",
+          "icon": "🏞",
+          "popularity": "high",
+          "level3_artists": {
+            "ansel_adams": {
+              "name": "Ansel Adams",
+              "description": "Masterful B&W landscapes, grand compositions, Zone System",
+              "signature": "Black & white, dramatic, grand scale",
+              "best_for": ["nature", "mountains", "dramatic landscapes"],
+              "level4_technical": {},
+              "level5_specifics": {}
+            }
+          }
+        },
+        "street": {
+          "name": "Street Photography",
+          "description": "Urban candid moments, documentary style",
+          "icon": "🚶",
+          "level3_artists": {}
+        },
+        "fashion_editorial": {
+          "name": "Fashion/Editorial",
+          "description": "High-fashion styled shoots",
+          "icon": "👗",
+          "level3_artists": {}
+        }
+      }
+    },
+
+    "comic_book": {
+      "name": "Comic Book Art",
+      "icon": "🎨",
+      "description": "Sequential art, dynamic action, superhero style",
+      "best_for": ["superheroes", "action", "characters", "storytelling"],
+      "popularity": "high",
+      
+      "level2_types": {
+        "marvel_style": {
+          "name": "Marvel Style",
+          "description": "Dynamic, vibrant, heroic - classic superhero aesthetic",
+          "icon": "🦸",
+          "popularity": "high",
+          
+          "level3_artists": {
+            "jim_lee": {
+              "name": "Jim Lee",
+              "description": "Detailed dynamic style, heavy crosshatching, X-Men era",
+              "signature": "Intricate detail, dynamic poses, crosshatching",
+              "best_for": ["superheroes", "action", "team books"],
+              "popularity": "high",
+              
+              "level4_technical": {
+                "inking_style": {
+                  "name": "Inking Style",
+                  "options": [
+                    {
+                      "id": "heavy_crosshatch",
+                      "name": "Heavy crosshatching",
+                      "description": "His signature style",
+                      "recommended": true
+                    },
+                    {
+                      "id": "clean_spot_blacks",
+                      "name": "Clean with spot blacks",
+                      "description": "Simplified, bold"
+                    },
+                    {
+                      "id": "detailed_rendering",
+                      "name": "Detailed rendering",
+                      "description": "Maximum texture"
+                    },
+                    {
+                      "id": "stylized",
+                      "name": "Simplified/stylized",
+                      "description": "Less detail, cleaner"
+                    }
+                  ]
+                },
+                "coloring": {
+                  "name": "Coloring Approach",
+                  "options": [
+                    {
+                      "id": "modern_gradient",
+                      "name": "Modern gradient",
+                      "description": "Current style, depth",
+                      "recommended": true
+                    },
+                    {
+                      "id": "flat_90s",
+                      "name": "Flat 90s colors",
+                      "description": "Nostalgic, simple"
+                    },
+                    {
+                      "id": "painted_style",
+                      "name": "Painted style",
+                      "description": "Artistic, textured"
+                    },
+                    {
+                      "id": "limited_palette",
+                      "name": "Limited palette",
+                      "description": "Focused color scheme"
+                    }
+                  ]
+                },
+                "line_weight": {
+                  "name": "Line Weight",
+                  "options": [
+                    "varied_thick_thin",
+                    "consistent_clean",
+                    "heavy_blacks"
+                  ]
+                },
+                "detail_level": {
+                  "name": "Detail Level",
+                  "options": [
+                    {
+                      "id": "maximum",
+                      "name": "Maximum detail",
+                      "description": "His signature approach",
+                      "recommended": true
+                    },
+                    {
+                      "id": "moderate",
+                      "name": "Moderate detail",
+                      "description": "Balanced"
+                    },
+                    {
+                      "id": "simplified",
+                      "name": "Simplified for readability",
+                      "description": "Cleaner, faster read"
+                    }
+                  ]
+                }
+              },
+              
+              "level5_specifics": {
+                "scene_type": {
+                  "name": "Scene Type",
+                  "options": [
+                    {
+                      "id": "character",
+                      "name": "Character Focus",
+                      "sub_options": {
+                        "character_count": ["solo_hero", "multiple_team", "villain", "civilian"],
+                        "pose_action": [
+                          "heroic_landing",
+                          "mid_action_punch",
+                          "power_up_energy",
+                          "dramatic_standing",
+                          "ready_stance",
+                          "defeated_wounded"
+                        ],
+                        "costume": [
+                          "classic_spandex",
+                          "armored_tactical",
+                          "civilian_clothes",
+                          "damaged_battle_worn"
+                        ],
+                        "powers": [
+                          "energy_blasts",
+                          "lightning_electricity",
+                          "fire_flame",
+                          "cosmic_energy",
+                          "none_physical"
+                        ]
+                      }
+                    },
+                    {
+                      "id": "action_splash",
+                      "name": "Dynamic action splash",
+                      "description": "Signature comic moment"
+                    },
+                    {
+                      "id": "sequential",
+                      "name": "Sequential panels",
+                      "description": "Story progression"
+                    },
+                    {
+                      "id": "full_spread",
+                      "name": "Full page spread",
+                      "description": "Epic showcase"
+                    }
+                  ]
+                },
+                "background": {
+                  "name": "Background Complexity",
+                  "options": [
+                    "detailed_cityscape",
+                    "simple_gradient",
+                    "speed_lines",
+                    "splash_minimal",
+                    "fully_rendered"
+                  ]
+                },
+                "composition": {
+                  "name": "Composition",
+                  "options": [
+                    "dynamic_low_angle",
+                    "heroic_upward",
+                    "close_dramatic",
+                    "wide_establishing"
+                  ]
+                }
+              }
+            },
+            "todd_mcfarlane": {
+              "name": "Todd McFarlane",
+              "description": "Spider-Man, detailed webbing, dynamic poses",
+              "signature": "Intricate webbing, exaggerated anatomy",
+              "level4_technical": {},
+              "level5_specifics": {}
+            },
+            "john_romita_jr": {
+              "name": "John Romita Jr.",
+              "description": "Blocky powerful style, iconic Marvel work",
+              "signature": "Angular, powerful, distinct",
+              "level4_technical": {},
+              "level5_specifics": {}
+            },
+            "alex_ross": {
+              "name": "Alex Ross",
+              "description": "Painted photorealistic superhero art",
+              "signature": "Realistic painted, Norman Rockwell influence",
+              "level4_technical": {},
+              "level5_specifics": {}
+            }
+          }
+        },
+        "dc_style": {
+          "name": "DC Style",
+          "description": "Epic, mythological, darker tones",
+          "icon": "🦇",
+          "level3_artists": {
+            "frank_miller": {
+              "name": "Frank Miller",
+              "description": "Noir, heavy shadows, gritty Dark Knight",
+              "signature": "Heavy blacks, minimalist, noir",
+              "level4_technical": {},
+              "level5_specifics": {}
+            },
+            "dave_mckean": {
+              "name": "Dave McKean",
+              "description": "Experimental painted mixed media",
+              "signature": "Collage, texture, psychological",
+              "level4_technical": {},
+              "level5_specifics": {}
+            }
+          }
+        },
+        "image_comics": {
+          "name": "Image Comics Style",
+          "description": "Creator-driven, darker, diverse aesthetics",
+          "icon": "🎭",
+          "level3_artists": {
+            "todd_mcfarlane_spawn": {
+              "name": "Todd McFarlane (Spawn)",
+              "description": "Gothic, chains, capes, heavy shadows",
+              "level4_technical": {},
+              "level5_specifics": {}
+            }
+          }
+        },
+        "indie": {
+          "name": "Indie/Alternative",
+          "description": "Experimental, unique, personal stories",
+          "icon": "📚",
+          "level3_artists": {}
+        }
+      }
+    },
+
+    "anime": {
+      "name": "Anime/Manga",
+      "icon": "🎌",
+      "description": "Japanese animation and comic style",
+      "best_for": ["characters", "expressive", "stylized"],
+      "popularity": "high",
+      
+      "level2_types": {
+        "shonen": {
+          "name": "Shonen",
+          "description": "Action/adventure - boys' demographic",
+          "icon": "⚔️",
+          "popularity": "high",
+          
+          "level3_artists": {
+            "bones": {
+              "name": "Studio Bones",
+              "description": "My Hero Academia, dynamic action, vibrant",
+              "signature": "Fluid animation, vibrant colors",
+              "level4_technical": {
+                "technique": {
+                  "name": "Animation Technique",
+                  "options": [
+                    "digital_cell_shading",
+                    "painted_backgrounds",
+                    "2d_3d_hybrid",
+                    "high_contrast_action"
+                  ]
+                },
+                "color_grading": {
+                  "name": "Color Grading",
+                  "options": [
+                    "vibrant_saturated",
+                    "cinematic_film",
+                    "dark_moody",
+                    "soft_pastel"
+                  ]
+                },
+                "effects": {
+                  "name": "Effect Style",
+                  "options": [
+                    "particle_effects",
+                    "speed_lines",
+                    "impact_frames",
+                    "minimal_clean"
+                  ]
+                },
+                "line_art": {
+                  "name": "Line Art",
+                  "options": [
+                    "thick_bold",
+                    "thin_delicate",
+                    "varied_dynamic"
+                  ]
+                }
+              },
+              "level5_specifics": {
+                "scene_type": {
+                  "name": "Scene Type",
+                  "options": [
+                    {
+                      "id": "battle",
+                      "name": "Action battle scene",
+                      "sub_options": {
+                        "character_type": ["protagonist", "rival", "villain", "supporting"],
+                        "action_pose": [
+                          "mid_attack",
+                          "defensive_stance",
+                          "speed_dash",
+                          "energy_charging",
+                          "landing_impact",
+                          "dramatic_standing"
+                        ],
+                        "power_visual": [
+                          "fire_flames",
+                          "lightning_electric",
+                          "energy_aura",
+                          "weapon_glow",
+                          "transformation",
+                          "none_physical"
+                        ]
+                      }
+                    },
+                    "portrait_closeup",
+                    "group_team",
+                    "emotional_moment",
+                    "transformation",
+                    "daily_life"
+                  ]
+                },
+                "background": {
+                  "name": "Background Style",
+                  "options": [
+                    "detailed_painted",
+                    "simple_gradient",
+                    "speed_lines",
+                    "action_impact",
+                    "realistic_location"
+                  ]
+                },
+                "composition": {
+                  "name": "Composition",
+                  "options": [
+                    "dynamic_low_angle",
+                    "closeup_emotion",
+                    "wide_environment",
+                    "manga_panels",
+                    "single_splash"
+                  ]
+                }
+              }
+            },
+            "ufotable": {
+              "name": "Ufotable",
+              "description": "Demon Slayer, cinematic, high production, effects",
+              "signature": "Cinematic quality, beautiful backgrounds",
+              "level4_technical": {},
+              "level5_specifics": {}
+            },
+            "mappa": {
+              "name": "MAPPA",
+              "description": "Jujutsu Kaisen, Attack on Titan, detailed darker",
+              "signature": "High detail, darker tones",
+              "level4_technical": {},
+              "level5_specifics": {}
+            }
+          }
+        },
+        "shoujo": {
+          "name": "Shoujo",
+          "description": "Romance/drama - girls' demographic",
+          "icon": "💖",
+          "level3_artists": {}
+        },
+        "seinen": {
+          "name": "Seinen",
+          "description": "Mature complex themes - adult demographic",
+          "icon": "🎭",
+          "level3_artists": {}
+        },
+        "slice_of_life": {
+          "name": "Slice of Life",
+          "description": "Everyday moments, peaceful, realistic",
+          "icon": "☕",
+          "level3_artists": {
+            "studio_ghibli": {
+              "name": "Studio Ghibli",
+              "description": "Whimsical, soft colors, magical realism",
+              "signature": "Warm, gentle, nostalgic",
+              "level4_technical": {},
+              "level5_specifics": {}
+            },
+            "makoto_shinkai": {
+              "name": "Makoto Shinkai",
+              "description": "Beautiful backgrounds, dramatic skies, emotional",
+              "signature": "Photorealistic backgrounds, lighting",
+              "level4_technical": {},
+              "level5_specifics": {}
+            }
+          }
+        }
+      }
+    },
+
+    "fantasy": {
+      "name": "Fantasy Art",
+      "icon": "🐉",
+      "description": "Epic magical worlds, creatures, heroes",
+      "best_for": ["dragons", "wizards", "epic battles", "magical"],
+      "popularity": "high",
+      
+      "level2_types": {
+        "high_fantasy": {
+          "name": "High Fantasy",
+          "description": "Epic Tolkien-esque, grand quests, heroes vs evil",
+          "icon": "⚔️",
+          "popularity": "high",
+          
+          "level3_artists": {
+            "greg_rutkowski": {
+              "name": "Greg Rutkowski",
+              "description": "Epic digital paintings, dramatic lighting, detailed",
+              "signature": "Rich colors, atmospheric, concept art quality",
+              "best_for": ["characters", "environments", "dramatic scenes"],
+              "popularity": "high",
+              
+              "level4_technical": {
+                "technique": {
+                  "name": "Painting Technique",
+                  "options": [
+                    {
+                      "id": "digital_oil",
+                      "name": "Digital oil painting",
+                      "description": "His signature style",
+                      "recommended": true
+                    },
+                    "photorealistic_digital",
+                    "impressionistic_digital",
+                    "matte_painting"
+                  ]
+                },
+                "lighting": {
+                  "name": "Lighting Approach",
+                  "options": [
+                    {
+                      "id": "dramatic_volumetric",
+                      "name": "Dramatic volumetric",
+                      "description": "His specialty - god rays",
+                      "recommended": true
+                    },
+                    "golden_hour_warm",
+                    "mystical_glow",
+                    "storm_dramatic",
+                    "candlelit_fire"
+                  ]
+                },
+                "color_palette": {
+                  "name": "Color Palette",
+                  "options": [
+                    {
+                      "id": "rich_saturated",
+                      "name": "Rich saturated",
+                      "description": "Signature vibrant",
+                      "recommended": true
+                    },
+                    "muted_atmospheric",
+                    "cool_blue_purple",
+                    "warm_amber_orange",
+                    "desaturated_realistic"
+                  ]
+                },
+                "detail_level": {
+                  "name": "Detail Level",
+                  "options": [
+                    "highly_detailed",
+                    "focus_loose_bg",
+                    "simplified_mood",
+                    "maximum_everywhere"
+                  ]
+                },
+                "composition": {
+                  "name": "Composition Style",
+                  "options": [
+                    "epic_wide",
+                    "character_portrait",
+                    "environmental_story",
+                    "action_moment",
+                    "contemplative"
+                  ]
+                }
+              },
+              
+              "level5_specifics": {
+                "scene_type": {
+                  "name": "Scene Type",
+                  "options": [
+                    {
+                      "id": "character",
+                      "name": "Character Scene",
+                      "sub_options": {
+                        "character_type": [
+                          "heroic_knight",
+                          "wizard_mage",
+                          "rogue_ranger",
+                          "elven",
+                          "dwarven",
+                          "original_race"
+                        ],
+                        "action": [
+                          "heroic_standing",
+                          "mid_battle",
+                          "casting_spell",
+                          "traveling",
+                          "resting_camp",
+                          "confronting_enemy"
+                        ],
+                        "armor": [
+                          "heavy_plate",
+                          "light_leather",
+                          "mage_robes",
+                          "practical_adventurer",
+                          "royal_ornate",
+                          "battle_worn"
+                        ],
+                        "weapon": [
+                          "sword",
+                          "staff_wand",
+                          "bow_arrows",
+                          "dual_weapons",
+                          "unique_fantasy",
+                          "unarmed_magic"
+                        ]
+                      }
+                    },
+                    {
+                      "id": "creature",
+                      "name": "Creature/Monster",
+                      "sub_options": {
+                        "type": ["dragon", "griffin", "undead", "demon", "giant", "mythical"],
+                        "action": ["attacking", "flying_majestic", "guarding", "resting", "being_fought"]
+                      }
+                    },
+                    {
+                      "id": "environment",
+                      "name": "Environment Scene",
+                      "sub_options": {
+                        "location": [
+                          "castle_fortress",
+                          "mystical_forest",
+                          "mountain_pass",
+                          "magical_city",
+                          "dungeon_ruins",
+                          "otherworldly_realm"
+                        ],
+                        "atmosphere": [
+                          "epic_golden_hour",
+                          "mystical_fog",
+                          "storm_approaching",
+                          "magical_aurora",
+                          "peaceful_serene",
+                          "ominous_dark"
+                        ]
+                      }
+                    },
+                    {
+                      "id": "action_battle",
+                      "name": "Action/Battle",
+                      "sub_options": {
+                        "type": [
+                          "hero_vs_monster",
+                          "army_battle",
+                          "wizard_duel",
+                          "dragon_attack",
+                          "siege",
+                          "skirmish"
+                        ],
+                        "intensity": ["calm_before", "mid_action", "climactic", "aftermath"]
+                      }
+                    }
+                  ]
+                },
+                "composition_details": {
+                  "name": "Composition Details",
+                  "framing": ["wide_epic", "medium_character", "closeup_portrait", "environmental_story"],
+                  "perspective": ["eye_level", "low_heroic", "high_overview", "dramatic_angle"],
+                  "background": ["highly_detailed", "atmospheric_simple", "bokeh_blur", "minimal_focus"]
+                }
+              }
+            },
+            "john_howe": {
+              "name": "John Howe",
+              "description": "Tolkien illustrator, medieval accuracy, intricate",
+              "signature": "Detailed, classical, muted palette",
+              "level4_technical": {},
+              "level5_specifics": {}
+            },
+            "alan_lee": {
+              "name": "Alan Lee",
+              "description": "Tolkien illustrator, watercolor-like, ethereal",
+              "signature": "Soft, dreamy, delicate",
+              "level4_technical": {},
+              "level5_specifics": {}
+            }
+          }
+        },
+        "dark_fantasy": {
+          "name": "Dark Fantasy",
+          "description": "Gothic, gritty, morally ambiguous",
+          "icon": "🌑",
+          "level3_artists": {
+            "gerald_brom": {
+              "name": "Gerald Brom",
+              "description": "Dark gothic, demons, twisted beauty",
+              "signature": "Beautiful horror, oil painting style",
+              "level4_technical": {},
+              "level5_specifics": {}
+            },
+            "mike_mignola": {
+              "name": "Mike Mignola",
+              "description": "Heavy shadows, minimalist, Hellboy",
+              "signature": "Strong silhouettes, limited palette",
+              "level4_technical": {},
+              "level5_specifics": {}
+            }
+          }
+        },
+        "fairy_tale": {
+          "name": "Fairy Tale Fantasy",
+          "description": "Whimsical, storybook, enchanted",
+          "icon": "🧚",
+          "level3_artists": {
+            "brian_froud": {
+              "name": "Brian Froud",
+              "description": "Detailed fairies, goblins, nature spirits",
+              "signature": "Intricate, earthy, whimsical",
+              "level4_technical": {},
+              "level5_specifics": {}
+            }
+          }
+        },
+        "urban_fantasy": {
+          "name": "Urban Fantasy",
+          "description": "Magic in modern world, contemporary",
+          "icon": "🌃",
+          "level3_artists": {}
+        },
+        "mythology": {
+          "name": "Mythology/Folklore",
+          "description": "Gods, legends, cultural myths",
+          "icon": "🏛️",
+          "level3_artists": {}
+        }
+      }
+    },
+
+    "horror": {
+      "name": "Horror",
+      "icon": "😱",
+      "description": "Dark, terrifying, unsettling imagery",
+      "best_for": ["monsters", "psychological", "gore", "atmosphere"],
+      "popularity": "medium",
+      
+      "level2_types": {
+        "gothic": {
+          "name": "Gothic Horror",
+          "description": "Victorian, castles, atmospheric dread",
+          "icon": "🦇",
+          "level3_artists": {
+            "bernie_wrightson": {
+              "name": "Bernie Wrightson",
+              "description": "Detailed pen & ink, Frankenstein illustrator",
+              "signature": "Intricate crosshatching, classic horror",
+              "level4_technical": {},
+              "level5_specifics": {}
+            },
+            "edward_gorey": {
+              "name": "Edward Gorey",
+              "description": "Victorian macabre, darkly whimsical",
+              "signature": "Crosshatching, morbid humor",
+              "level4_technical": {},
+              "level5_specifics": {}
+            }
+          }
+        },
+        "body_horror": {
+          "name": "Body Horror",
+          "description": "Physical transformation, grotesque, visceral",
+          "icon": "🧬",
+          "popularity": "medium",
+          
+          "level3_artists": {
+            "hr_giger": {
+              "name": "H.R. Giger",
+              "description": "Biomechanical, surreal, Alien designer",
+              "signature": "Airbrush, nightmarish, sexual horror",
+              "popularity": "high",
+              
+              "level4_technical": {
+                "medium": {
+                  "name": "Medium Approach",
+                  "options": [
+                    {
+                      "id": "airbrush",
+                      "name": "Airbrush",
+                      "description": "His signature technique",
+                      "recommended": true
+                    },
+                    "digital_airbrush",
+                    "pencil_ink",
+                    "mixed_media"
+                  ]
+                },
+                "biomech_style": {
+                  "name": "Biomechanical Style",
+                  "options": [
+                    {
+                      "id": "heavily_biomech",
+                      "name": "Heavily biomechanical",
+                      "description": "Signature fusion",
+                      "recommended": true
+                    },
+                    "moderate_organic_mech",
+                    "more_organic_less_mech",
+                    "pure_biological"
+                  ]
+                },
+                "composition": {
+                  "name": "Composition",
+                  "options": [
+                    {
+                      "id": "symmetrical",
+                      "name": "Symmetrical",
+                      "description": "His preference",
+                      "recommended": true
+                    },
+                    "asymmetric_chaos",
+                    "central_figure",
+                    "environmental"
+                  ]
+                },
+                "detail": {
+                  "name": "Detail Level",
+                  "options": [
+                    "extreme_intricate",
+                    "focused_atmospheric",
+                    "simplified_impact"
+                  ]
+                },
+                "color": {
+                  "name": "Color Treatment",
+                  "options": [
+                    {
+                      "id": "monochrome",
+                      "name": "Monochrome",
+                      "description": "Classic Giger",
+                      "recommended": true
+                    },
+                    "blue_grey",
+                    "sickly_organic",
+                    "high_contrast_bw"
+                  ]
+                }
+              },
+              
+              "level5_specifics": {
+                "subject": {
+                  "name": "Subject Type",
+                  "creature": {
+                    "type": [
+                      "xenomorph_alien",
+                      "original_biomech",
+                      "human_transformation",
+                      "abstract_entity",
+                      "biomech_environment"
+                    ],
+                    "features": [
+                      "elongated_head",
+                      "multiple_limbs",
+                      "mechanical_integration",
+                      "skeletal_ribbed",
+                      "sexual_horror",
+                      "tubes_pipes"
+                    ]
+                  }
+                },
+                "setting": {
+                  "name": "Setting",
+                  "options": [
+                    "alien_spacecraft",
+                    "biomech_temple",
+                    "industrial_nightmare",
+                    "organic_walls",
+                    "void_space",
+                    "birth_chamber"
+                  ]
+                },
+                "pose": {
+                  "name": "Pose/Action",
+                  "options": [
+                    "standing_looming",
+                    "emerging_walls",
+                    "attacking",
+                    "birth_transformation",
+                    "symmetrical_display"
+                  ]
+                },
+                "atmosphere": {
+                  "name": "Atmosphere",
+                  "options": [
+                    "dark_highlights",
+                    "foggy_atmospheric",
+                    "stark_contrast",
+                    "industrial_cold"
+                  ]
+                }
+              }
+            },
+            "junji_ito": {
+              "name": "Junji Ito",
+              "description": "Manga body horror, spirals, extreme detail",
+              "signature": "B&W, detailed grotesque, unsettling",
+              "level4_technical": {},
+              "level5_specifics": {}
+            },
+            "clive_barker": {
+              "name": "Clive Barker",
+              "description": "Visceral, grotesque, Cenobites",
+              "signature": "Extreme body horror",
+              "level4_technical": {},
+              "level5_specifics": {}
+            }
+          }
+        },
+        "cosmic_horror": {
+          "name": "Cosmic Horror",
+          "description": "Lovecraftian, incomprehensible, existential",
+          "icon": "🌌",
+          "level3_artists": {
+            "zdzislaw_beksinski": {
+              "name": "Zdzisław Beksiński",
+              "description": "Apocalyptic surreal nightmarish landscapes",
+              "signature": "Disturbing beauty, no living things",
+              "level4_technical": {},
+              "level5_specifics": {}
+            }
+          }
+        },
+        "psychological": {
+          "name": "Psychological Horror",
+          "description": "Mental terror, unsettling, subtle",
+          "icon": "🧠",
+          "level3_artists": {}
+        }
+      }
+    },
+
+    "scifi": {
+      "name": "Sci-Fi Art",
+      "icon": "🤖",
+      "description": "Futuristic technology, space, advanced civilizations",
+      "best_for": ["spaceships", "cities", "technology", "aliens"],
+      "popularity": "high",
+      
+      "level2_types": {
+        "cyberpunk": {
+          "name": "Cyberpunk",
+          "description": "Dystopian cities, neon, high-tech low-life",
+          "icon": "🌃",
+          "popularity": "high",
+          
+          "level3_artists": {
+            "syd_mead": {
+              "name": "Syd Mead",
+              "description": "Blade Runner, clean futuristic design, vehicles",
+              "signature": "Industrial design, sleek, functional",
+              "best_for": ["vehicles", "architecture", "industrial design"],
+              "popularity": "high",
+              
+              "level4_technical": {
+                "design_philosophy": {
+                  "name": "Design Philosophy",
+                  "options": [
+                    {
+                      "id": "industrial_accurate",
+                      "name": "Industrial design accuracy",
+                      "description": "His signature approach",
+                      "recommended": true
+                    },
+                    "conceptual_exploration",
+                    "atmospheric_scene",
+                    "technical_blueprint"
+                  ]
+                },
+                "rendering": {
+                  "name": "Rendering Style",
+                  "options": [
+                    "clean_marker",
+                    "digital_painted",
+                    "sketch_like",
+                    "photorealistic"
+                  ]
+                },
+                "detail": {
+                  "name": "Detail Level",
+                  "options": [
+                    "highly_technical",
+                    "focus_key_elements",
+                    "atmospheric_broad"
+                  ]
+                },
+                "color": {
+                  "name": "Color Approach",
+                  "options": [
+                    {
+                      "id": "muted_industrial",
+                      "name": "Muted industrial",
+                      "description": "Blade Runner palette",
+                      "recommended": true
+                    },
+                    "vibrant_saturated",
+                    "monochrome_technical",
+                    "neon_accents"
+                  ]
+                },
+                "composition": {
+                  "name": "Composition",
+                  "options": [
+                    "vehicle_showcase",
+                    "environmental_story",
+                    "character_tech_world",
+                    "pure_landscape"
+                  ]
+                }
+              },
+              
+              "level5_specifics": {
+                "subject_focus": {
+                  "name": "Subject Focus",
+                  "options": [
+                    {
+                      "id": "vehicle",
+                      "name": "Vehicle Design",
+                      "types": [
+                        "flying_car_spinner",
+                        "ground_vehicle",
+                        "motorcycle",
+                        "public_transport",
+                        "industrial_commercial"
+                      ]
+                    },
+                    {
+                      "id": "architecture",
+                      "name": "Architecture",
+                      "types": [
+                        "megacity_buildings",
+                        "interior_spaces",
+                        "street_level",
+                        "corporate_towers",
+                        "industrial_functional"
+                      ]
+                    },
+                    {
+                      "id": "character",
+                      "name": "Character in Environment",
+                      "types": [
+                        "person_with_vehicle",
+                        "figure_cityscape",
+                        "worker_industrial",
+                        "pure_environment"
+                      ]
+                    }
+                  ]
+                },
+                "setting": {
+                  "name": "Setting Details",
+                  "options": [
+                    {
+                      "id": "rain_soaked",
+                      "name": "Rain-soaked streets",
+                      "description": "Blade Runner signature",
+                      "recommended": true
+                    },
+                    "dry_industrial",
+                    "interior_space",
+                    "rooftop_elevated",
+                    "underground_lower"
+                  ]
+                },
+                "time": {
+                  "name": "Time of Day",
+                  "options": [
+                    {
+                      "id": "night_neon",
+                      "name": "Night/neon lit",
+                      "description": "Signature cyberpunk",
+                      "recommended": true
+                    },
+                    "dusk_twilight",
+                    "day_uncommon",
+                    "perpetual_artificial"
+                  ]
+                },
+                "atmosphere": {
+                  "name": "Atmosphere",
+                  "options": [
+                    "rain_neon_reflections",
+                    "fog_smog_haze",
+                    "clean_industrial",
+                    "crowded_urban",
+                    "empty_dystopian"
+                  ]
+                },
+                "tech_era": {
+                  "name": "Tech Era",
+                  "options": [
+                    "near_future_20_50",
+                    "far_future_100plus",
+                    "retro_future_80s",
+                    "timeless_industrial"
+                  ]
+                }
+              }
+            },
+            "simon_stalenhag": {
+              "name": "Simon Stålenhag",
+              "description": "Retro sci-fi in rural settings, melancholic",
+              "signature": "80s tech, Swedish landscapes",
+              "level4_technical": {},
+              "level5_specifics": {}
+            },
+            "blade_runner_aesthetic": {
+              "name": "Blade Runner Aesthetic",
+              "description": "Noir cyber, rain-soaked, dense detail",
+              "signature": "Atmospheric, lived-in future",
+              "level4_technical": {},
+              "level5_specifics": {}
+            }
+          }
+        },
+        "space_opera": {
+          "name": "Space Opera",
+          "description": "Grand space adventures, epic battles, diverse aliens",
+          "icon": "🚀",
+          "level3_artists": {
+            "john_berkey": {
+              "name": "John Berkey",
+              "description": "Grand space battles, impressionistic, Star Wars",
+              "signature": "Loose painterly, massive scale",
+              "level4_technical": {},
+              "level5_specifics": {}
+            },
+            "chris_foss": {
+              "name": "Chris Foss",
+              "description": "Colorful massive spacecraft, 70s sci-fi",
+              "signature": "Vibrant, unique designs",
+              "level4_technical": {},
+              "level5_specifics": {}
+            }
+          }
+        },
+        "hard_scifi": {
+          "name": "Hard Sci-Fi",
+          "description": "Realistic science, plausible tech, grounded",
+          "icon": "🔬",
+          "level3_artists": {}
+        },
+        "dystopian": {
+          "name": "Dystopian/Post-Apocalyptic",
+          "description": "Collapsed society, wasteland, survival",
+          "icon": "☢️",
+          "level3_artists": {}
+        },
+        "retro_futurism": {
+          "name": "Retro-Futurism",
+          "description": "50s-80s vision of future, nostalgic",
+          "icon": "📻",
+          "level3_artists": {
+            "chris_foss_retro": {
+              "name": "Chris Foss",
+              "description": "70s book covers, colorful, geometric",
+              "level4_technical": {},
+              "level5_specifics": {}
+            },
+            "moebius": {
+              "name": "Moebius",
+              "description": "Detailed line work, French comics, surreal",
+              "signature": "Intricate, imaginative",
+              "level4_technical": {},
+              "level5_specifics": {}
+            }
+          }
+        }
+      }
+    },
+
+    "oil_painting": {
+      "name": "Oil/Traditional Painting",
+      "icon": "🎨",
+      "description": "Classical painting techniques and styles",
+      "best_for": ["fine art", "portraits", "classical"],
+      "popularity": "medium",
+      
+      "level2_types": {
+        "renaissance": {
+          "name": "Renaissance",
+          "description": "Classical Italian masters, realistic",
+          "level3_artists": {
+            "caravaggio": {
+              "name": "Caravaggio",
+              "description": "Dramatic chiaroscuro, intense realism",
+              "level4_technical": {},
+              "level5_specifics": {}
+            }
+          }
+        },
+        "baroque": {
+          "name": "Baroque",
+          "description": "Dramatic, ornate, emotional",
+          "level3_artists": {
+            "rembrandt": {
+              "name": "Rembrandt",
+              "description": "Master of light and shadow, portraits",
+              "level4_technical": {},
+              "level5_specifics": {}
+            },
+            "vermeer": {
+              "name": "Vermeer",
+              "description": "Soft natural light, domestic scenes",
+              "level4_technical": {},
+              "level5_specifics": {}
+            }
+          }
+        },
+        "impressionism": {
+          "name": "Impressionism",
+          "description": "Loose brushwork, light effects, outdoor",
+          "level3_artists": {
+            "monet": {
+              "name": "Claude Monet",
+              "description": "Master of light, water lilies, gardens",
+              "level4_technical": {},
+              "level5_specifics": {}
+            }
+          }
+        }
+      }
+    },
+
+    "digital_illustration": {
+      "name": "Digital Illustration",
+      "icon": "💻",
+      "description": "Modern digital art and illustration",
+      "best_for": ["character design", "concept art", "modern"],
+      "popularity": "high",
+      
+      "level2_types": {
+        "semi_realistic": {
+          "name": "Semi-Realistic",
+          "description": "Stylized but detailed, modern digital",
+          "level3_artists": {
+            "loish": {
+              "name": "Loish",
+              "description": "Expressive characters, vibrant colors",
+              "level4_technical": {},
+              "level5_specifics": {}
+            },
+            "ross_tran": {
+              "name": "Ross Tran",
+              "description": "Cinematic lighting, atmospheric",
+              "level4_technical": {},
+              "level5_specifics": {}
+            },
+            "wlop": {
+              "name": "WLOP",
+              "description": "Detailed character art, fantasy",
+              "level4_technical": {},
+              "level5_specifics": {}
+            }
+          }
+        },
+        "concept_art": {
+          "name": "Concept Art",
+          "description": "Professional game/film concept design",
+          "level3_artists": {}
+        }
+      }
+    },
+
+    "architecture": {
+      "name": "Architectural Visualization",
+      "icon": "🏛️",
+      "description": "Building design and architectural rendering",
+      "best_for": ["buildings", "interiors", "design"],
+      "popularity": "medium",
+      
+      "level2_types": {
+        "modern": {
+          "name": "Modern Architecture",
+          "description": "Contemporary clean design",
+          "level3_artists": {}
+        },
+        "classical": {
+          "name": "Classical Architecture",
+          "description": "Historical ornate styles",
+          "level3_artists": {}
+        },
+        "futuristic": {
+          "name": "Futuristic Architecture",
+          "description": "Sci-fi building concepts",
+          "level3_artists": {}
+        }
+      }
+    },
+
+    "video_game": {
+      "name": "Video Game Art",
+      "icon": "🎮",
+      "description": "Game-style graphics and aesthetics",
+      "best_for": ["game characters", "environments", "UI"],
+      "popularity": "high",
+      
+      "level2_types": {
+        "pixel_art": {
+          "name": "Pixel Art",
+          "description": "Retro pixel graphics",
+          "level3_artists": {}
+        },
+        "low_poly": {
+          "name": "Low Poly",
+          "description": "Geometric minimalist 3D",
+          "level3_artists": {}
+        },
+        "realistic_3d": {
+          "name": "Realistic 3D",
+          "description": "Modern AAA game graphics",
+          "level3_artists": {}
+        }
+      }
+    }
+  },
+
+  "universal_options": {
+    "description": "Options that work across all main categories",
+    
+    "mood": {
+      "core": [
+        {
+          "id": "dramatic",
+          "name": "Dramatic",
+          "description": "Intense, powerful, striking"
+        },
+        {
+          "id": "peaceful",
+          "name": "Peaceful",
+          "description": "Serene, calm, tranquil"
+        },
+        {
+          "id": "mysterious",
+          "name": "Mysterious",
+          "description": "Enigmatic, shadowy, intriguing"
+        },
+        {
+          "id": "energetic",
+          "name": "Energetic",
+          "description": "Dynamic, vibrant, lively"
+        },
+        {
+          "id": "melancholic",
+          "name": "Melancholic",
+          "description": "Wistful, nostalgic, bittersweet"
+        },
+        {
+          "id": "elegant",
+          "name": "Elegant",
+          "description": "Sophisticated, refined, graceful"
+        }
+      ],
+      "by_category": {
+        "fantasy": ["epic", "heroic", "magical", "whimsical", "dark_ominous", "adventurous"],
+        "horror": ["terrifying", "unsettling", "eerie", "grotesque", "dread_filled"],
+        "scifi": ["futuristic", "dystopian", "optimistic", "industrial", "alien"],
+        "comic_book": ["heroic", "action_packed", "gritty", "campy"],
+        "anime": ["kawaii", "epic", "emotional", "badass"]
+      }
+    },
+
+    "lighting": {
+      "core": [
+        {
+          "id": "golden_hour",
+          "name": "Golden Hour",
+          "description": "Warm sunset/sunrise light, flattering",
+          "popularity": "high"
+        },
+        {
+          "id": "blue_hour",
+          "name": "Blue Hour",
+          "description": "Cool twilight, moody, atmospheric"
+        },
+        {
+          "id": "dramatic",
+          "name": "Dramatic",
+          "description": "High contrast with strong shadows"
+        },
+        {
+          "id": "soft_diffused",
+          "name": "Soft Diffused",
+          "description": "Even, gentle, flattering"
+        },
+        {
+          "id": "volumetric",
+          "name": "Volumetric",
+          "description": "Visible light rays, god rays, atmospheric"
+        },
+        {
+          "id": "neon",
+          "name": "Neon",
+          "description": "Artificial colored lights, cyberpunk"
+        },
+        {
+          "id": "candlelight",
+          "name": "Candlelight",
+          "description": "Warm flickering, intimate"
+        },
+        {
+          "id": "studio",
+          "name": "Studio",
+          "description": "Professional controlled lighting"
+        },
+        {
+          "id": "backlighting",
+          "name": "Backlighting",
+          "description": "Light behind subject, silhouette"
+        },
+        {
+          "id": "rim_lighting",
+          "name": "Rim Lighting",
+          "description": "Edges highlighted, dramatic separation"
+        },
+        {
+          "id": "chiaroscuro",
+          "name": "Chiaroscuro",
+          "description": "Strong light/dark contrast, Rembrandt style"
+        }
+      ]
+    },
+
+    "time_of_day": {
+      "options": [
+        {
+          "id": "dawn",
+          "name": "Dawn",
+          "description": "Early morning, soft light, hopeful"
+        },
+        {
+          "id": "morning",
+          "name": "Morning",
+          "description": "Mid-morning, bright clear, energetic"
+        },
+        {
+          "id": "noon",
+          "name": "Noon",
+          "description": "Midday, harsh overhead, bright"
+        },
+        {
+          "id": "afternoon",
+          "name": "Afternoon",
+          "description": "Late afternoon, warm angled"
+        },
+        {
+          "id": "golden_hour",
+          "name": "Golden Hour",
+          "description": "Hour before sunset, magical warm"
+        },
+        {
+          "id": "dusk",
+          "name": "Dusk/Twilight",
+          "description": "After sunset, purple-blue, mysterious"
+        },
+        {
+          "id": "night",
+          "name": "Night",
+          "description": "Dark, artificial or moon lighting"
+        },
+        {
+          "id": "blue_hour",
+          "name": "Blue Hour",
+          "description": "Deep twilight, cool blue, cinematic"
+        }
+      ]
+    },
+
+    "weather_atmosphere": {
+      "options": [
+        {
+          "id": "sunny",
+          "name": "Sunny",
+          "description": "Clear bright, vibrant, high contrast"
+        },
+        {
+          "id": "overcast",
+          "name": "Overcast",
+          "description": "Cloudy, soft even light, subdued"
+        },
+        {
+          "id": "rainy",
+          "name": "Rainy",
+          "description": "Rain, wet surfaces, reflections, moody"
+        },
+        {
+          "id": "stormy",
+          "name": "Stormy",
+          "description": "Dark clouds, lightning, dramatic"
+        },
+        {
+          "id": "foggy",
+          "name": "Foggy/Misty",
+          "description": "Reduced visibility, mysterious, ethereal"
+        },
+        {
+          "id": "snowy",
+          "name": "Snowy",
+          "description": "Falling snow or snowy landscape, peaceful"
+        },
+        {
+          "id": "windy",
+          "name": "Windy",
+          "description": "Movement from wind, dynamic"
+        },
+        {
+          "id": "hazy",
+          "name": "Hazy",
+          "description": "Soft atmospheric haze, dreamy"
+        }
+      ]
+    },
+
+    "color_palettes": {
+      "options": [
+        {
+          "id": "warm_tones",
+          "name": "Warm Tones",
+          "colors": ["orange", "red", "yellow", "amber"],
+          "feel": "Inviting, energetic, passionate"
+        },
+        {
+          "id": "cool_tones",
+          "name": "Cool Tones",
+          "colors": ["blue", "cyan", "purple", "teal"],
+          "feel": "Calm, professional, mysterious"
+        },
+        {
+          "id": "monochrome",
+          "name": "Monochrome",
+          "colors": ["black and white", "grayscale"],
+          "feel": "Classic, dramatic, timeless"
+        },
+        {
+          "id": "pastel",
+          "name": "Pastel",
+          "colors": ["soft pink", "mint", "lavender", "cream"],
+          "feel": "Gentle, dreamy, whimsical"
+        },
+        {
+          "id": "vibrant",
+          "name": "Vibrant",
+          "colors": ["electric blue", "hot pink", "lime green", "bright yellow"],
+          "feel": "Bold, energetic, modern"
+        },
+        {
+          "id": "earth_tones",
+          "name": "Earth Tones",
+          "colors": ["brown", "forest green", "ochre", "terracotta"],
+          "feel": "Natural, grounded, organic"
+        },
+        {
+          "id": "neon",
+          "name": "Neon",
+          "colors": ["neon pink", "electric blue", "acid green"],
+          "feel": "Cyberpunk, urban, futuristic"
+        },
+        {
+          "id": "muted",
+          "name": "Muted/Desaturated",
+          "colors": ["dusty rose", "sage", "slate blue", "taupe"],
+          "feel": "Sophisticated, vintage, elegant"
+        },
+        {
+          "id": "golden",
+          "name": "Golden",
+          "colors": ["gold", "amber", "bronze", "honey"],
+          "feel": "Luxurious, warm, regal"
+        },
+        {
+          "id": "jewel_tones",
+          "name": "Jewel Tones",
+          "colors": ["emerald", "sapphire", "ruby", "amethyst"],
+          "feel": "Rich, luxurious, dramatic"
+        }
+      ]
+    },
+
+    "camera_effects": {
+      "options": [
+        {
+          "id": "bokeh",
+          "name": "Bokeh",
+          "description": "Blurred background with sharp subject"
+        },
+        {
+          "id": "depth_of_field",
+          "name": "Depth of Field",
+          "description": "Selective focus creating depth"
+        },
+        {
+          "id": "motion_blur",
+          "name": "Motion Blur",
+          "description": "Movement captured with blur"
+        },
+        {
+          "id": "lens_flare",
+          "name": "Lens Flare",
+          "description": "Light streaks from bright source"
+        },
+        {
+          "id": "vignette",
+          "name": "Vignette",
+          "description": "Darkened edges, focused center"
+        },
+        {
+          "id": "tilt_shift",
+          "name": "Tilt-Shift",
+          "description": "Miniature-like selective focus"
+        },
+        {
+          "id": "long_exposure",
+          "name": "Long Exposure",
+          "description": "Smooth water, light trails"
+        },
+        {
+          "id": "film_grain",
+          "name": "Film Grain",
+          "description": "Vintage texture and feel"
+        }
+      ]
+    },
+
+    "composition": {
+      "options": [
+        {
+          "id": "portrait",
+          "name": "Portrait",
+          "description": "Close shot, face/upper body focus"
+        },
+        {
+          "id": "full_body",
+          "name": "Full Body",
+          "description": "Complete view head to toe"
+        },
+        {
+          "id": "wide_angle",
+          "name": "Wide Angle",
+          "description": "Broad environmental view"
+        },
+        {
+          "id": "closeup",
+          "name": "Close-up",
+          "description": "Very tight focus on details"
+        },
+        {
+          "id": "rule_of_thirds",
+          "name": "Rule of Thirds",
+          "description": "Subject at intersection points"
+        },
+        {
+          "id": "symmetrical",
+          "name": "Symmetrical",
+          "description": "Centered with mirror balance"
+        },
+        {
+          "id": "low_angle",
+          "name": "Low Angle",
+          "description": "Camera looking up, powerful"
+        },
+        {
+          "id": "high_angle",
+          "name": "High Angle",
+          "description": "Camera looking down"
+        },
+        {
+          "id": "over_shoulder",
+          "name": "Over the Shoulder",
+          "description": "View from behind shoulder"
+        },
+        {
+          "id": "birds_eye",
+          "name": "Bird's Eye View",
+          "description": "Directly from above"
+        },
+        {
+          "id": "dutch_angle",
+          "name": "Dutch Angle",
+          "description": "Tilted camera, dynamic"
+        }
+      ]
+    }
+  },
+
+  "quality_tags": {
+    "flux": {
+      "description": "Flux doesn't need quality tags - just descriptive prose",
+      "recommended": []
+    },
+    "sdxl": {
+      "description": "SDXL benefits from quality tags at start",
+      "recommended": [
+        "masterpiece",
+        "best quality",
+        "highres",
+        "extremely detailed",
+        "8k uhd",
+        "sharp focus",
+        "professional"
+      ]
+    }
+  }
+}

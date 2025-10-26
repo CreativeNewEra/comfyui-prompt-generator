@@ -119,12 +119,28 @@ Your complete project package includes:
 - **Flux Dev**: Natural language prompts with detailed scene descriptions
 - **SDXL (Juggernaut)**: Quality-tagged prompts with negative prompt generation
 
-### 🎨 Intelligent Preset System
-Choose from 61 curated presets across four categories:
-- **Styles**: Cinematic, Anime, Photorealistic, Oil Painting, Cyberpunk, and more
-- **Artists/Photographers**: Greg Rutkowski, Ansel Adams, Studio Ghibli, and more
-- **Composition**: Portrait, Landscape, Bird's Eye View, Golden Ratio, and more
-- **Lighting**: Golden Hour, Volumetric, Studio Lighting, Neon, and more
+### 🎨 Hierarchical Preset System
+Choose from **50+ professional artists and styles** across 6 main categories with intelligent cascading selection:
+
+**Main Categories:**
+- **📸 Photography**: Portrait, Landscape, Street, Fashion, Wildlife, Macro
+- **🎨 Comic Book Art**: Marvel, DC, Manga, Indie styles
+- **🎌 Anime/Manga**: Shonen, Shojo, Studio Ghibli, Seinen
+- **🐉 Fantasy Art**: High Fantasy, Dark Fantasy, Fairy Tale
+- **😱 Horror**: Gothic, Body Horror, Cosmic Horror, Folk Horror
+- **🤖 Sci-Fi Art**: Cyberpunk, Space Opera, Hard Sci-Fi, Retro-Futurism
+
+**Smart Features:**
+- **Cascading Dropdowns**: Category → Type → Artist (progressive loading)
+- **⚡ Preset Packs**: One-click professional setups (90s X-Men, Studio Ghibli, Blade Runner, etc.)
+- **🌟 Universal Options**: Mood, Time of Day, Lighting, Weather, Color Palettes, Camera Effects
+- **🔥 Popular Indicators**: Highly-rated options marked for easy discovery
+- **Feature Flag**: Toggle between hierarchical and legacy flat presets
+
+**Examples:**
+- Photography > Portrait > Annie Leibovitz + Golden Hour + Dramatic mood
+- Fantasy > High Fantasy > Greg Rutkowski + Epic atmosphere + Stormy weather
+- Sci-Fi > Cyberpunk > Syd Mead + Night + Neon lighting + Rainy
 
 ### 💾 Prompt History & Management
 - **SQLite Database**: Automatically saves all generated prompts

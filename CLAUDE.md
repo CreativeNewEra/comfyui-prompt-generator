@@ -124,6 +124,10 @@ All routes return JSON error responses with `error`, `message`, `status`, and `t
 - Trimming happens in `/chat` and `/chat-stream` routes when conversation exceeds 21 messages
 
 ### Preset System
+
+The application supports **two preset systems** (toggled via feature flag):
+
+#### **Legacy Preset System** (Default for backward compatibility)
 The application includes 61 curated presets stored in `presets.json`:
 - **styles**: 14 options (Cinematic, Anime, Photorealistic, etc.)
 - **artists**: 18 options (Greg Rutkowski, Ansel Adams, Studio Ghibli, etc.)
@@ -135,6 +139,99 @@ The `/presets` endpoint reloads the file on each request, enabling hot-reload wi
 Each preset is optional - all default to "None" with empty string value.
 
 **Hot-Reload Feature**: Edit `presets.json` and refresh the browser to see changes immediately - no server restart needed!
+
+#### **Hierarchical Preset System** (New in v2.0)
+
+**Enabling the System**:
+Set `ENABLE_HIERARCHICAL_PRESETS=true` in `.env` file and restart the application.
+
+**File Structure**:
+- **Legacy**: `presets.json` (flat 4-category structure)
+- **Hierarchical**: `hierarchical_presets.json` (5-level nested structure)
+
+**Key Features**:
+- **50+ Professional Artists** across 6 main categories (Photography, Comic Art, Anime, Fantasy, Horror, Sci-Fi)
+- **Progressive Loading**: 3 cascading dropdowns (Category → Type → Artist)
+- **Preset Packs**: 5 quick-start professional combinations (one-click setup)
+- **Universal Options**: Mood, time, lighting, weather, colors, camera effects (works across all categories)
+- **Feature Flag Toggle**: Switch between systems without code changes
+
+**New API Routes** (lines 1671-2087):
+```python
+GET /api/categories                                          # Level 1: Main categories
+GET /api/categories/<id>/types                               # Level 2: Types within category
+GET /api/categories/<cat_id>/types/<type_id>/artists         # Level 3: Artists
+GET /api/preset-packs                                        # Quick-start combinations
+GET /api/universal-options                                   # Cross-cutting options
+```
+
+**Backend Implementation**:
+```python
+# Feature flag (line 76)
+ENABLE_HIERARCHICAL_PRESETS = os.getenv('ENABLE_HIERARCHICAL_PRESETS', 'false').lower() in ('true', '1', 'yes')
+
+# Dual file paths (lines 631-635)
+LEGACY_PRESETS_FILE = 'presets.json'
+HIERARCHICAL_PRESETS_FILE = 'hierarchical_presets.json'
+PRESETS_FILE = HIERARCHICAL_PRESETS_FILE if ENABLE_HIERARCHICAL_PRESETS else LEGACY_PRESETS_FILE
+
+# Dynamic loading (line 648+)
+def load_presets():
+    """Loads appropriate preset file based on feature flag"""
+    preset_type = "hierarchical" if ENABLE_HIERARCHICAL_PRESETS else "legacy"
+    # Validates structure and logs loaded counts
+
+# Enhanced prompt building (lines 894-1052)
+def build_hierarchical_prompt(user_input, selections, presets_data):
+    """
+    Builds enhanced prompt from hierarchical selections
+    Args:
+        user_input (str): User's image idea
+        selections (dict): {level1, level2, level3, universal}
+        presets_data (dict): Full hierarchical presets JSON
+    Returns:
+        str: Enhanced prompt with artist descriptions and atmospheric settings
+    """
+```
+
+**Frontend Implementation** (`templates/index.html`):
+```javascript
+// State management (lines 1665-1669)
+let hierarchicalEnabled = false;
+let currentCategoryId = '';
+let currentTypeId = '';
+let currentArtistId = '';
+
+// Progressive loading (lines 1671-1800)
+async function loadCategories() { /* Fetch and populate categories */ }
+async function loadTypes(categoryId) { /* Fetch types for category */ }
+async function loadArtists(categoryId, typeId) { /* Fetch artists */ }
+
+// Preset packs (lines 1954-2022)
+async function loadPresetPacks() { /* Display quick-start buttons */ }
+async function applyPresetPack(pack) { /* Auto-fill dropdowns */ }
+
+// Universal options (lines 1864-1952)
+async function loadUniversalOptions() { /* Populate mood, time, lighting, etc. */ }
+
+// Payload generation (lines 2463-2518)
+if (hierarchicalEnabled) {
+    basePayload.selections = {
+        level1: currentCategoryId,
+        level2: currentTypeId,
+        level3: currentArtistId,
+        universal: { /* mood, time, lighting, weather, colors, camera */ }
+    };
+}
+```
+
+**Migration Scripts**:
+- `migrate_presets.py` - Safely install hierarchical system with backup
+- `rollback_presets.py` - Revert to legacy system in one command
+
+**Testing**:
+- `test_api_routes.py` - Validates all 7 hierarchical API routes
+- Run: `python test_api_routes.py` (requires `ENABLE_HIERARCHICAL_PRESETS=true`)
 
 ### Database System
 The application uses SQLite to persist prompt generation history:

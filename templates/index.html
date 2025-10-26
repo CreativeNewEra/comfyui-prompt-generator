@@ -623,6 +623,48 @@
             animation: preset-highlight 0.6s ease;
         }
 
+        /* Preset Packs Grid */
+        .preset-packs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .preset-pack-btn {
+            padding: 15px;
+            border: 2px solid var(--preset-border);
+            border-radius: 8px;
+            background: var(--preset-bg);
+            color: var(--text-primary);
+            font-size: 0.95em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .preset-pack-btn:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .preset-pack-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+
+        .preset-pack-icon {
+            font-size: 2em;
+            margin-bottom: 8px;
+        }
+
+        .preset-pack-name {
+            font-weight: 500;
+        }
+
         /* History Modal Styles */
         .history-overlay {
             display: none;
@@ -1259,29 +1301,56 @@
             </div>
 
             <div class="presets-section">
-                <h3>🎨 Presets (Optional)</h3>
+                <h3>🎨 Hierarchical Presets (Optional)</h3>
+                <p style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: 15px;">
+                    Select category → type → artist for detailed presets
+                </p>
                 <div class="presets-grid">
+                    <div class="preset-group">
+                        <label for="categorySelect">📂 Category:</label>
+                        <select id="categorySelect" class="preset-select">
+                            <option value="">None</option>
+                        </select>
+                    </div>
+
+                    <div class="preset-group">
+                        <label for="typeSelect">📑 Type:</label>
+                        <select id="typeSelect" class="preset-select" disabled>
+                            <option value="">Select category first</option>
+                        </select>
+                    </div>
+
+                    <div class="preset-group">
+                        <label for="artistStyleSelect">🎨 Artist/Style:</label>
+                        <select id="artistStyleSelect" class="preset-select" disabled>
+                            <option value="">Select type first</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Legacy presets (hidden when hierarchical enabled) -->
+                <div id="legacyPresets" class="presets-grid" style="display: none;">
                     <div class="preset-group">
                         <label for="styleSelect">Style:</label>
                         <select id="styleSelect" class="preset-select">
                             <option value="None">None</option>
                         </select>
                     </div>
-                    
+
                     <div class="preset-group">
                         <label for="artistSelect">Artist/Photographer:</label>
                         <select id="artistSelect" class="preset-select">
                             <option value="None">None</option>
                         </select>
                     </div>
-                    
+
                     <div class="preset-group">
                         <label for="compositionSelect">Composition:</label>
                         <select id="compositionSelect" class="preset-select">
                             <option value="None">None</option>
                         </select>
                     </div>
-                    
+
                     <div class="preset-group">
                         <label for="lightingSelect">Lighting:</label>
                         <select id="lightingSelect" class="preset-select">
@@ -1290,7 +1359,69 @@
                     </div>
                 </div>
             </div>
-            
+
+            <!-- Preset Packs Quick Start -->
+            <div class="presets-section" id="presetPacksSection" style="display: none;">
+                <h3>⚡ Quick Start Preset Packs</h3>
+                <p style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: 15px;">
+                    One-click professional preset combinations
+                </p>
+                <div id="presetPacksContainer" class="preset-packs-grid">
+                    <!-- Preset pack buttons will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Universal Options -->
+            <div class="presets-section" id="universalOptionsSection" style="display: none;">
+                <h3>🌟 Additional Options (Optional)</h3>
+                <p style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: 15px;">
+                    Fine-tune atmosphere, mood, and style
+                </p>
+                <div class="presets-grid">
+                    <div class="preset-group">
+                        <label for="moodSelect">😊 Mood:</label>
+                        <select id="moodSelect" class="preset-select" multiple size="3">
+                            <option value="">Loading...</option>
+                        </select>
+                    </div>
+
+                    <div class="preset-group">
+                        <label for="timeOfDaySelect">🌅 Time of Day:</label>
+                        <select id="timeOfDaySelect" class="preset-select">
+                            <option value="">None</option>
+                        </select>
+                    </div>
+
+                    <div class="preset-group">
+                        <label for="universalLightingSelect">💡 Lighting:</label>
+                        <select id="universalLightingSelect" class="preset-select">
+                            <option value="">None</option>
+                        </select>
+                    </div>
+
+                    <div class="preset-group">
+                        <label for="weatherSelect">🌦 Weather/Atmosphere:</label>
+                        <select id="weatherSelect" class="preset-select">
+                            <option value="">None</option>
+                        </select>
+                    </div>
+
+                    <div class="preset-group">
+                        <label for="colorPaletteSelect">🎨 Color Palette:</label>
+                        <select id="colorPaletteSelect" class="preset-select">
+                            <option value="">None</option>
+                        </select>
+                    </div>
+
+                    <div class="preset-group">
+                        <label for="cameraEffectsSelect">📷 Camera Effects:</label>
+                        <select id="cameraEffectsSelect" class="preset-select" multiple size="3">
+                            <option value="">None</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
             <div class="error" id="error"></div>
             
             <div class="chat-history" id="chatHistory"></div>
@@ -1635,17 +1766,316 @@
             return str.replace(/'/g, "\\'");
         }
 
+        // Hierarchical preset state
+        let hierarchicalEnabled = false;
+        let currentCategoryId = '';
+        let currentTypeId = '';
+        let currentArtistId = '';
+
+        // Load hierarchical categories
+        async function loadCategories() {
+            try {
+                const response = await fetch('/api/categories');
+                const data = await response.json();
+
+                const categorySelect = document.getElementById('categorySelect');
+                categorySelect.innerHTML = '<option value="">None</option>';
+
+                data.categories.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat.id;
+                    option.textContent = `${cat.icon} ${cat.name}`;
+                    categorySelect.appendChild(option);
+                });
+
+                hierarchicalEnabled = true;
+            } catch (error) {
+                console.error('Hierarchical presets not available, using legacy:', error);
+                hierarchicalEnabled = false;
+            }
+        }
+
+        // Load types for selected category
+        async function loadTypes(categoryId) {
+            const typeSelect = document.getElementById('typeSelect');
+            const artistSelect = document.getElementById('artistStyleSelect');
+
+            if (!categoryId) {
+                typeSelect.innerHTML = '<option value="">Select category first</option>';
+                typeSelect.disabled = true;
+                artistSelect.innerHTML = '<option value="">Select type first</option>';
+                artistSelect.disabled = true;
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/categories/${categoryId}/types`);
+                const data = await response.json();
+
+                typeSelect.innerHTML = '<option value="">None</option>';
+                data.types.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type.id;
+                    option.textContent = `${type.icon} ${type.name}`;
+                    typeSelect.appendChild(option);
+                });
+
+                typeSelect.disabled = false;
+                artistSelect.innerHTML = '<option value="">Select type first</option>';
+                artistSelect.disabled = true;
+            } catch (error) {
+                console.error('Failed to load types:', error);
+                typeSelect.innerHTML = '<option value="">Error loading types</option>';
+            }
+        }
+
+        // Load artists for selected type
+        async function loadArtists(categoryId, typeId) {
+            const artistSelect = document.getElementById('artistStyleSelect');
+
+            if (!typeId) {
+                artistSelect.innerHTML = '<option value="">Select type first</option>';
+                artistSelect.disabled = true;
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/categories/${categoryId}/types/${typeId}/artists`);
+                const data = await response.json();
+
+                artistSelect.innerHTML = '<option value="">None</option>';
+                data.artists.forEach(artist => {
+                    const option = document.createElement('option');
+                    option.value = artist.id;
+                    option.textContent = artist.name;
+                    if (artist.popularity === 'high') {
+                        option.textContent += ' 🔥';
+                    }
+                    artistSelect.appendChild(option);
+                });
+
+                artistSelect.disabled = false;
+            } catch (error) {
+                console.error('Failed to load artists:', error);
+                artistSelect.innerHTML = '<option value="">Error loading artists</option>';
+            }
+        }
+
+        // Load universal options
+        async function loadUniversalOptions() {
+            try {
+                const response = await fetch('/api/universal-options');
+                const data = await response.json();
+                const universal = data.universal_options;
+
+                // Mood
+                const moodSelect = document.getElementById('moodSelect');
+                moodSelect.innerHTML = '';
+                if (universal.mood && universal.mood.core) {
+                    universal.mood.core.forEach(mood => {
+                        const option = document.createElement('option');
+                        option.value = mood.id || mood.name || mood;
+                        option.textContent = mood.name || mood;
+                        moodSelect.appendChild(option);
+                    });
+                }
+
+                // Time of Day
+                const timeSelect = document.getElementById('timeOfDaySelect');
+                timeSelect.innerHTML = '<option value="">None</option>';
+                if (universal.time_of_day && universal.time_of_day.options) {
+                    universal.time_of_day.options.forEach(time => {
+                        const option = document.createElement('option');
+                        option.value = time.id || time.name || time;
+                        option.textContent = time.name || time;
+                        timeSelect.appendChild(option);
+                    });
+                }
+
+                // Lighting
+                const lightingSelect = document.getElementById('universalLightingSelect');
+                lightingSelect.innerHTML = '<option value="">None</option>';
+                if (universal.lighting && universal.lighting.core) {
+                    universal.lighting.core.forEach(light => {
+                        const option = document.createElement('option');
+                        option.value = light.id || light.name || light;
+                        option.textContent = light.name || light;
+                        if (light.popularity === 'high') {
+                            option.textContent += ' 🔥';
+                        }
+                        lightingSelect.appendChild(option);
+                    });
+                }
+
+                // Weather/Atmosphere
+                const weatherSelect = document.getElementById('weatherSelect');
+                weatherSelect.innerHTML = '<option value="">None</option>';
+                if (universal.weather_atmosphere && universal.weather_atmosphere.options) {
+                    universal.weather_atmosphere.options.forEach(weather => {
+                        const option = document.createElement('option');
+                        option.value = weather.id || weather.name || weather;
+                        option.textContent = weather.name || weather;
+                        weatherSelect.appendChild(option);
+                    });
+                }
+
+                // Color Palettes
+                const colorSelect = document.getElementById('colorPaletteSelect');
+                colorSelect.innerHTML = '<option value="">None</option>';
+                if (universal.color_palettes && universal.color_palettes.universal) {
+                    universal.color_palettes.universal.forEach(color => {
+                        const option = document.createElement('option');
+                        option.value = color.id || color.name || color;
+                        option.textContent = color.name || color;
+                        colorSelect.appendChild(option);
+                    });
+                }
+
+                // Camera Effects
+                const cameraSelect = document.getElementById('cameraEffectsSelect');
+                cameraSelect.innerHTML = '';
+                if (universal.camera_effects && universal.camera_effects.options) {
+                    universal.camera_effects.options.forEach(effect => {
+                        const option = document.createElement('option');
+                        option.value = effect.id || effect.name || effect;
+                        option.textContent = effect.name || effect;
+                        cameraSelect.appendChild(option);
+                    });
+                }
+
+                // Show the universal options section
+                document.getElementById('universalOptionsSection').style.display = 'block';
+                console.log('Universal options loaded successfully');
+            } catch (error) {
+                console.error('Failed to load universal options:', error);
+            }
+        }
+
+        // Load preset packs
+        let currentPresetPack = null;
+        async function loadPresetPacks() {
+            try {
+                const response = await fetch('/api/preset-packs');
+                const data = await response.json();
+
+                const container = document.getElementById('presetPacksContainer');
+                container.innerHTML = '';
+
+                data.packs.forEach(pack => {
+                    const btn = document.createElement('button');
+                    btn.className = 'preset-pack-btn';
+                    btn.innerHTML = `
+                        <div class="preset-pack-icon">${pack.icon}</div>
+                        <div class="preset-pack-name">${pack.name}</div>
+                    `;
+                    btn.onclick = () => applyPresetPack(pack);
+                    container.appendChild(btn);
+                });
+
+                // Show the preset packs section
+                document.getElementById('presetPacksSection').style.display = 'block';
+                console.log(`Loaded ${data.packs.length} preset packs`);
+            } catch (error) {
+                console.error('Failed to load preset packs:', error);
+            }
+        }
+
+        // Apply a preset pack
+        async function applyPresetPack(pack) {
+            currentPresetPack = pack;
+
+            // Remove active class from all buttons
+            document.querySelectorAll('.preset-pack-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Add active class to clicked button
+            event.target.closest('.preset-pack-btn').classList.add('active');
+
+            const sel = pack.selections;
+
+            // Set category
+            if (sel.level1) {
+                document.getElementById('categorySelect').value = sel.level1;
+                currentCategoryId = sel.level1;
+                await loadTypes(sel.level1);
+            }
+
+            // Set type
+            if (sel.level2) {
+                // Wait a bit for types to load
+                await new Promise(resolve => setTimeout(resolve, 100));
+                document.getElementById('typeSelect').value = sel.level2;
+                currentTypeId = sel.level2;
+                await loadArtists(sel.level1, sel.level2);
+            }
+
+            // Set artist
+            if (sel.level3) {
+                // Wait a bit for artists to load
+                await new Promise(resolve => setTimeout(resolve, 100));
+                document.getElementById('artistStyleSelect').value = sel.level3;
+                currentArtistId = sel.level3;
+            }
+
+            console.log(`Applied preset pack: ${pack.name}`);
+        }
+
+        // Set up cascading dropdown listeners
+        function setupHierarchicalListeners() {
+            const categorySelect = document.getElementById('categorySelect');
+            const typeSelect = document.getElementById('typeSelect');
+
+            categorySelect.addEventListener('change', async (e) => {
+                currentCategoryId = e.target.value;
+                currentTypeId = '';
+                currentArtistId = '';
+                await loadTypes(currentCategoryId);
+            });
+
+            typeSelect.addEventListener('change', async (e) => {
+                currentTypeId = e.target.value;
+                currentArtistId = '';
+                await loadArtists(currentCategoryId, currentTypeId);
+            });
+
+            document.getElementById('artistStyleSelect').addEventListener('change', (e) => {
+                currentArtistId = e.target.value;
+            });
+        }
+
         // Load presets on page load
         window.addEventListener('DOMContentLoaded', async () => {
+            // Try to load hierarchical presets first
+            try {
+                await loadCategories();
+                setupHierarchicalListeners();
+
+                // Load universal options and preset packs
+                await loadUniversalOptions();
+                await loadPresetPacks();
+
+                console.log('Hierarchical presets loaded successfully');
+            } catch (error) {
+                console.log('Hierarchical presets not available, loading legacy presets');
+            }
+
+            // Load legacy presets as fallback
             try {
                 const response = await fetch('/presets');
                 presets = await response.json();
 
-                // Populate dropdowns
-                populateSelect('styleSelect', presets.styles);
-                populateSelect('artistSelect', presets.artists);
-                populateSelect('compositionSelect', presets.composition);
-                populateSelect('lightingSelect', presets.lighting);
+                // Check if we got hierarchical or legacy format
+                if (presets.styles && presets.artists) {
+                    // Legacy format
+                    document.getElementById('legacyPresets').style.display = 'grid';
+                    document.querySelector('.presets-grid').style.display = 'none';
+
+                    populateSelect('styleSelect', presets.styles);
+                    populateSelect('artistSelect', presets.artists);
+                    populateSelect('compositionSelect', presets.composition);
+                    populateSelect('lightingSelect', presets.lighting);
+                }
 
                 // Initialize favorites
                 initializeDefaultFavorites(presets);
@@ -2020,33 +2450,88 @@
             }
 
             // Get preset selections
-            const style = document.getElementById('styleSelect').value;
-            const artist = document.getElementById('artistSelect').value;
-            const composition = document.getElementById('compositionSelect').value;
-            const lighting = document.getElementById('lightingSelect').value;
             const ollamaModel = document.getElementById('ollamaModelSelect').value;
 
             hideError();
 
-            const payload = currentMode === 'oneshot'
-                ? {
-                    input: input,
-                    model: currentModel,
-                    ollama_model: ollamaModel,
-                    style: style,
-                    artist: artist,
-                    composition: composition,
-                    lighting: lighting
-                }
-                : {
-                    message: input,
-                    model: currentModel,
-                    ollama_model: ollamaModel,
-                    style: style,
-                    artist: artist,
-                    composition: composition,
-                    lighting: lighting
+            // Build payload based on whether hierarchical presets are enabled
+            let basePayload = {
+                model: currentModel,
+                ollama_model: ollamaModel
+            };
+
+            // Add hierarchical selections if enabled
+            if (hierarchicalEnabled && (currentCategoryId || currentTypeId || currentArtistId)) {
+                basePayload.selections = {
+                    level1: currentCategoryId,
+                    level2: currentTypeId,
+                    level3: currentArtistId
                 };
+
+                // Add universal options if any are selected
+                const universalOptions = {};
+
+                // Mood (multi-select)
+                const moodSelect = document.getElementById('moodSelect');
+                const selectedMoods = Array.from(moodSelect.selectedOptions).map(opt => opt.value).filter(v => v);
+                if (selectedMoods.length > 0) {
+                    universalOptions.mood = selectedMoods;
+                }
+
+                // Time of day
+                const timeOfDay = document.getElementById('timeOfDaySelect').value;
+                if (timeOfDay) {
+                    universalOptions.time_of_day = timeOfDay;
+                }
+
+                // Lighting
+                const lighting = document.getElementById('universalLightingSelect').value;
+                if (lighting) {
+                    universalOptions.lighting = lighting;
+                }
+
+                // Weather
+                const weather = document.getElementById('weatherSelect').value;
+                if (weather) {
+                    universalOptions.weather_atmosphere = weather;
+                }
+
+                // Color palette
+                const colorPalette = document.getElementById('colorPaletteSelect').value;
+                if (colorPalette) {
+                    universalOptions.color_palette = colorPalette;
+                }
+
+                // Camera effects (multi-select)
+                const cameraSelect = document.getElementById('cameraEffectsSelect');
+                const selectedEffects = Array.from(cameraSelect.selectedOptions).map(opt => opt.value).filter(v => v);
+                if (selectedEffects.length > 0) {
+                    universalOptions.camera_effects = selectedEffects;
+                }
+
+                // Add universal options if any were selected
+                if (Object.keys(universalOptions).length > 0) {
+                    basePayload.selections.universal = universalOptions;
+                    console.log('Adding universal options:', universalOptions);
+                }
+
+                console.log('Sending hierarchical selections:', basePayload.selections);
+            } else {
+                // Use legacy presets
+                const style = document.getElementById('styleSelect').value;
+                const artist = document.getElementById('artistSelect').value;
+                const composition = document.getElementById('compositionSelect').value;
+                const lighting = document.getElementById('lightingSelect').value;
+
+                basePayload.style = style;
+                basePayload.artist = artist;
+                basePayload.composition = composition;
+                basePayload.lighting = lighting;
+            }
+
+            const payload = currentMode === 'oneshot'
+                ? { input: input, ...basePayload }
+                : { message: input, ...basePayload };
 
             // Check if streaming is enabled
             if (streamingEnabled) {

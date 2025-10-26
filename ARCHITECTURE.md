@@ -121,7 +121,9 @@ comfyui-prompt-generator/
 
 ### Preset Breakdown
 
-The application includes **61 curated presets**:
+The application supports **two preset systems** (toggled via `ENABLE_HIERARCHICAL_PRESETS` flag):
+
+#### **Legacy Preset System** (61 curated presets)
 
 1. **Styles (14 presets)**
    - Cinematic, Anime, Photorealistic, Oil Painting, Digital Art
@@ -145,6 +147,47 @@ The application includes **61 curated presets**:
    - Studio: Professional Studio Lighting, Soft Diffused
    - Creative: Neon, Volumetric, Backlit, Dramatic Shadows
    - Atmospheric: Moonlight, Candlelight, Fire Light, Underwater Light
+
+#### **Hierarchical Preset System** (50+ professional artists across 6 categories)
+
+**Level 1 - Main Categories (6):**
+- 📸 Photography
+- 🎨 Comic Book Art
+- 🎌 Anime/Manga
+- 🐉 Fantasy Art
+- 😱 Horror
+- 🤖 Sci-Fi Art
+
+**Level 2 - Types** (varies by category, 3-8 per category):
+- Photography: Portrait, Landscape, Street, Fashion, Wildlife, Macro
+- Comic Book Art: Marvel Style, DC Style, Manga, Indie Comics
+- Anime/Manga: Shonen, Shojo, Studio Ghibli, Seinen
+- Fantasy Art: High Fantasy, Dark Fantasy, Fairy Tale
+- Horror: Gothic, Body Horror, Cosmic Horror, Folk Horror
+- Sci-Fi: Cyberpunk, Space Opera, Hard Sci-Fi, Retro-Futurism
+
+**Level 3 - Artists** (50+ total, 3-20 per type):
+- Photography/Portrait: Annie Leibovitz, Irving Penn, Richard Avedon, etc.
+- Comic Book/Marvel: Jim Lee, Jack Kirby, John Romita Sr., etc.
+- Fantasy: Greg Rutkowski, Frank Frazetta, Boris Vallejo, etc.
+- Horror: H.R. Giger, Bernie Wrightson, Zdzisław Beksiński, etc.
+- And many more...
+
+**Additional Features:**
+- **Preset Packs**: 5 quick-start professional combinations
+  - 90s X-Men Comic (Jim Lee)
+  - Studio Ghibli Magic
+  - Blade Runner Street Scene (Syd Mead)
+  - Epic Fantasy Battle (Greg Rutkowski)
+  - Leibovitz Portrait Session
+
+- **Universal Options**: Cross-cutting atmospheric enhancements
+  - Mood (multi-select): Dramatic, Peaceful, Mysterious, Epic, etc.
+  - Time of Day: Golden Hour, Dawn, Dusk, Night, etc.
+  - Lighting: Volumetric, Neon, Natural Light, etc.
+  - Weather/Atmosphere: Rainy, Foggy, Clear, Stormy, etc.
+  - Color Palette: Warm Tones, Cool Tones, Monochrome, etc.
+  - Camera Effects (multi-select): Bokeh, Motion Blur, etc.
 
 ### Disk Usage
 
@@ -246,6 +289,18 @@ Frontend Architecture:
 | `/reset` | POST | Clear chat history | Session-based |
 | `/history` | GET | Retrieve prompt history (with search) | None |
 | `/history/<id>` | DELETE | Delete specific history item | None |
+
+**Hierarchical Preset Routes** (when `ENABLE_HIERARCHICAL_PRESETS=true`):
+
+| Route | Method | Purpose | Authentication |
+|-------|--------|---------|----------------|
+| `/api/categories` | GET | Get all main categories (6 categories) | None |
+| `/api/categories/<id>/types` | GET | Get types for a category (Level 2) | None |
+| `/api/categories/<cat_id>/types/<type_id>/artists` | GET | Get artists for a type (Level 3) | None |
+| `/api/artists/<cat_id>/<type_id>/<artist_id>/technical` | GET | Get technical options (Level 4 - Future) | None |
+| `/api/artists/<cat_id>/<type_id>/<artist_id>/specifics` | GET | Get scene specifics (Level 5 - Future) | None |
+| `/api/preset-packs` | GET | Get quick-start preset combinations | None |
+| `/api/universal-options` | GET | Get universal options (mood, lighting, etc.) | None |
 
 **Architecture Pattern**: RESTful API with Flask blueprints pattern (future enhancement)
 
@@ -1028,6 +1083,27 @@ def generate_stream():
 - ✅ Different configs for dev/prod
 - ✅ Secrets not in version control
 - ✅ Standard practice
+
+**Available Configuration** (`.env`):
+```bash
+# Ollama Configuration
+OLLAMA_URL=http://localhost:11434/api/generate
+OLLAMA_MODEL=qwen3:latest
+
+# Flask Configuration
+FLASK_PORT=5000
+FLASK_DEBUG=true
+FLASK_SECRET_KEY=your-secret-key-here
+
+# Logging Configuration
+LOG_LEVEL=INFO
+
+# Preset System Configuration (NEW in v2.0)
+ENABLE_HIERARCHICAL_PRESETS=true
+
+# Startup Behavior
+OLLAMA_STARTUP_CHECK=true
+```
 
 **Trade-offs**:
 - ❌ Must create .env file

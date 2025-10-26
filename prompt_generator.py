@@ -70,6 +70,11 @@ FLASK_SECRET_KEY = os.getenv('FLASK_SECRET_KEY', secrets.token_hex(16))
 # Default: INFO provides good balance of detail
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
 
+# Feature flag for hierarchical preset system
+# Set to 'true' to enable new 5-level hierarchical presets
+# Set to 'false' to use legacy flat presets
+ENABLE_HIERARCHICAL_PRESETS = os.getenv('ENABLE_HIERARCHICAL_PRESETS', 'false').lower() in ('true', '1', 'yes')
+
 # ============================================================================
 # Logging Configuration
 # ============================================================================
@@ -620,10 +625,14 @@ class OllamaAPIError(Exception):
 # Users can mix and match presets across categories for creative control.
 # The AI model weaves these elements naturally into the final prompt.
 
-# Path to the presets configuration file
+# Path to the presets configuration files
 # Use absolute path based on script location to ensure it works
 # regardless of where the script is run from
-PRESETS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'presets.json')
+LEGACY_PRESETS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'presets.json')
+HIERARCHICAL_PRESETS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hierarchical_presets.json')
+
+# Select which presets file to use based on feature flag
+PRESETS_FILE = HIERARCHICAL_PRESETS_FILE if ENABLE_HIERARCHICAL_PRESETS else LEGACY_PRESETS_FILE
 
 # Paths to the system prompt files
 # These allow prompts to be edited without modifying the Python code
@@ -638,53 +647,102 @@ PROMPT_FILES = {
 
 def load_presets():
     """
-    Load presets from presets.json file.
+    Load presets from either hierarchical_presets.json or legacy presets.json.
+
+    The function supports both:
+    - Legacy flat presets (styles, artists, composition, lighting)
+    - New hierarchical presets (categories, preset_packs, universal_options)
+
+    Which file is loaded depends on the ENABLE_HIERARCHICAL_PRESETS feature flag.
 
     Returns:
-        dict: Presets dictionary with categories (styles, artists, composition, lighting)
+        dict: Presets dictionary in appropriate format based on preset type
 
     Raises:
-        FileNotFoundError: If presets.json is missing
-        json.JSONDecodeError: If presets.json contains invalid JSON
+        FileNotFoundError: If presets file is missing
+        json.JSONDecodeError: If presets file contains invalid JSON
 
     The function includes fallback presets in case the file is missing or invalid.
     This ensures the application can still run even if the presets file is corrupted.
     """
+    preset_type = "hierarchical" if ENABLE_HIERARCHICAL_PRESETS else "legacy"
+
     try:
         with open(PRESETS_FILE, 'r', encoding='utf-8') as f:
             presets = json.load(f)
-            logger.info(f"Successfully loaded presets from {PRESETS_FILE}")
+            logger.info(f"Successfully loaded {preset_type} presets from {PRESETS_FILE}")
+
+            # Validate structure based on type
+            if ENABLE_HIERARCHICAL_PRESETS:
+                if 'categories' in presets and 'preset_packs' in presets:
+                    num_categories = len(presets.get('categories', {}))
+                    num_packs = len(presets.get('preset_packs', {}).get('packs', []))
+                    logger.info(f"Loaded {num_categories} categories and {num_packs} preset packs")
+                else:
+                    logger.warning("Hierarchical presets file missing expected structure")
+
             return presets
+
     except FileNotFoundError:
         logger.error(f"Presets file not found: {PRESETS_FILE}")
-        logger.warning("Using minimal fallback presets")
-        # Return minimal fallback presets to keep app functional
-        return {
-            "styles": {"None": ""},
-            "artists": {"None": ""},
-            "composition": {"None": ""},
-            "lighting": {"None": ""}
-        }
+        logger.warning(f"Using minimal fallback {preset_type} presets")
+
+        # Return appropriate fallback based on type
+        if ENABLE_HIERARCHICAL_PRESETS:
+            return {
+                "version": "1.0",
+                "categories": {},
+                "preset_packs": {"packs": []},
+                "universal_options": {},
+                "quality_tags": {"flux": {}, "sdxl": {}}
+            }
+        else:
+            return {
+                "styles": {"None": ""},
+                "artists": {"None": ""},
+                "composition": {"None": ""},
+                "lighting": {"None": ""}
+            }
+
     except json.JSONDecodeError as e:
         logger.error(f"Invalid JSON in presets file: {e}")
-        logger.warning("Using minimal fallback presets")
-        # Return minimal fallback presets to keep app functional
-        return {
-            "styles": {"None": ""},
-            "artists": {"None": ""},
-            "composition": {"None": ""},
-            "lighting": {"None": ""}
-        }
+        logger.warning(f"Using minimal fallback {preset_type} presets")
+
+        if ENABLE_HIERARCHICAL_PRESETS:
+            return {
+                "version": "1.0",
+                "categories": {},
+                "preset_packs": {"packs": []},
+                "universal_options": {},
+                "quality_tags": {"flux": {}, "sdxl": {}}
+            }
+        else:
+            return {
+                "styles": {"None": ""},
+                "artists": {"None": ""},
+                "composition": {"None": ""},
+                "lighting": {"None": ""}
+            }
+
     except Exception as e:
         logger.error(f"Unexpected error loading presets: {e}")
-        logger.warning("Using minimal fallback presets")
-        # Return minimal fallback presets to keep app functional
-        return {
-            "styles": {"None": ""},
-            "artists": {"None": ""},
-            "composition": {"None": ""},
-            "lighting": {"None": ""}
-        }
+        logger.warning(f"Using minimal fallback {preset_type} presets")
+
+        if ENABLE_HIERARCHICAL_PRESETS:
+            return {
+                "version": "1.0",
+                "categories": {},
+                "preset_packs": {"packs": []},
+                "universal_options": {},
+                "quality_tags": {"flux": {}, "sdxl": {}}
+            }
+        else:
+            return {
+                "styles": {"None": ""},
+                "artists": {"None": ""},
+                "composition": {"None": ""},
+                "lighting": {"None": ""}
+            }
 
 
 def load_prompts():
@@ -831,6 +889,167 @@ Avoid emitting a single "PROMPT:" response. Keep the tone collaborative and idea
 
     logger.info("System prompts loaded successfully")
     return system_prompts, chat_prompts
+
+
+def build_hierarchical_prompt(user_input, selections, presets_data):
+    """
+    Build enhanced prompt from hierarchical preset selections.
+
+    This function takes user selections from the hierarchical preset wizard
+    and constructs a detailed, enhanced prompt that can be sent to the LLM.
+
+    Args:
+        user_input (str): User's basic image idea
+        selections (dict): Dictionary with selections at each level:
+            - level1 (str): Category ID (e.g., 'photography', 'fantasy')
+            - level2 (str): Type ID (e.g., 'portrait', 'high_fantasy')
+            - level3 (str): Artist ID (e.g., 'annie_leibovitz')
+            - level4 (dict): Technical options {option_key: value_id}
+            - level5 (dict): Scene specifics {key: value}
+            - universal (dict): Universal options (mood, lighting, etc.)
+        presets_data (dict): Full hierarchical presets JSON data
+
+    Returns:
+        str: Enhanced prompt with all selections formatted as text
+
+    Example:
+        >>> selections = {
+        ...     'level1': 'photography',
+        ...     'level2': 'portrait',
+        ...     'level3': 'annie_leibovitz',
+        ...     'level4': {'lighting': 'theatrical'},
+        ...     'universal': {'mood': ['dramatic', 'elegant']}
+        ... }
+        >>> enhanced = build_hierarchical_prompt("A woman posing", selections, presets)
+        >>> print(enhanced)
+        A woman posing
+
+        Style: Photography > Portrait > Annie Leibovitz
+        ...
+    """
+    if not selections:
+        logger.debug("No hierarchical selections provided, returning user input as-is")
+        return user_input
+
+    try:
+        prompt_parts = [user_input, ""]
+
+        # Get category data (Level 1)
+        category_id = selections.get('level1')
+        if not category_id:
+            logger.debug("No level1 category selected")
+            return user_input
+
+        category = presets_data.get('categories', {}).get(category_id)
+        if not category:
+            logger.warning(f"Category '{category_id}' not found in presets")
+            return user_input
+
+        # Level 2: Type
+        type_id = selections.get('level2')
+        type_data = category.get('level2_types', {}).get(type_id) if type_id else None
+
+        if type_data:
+            prompt_parts.append(f"Style: {category['name']} > {type_data['name']}")
+
+        # Level 3: Artist/Style
+        artist_id = selections.get('level3')
+        artist_data = type_data.get('level3_artists', {}).get(artist_id) if type_data and artist_id else None
+
+        if artist_data:
+            prompt_parts.append(f"Artist Style: {artist_data['name']}")
+
+            if artist_data.get('description'):
+                prompt_parts.append(f"Description: {artist_data['description']}")
+
+            if artist_data.get('signature'):
+                prompt_parts.append(f"Signature: {artist_data['signature']}")
+
+            prompt_parts.append("")
+
+        # Level 4: Technical details
+        level4_selections = selections.get('level4', {})
+        if level4_selections and artist_data:
+            technical_opts = artist_data.get('level4_technical', {})
+            if technical_opts:
+                prompt_parts.append("Technical Details:")
+                for tech_key, tech_value in level4_selections.items():
+                    tech_category = technical_opts.get(tech_key)
+                    if tech_category:
+                        options = tech_category.get('options', [])
+                        # Handle both list of dicts and list of strings
+                        if options and isinstance(options[0], dict):
+                            option = next((opt for opt in options if opt.get('id') == tech_value), None)
+                            if option:
+                                desc = f" ({option.get('description')})" if option.get('description') else ""
+                                prompt_parts.append(f"- {tech_category['name']}: {option['name']}{desc}")
+                        else:
+                            # Simple string list
+                            prompt_parts.append(f"- {tech_category['name']}: {tech_value.replace('_', ' ')}")
+                prompt_parts.append("")
+
+        # Level 5: Scene specifics
+        level5_selections = selections.get('level5', {})
+        if level5_selections:
+            prompt_parts.append("Scene Details:")
+            for key, value in level5_selections.items():
+                formatted_key = key.replace('_', ' ').title()
+                if isinstance(value, list):
+                    prompt_parts.append(f"- {formatted_key}: {', '.join(value)}")
+                elif isinstance(value, dict):
+                    # Handle nested selections
+                    for sub_key, sub_value in value.items():
+                        formatted_sub_key = sub_key.replace('_', ' ').title()
+                        prompt_parts.append(f"- {formatted_key} - {formatted_sub_key}: {sub_value}")
+                else:
+                    formatted_value = str(value).replace('_', ' ')
+                    prompt_parts.append(f"- {formatted_key}: {formatted_value}")
+            prompt_parts.append("")
+
+        # Universal options
+        universal = selections.get('universal', {})
+        if universal:
+            universal_added = False
+
+            if universal.get('mood'):
+                moods = universal['mood'] if isinstance(universal['mood'], list) else [universal['mood']]
+                prompt_parts.append(f"Mood: {', '.join(moods)}")
+                universal_added = True
+
+            if universal.get('time_of_day'):
+                prompt_parts.append(f"Time: {universal['time_of_day'].replace('_', ' ')}")
+                universal_added = True
+
+            if universal.get('lighting'):
+                prompt_parts.append(f"Lighting: {universal['lighting'].replace('_', ' ')}")
+                universal_added = True
+
+            if universal.get('color_palette'):
+                prompt_parts.append(f"Colors: {universal['color_palette'].replace('_', ' ')}")
+                universal_added = True
+
+            if universal.get('weather_atmosphere'):
+                prompt_parts.append(f"Weather: {universal['weather_atmosphere'].replace('_', ' ')}")
+                universal_added = True
+
+            if universal.get('camera_effects'):
+                effects = universal['camera_effects'] if isinstance(universal['camera_effects'], list) else [universal['camera_effects']]
+                prompt_parts.append(f"Camera Effects: {', '.join(effects)}")
+                universal_added = True
+
+            if universal_added:
+                prompt_parts.append("")
+
+        enhanced_prompt = "\n".join(prompt_parts).strip()
+        logger.info(f"Built hierarchical prompt ({len(enhanced_prompt)} chars) from {len(selections)} level selections")
+
+        return enhanced_prompt
+
+    except Exception as e:
+        logger.error(f"Error building hierarchical prompt: {e}")
+        logger.debug(f"Selections: {selections}")
+        # Return original user input on error
+        return user_input
 
 
 # Load presets from JSON file at startup
@@ -1447,6 +1666,425 @@ def get_presets():
     # Reload presets from file on each request to enable hot-reload
     presets = load_presets()
     return jsonify(presets)
+
+
+# ============================================================================
+# Hierarchical Preset API Routes (Phase 2)
+# ============================================================================
+# These routes provide level-by-level navigation through the hierarchical
+# preset system. They are only active when ENABLE_HIERARCHICAL_PRESETS=true.
+# Each route returns a subset of the hierarchical_presets.json data.
+
+
+@app.route('/api/categories', methods=['GET'])
+def get_categories():
+    """
+    Get all main categories (Level 1 of hierarchical presets).
+
+    Returns list of top-level categories like Photography, Fantasy, Sci-Fi, etc.
+    Each category includes metadata like icon, description, and popularity.
+
+    Only active when ENABLE_HIERARCHICAL_PRESETS=true.
+
+    Returns:
+        JSON: List of category objects with id, name, icon, description, etc.
+
+    Example Response:
+        {
+            "version": "1.0",
+            "categories": [
+                {
+                    "id": "photography",
+                    "name": "Photography",
+                    "icon": "📸",
+                    "description": "Realistic camera-based imagery",
+                    "popularity": "high",
+                    "best_for": ["portraits", "landscapes", "realistic scenes"]
+                },
+                ...
+            ]
+        }
+    """
+    if not ENABLE_HIERARCHICAL_PRESETS:
+        return jsonify({
+            'error': 'Hierarchical presets not enabled',
+            'message': 'Set ENABLE_HIERARCHICAL_PRESETS=true in .env'
+        }), 400
+
+    try:
+        presets = load_presets()
+        categories = []
+
+        for cat_id, cat_data in presets.get('categories', {}).items():
+            categories.append({
+                'id': cat_id,
+                'name': cat_data.get('name', cat_id),
+                'icon': cat_data.get('icon', ''),
+                'description': cat_data.get('description', ''),
+                'popularity': cat_data.get('popularity', 'medium'),
+                'best_for': cat_data.get('best_for', [])
+            })
+
+        # Sort by popularity (high first)
+        categories.sort(key=lambda x: 0 if x['popularity'] == 'high' else 1)
+
+        logger.info(f"Returned {len(categories)} categories")
+
+        return jsonify({
+            'version': presets.get('version', '1.0'),
+            'categories': categories
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting categories: {str(e)}")
+        return jsonify({
+            'error': 'Failed to load categories',
+            'message': str(e)
+        }), 500
+
+
+@app.route('/api/categories/<category_id>/types', methods=['GET'])
+def get_category_types(category_id):
+    """
+    Get sub-types for a category (Level 2 of hierarchical presets).
+
+    Args:
+        category_id: ID of the category (e.g., 'photography', 'fantasy')
+
+    Returns:
+        JSON: List of type objects for this category
+
+    Example:
+        GET /api/categories/photography/types
+        Returns: Portrait, Landscape, Street, Fashion, etc.
+    """
+    if not ENABLE_HIERARCHICAL_PRESETS:
+        return jsonify({
+            'error': 'Hierarchical presets not enabled'
+        }), 400
+
+    try:
+        presets = load_presets()
+        category = presets.get('categories', {}).get(category_id)
+
+        if not category:
+            logger.warning(f"Category not found: {category_id}")
+            return jsonify({
+                'error': 'Category not found',
+                'message': f"No category with id '{category_id}'"
+            }), 404
+
+        types = []
+        for type_id, type_data in category.get('level2_types', {}).items():
+            types.append({
+                'id': type_id,
+                'name': type_data.get('name', type_id),
+                'description': type_data.get('description', ''),
+                'icon': type_data.get('icon', ''),
+                'popularity': type_data.get('popularity', 'medium')
+            })
+
+        # Sort by popularity
+        types.sort(key=lambda x: 0 if x['popularity'] == 'high' else 1)
+
+        logger.info(f"Returned {len(types)} types for category '{category_id}'")
+
+        return jsonify({
+            'category_id': category_id,
+            'category_name': category.get('name', category_id),
+            'types': types
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting types for {category_id}: {str(e)}")
+        return jsonify({
+            'error': 'Failed to load types',
+            'message': str(e)
+        }), 500
+
+
+@app.route('/api/categories/<category_id>/types/<type_id>/artists', methods=['GET'])
+def get_artists(category_id, type_id):
+    """
+    Get artists/styles for a type (Level 3 of hierarchical presets).
+
+    Args:
+        category_id: ID of the category (e.g., 'photography')
+        type_id: ID of the type (e.g., 'portrait')
+
+    Returns:
+        JSON: List of artist objects for this type
+
+    Example:
+        GET /api/categories/photography/types/portrait/artists
+        Returns: Annie Leibovitz, Richard Avedon, Steve McCurry, etc.
+    """
+    if not ENABLE_HIERARCHICAL_PRESETS:
+        return jsonify({'error': 'Hierarchical presets not enabled'}), 400
+
+    try:
+        presets = load_presets()
+        category = presets.get('categories', {}).get(category_id)
+
+        if not category:
+            return jsonify({
+                'error': 'Category not found',
+                'message': f"No category '{category_id}'"
+            }), 404
+
+        type_data = category.get('level2_types', {}).get(type_id)
+        if not type_data:
+            return jsonify({
+                'error': 'Type not found',
+                'message': f"No type '{type_id}' in category '{category_id}'"
+            }), 404
+
+        artists = []
+        for artist_id, artist_data in type_data.get('level3_artists', {}).items():
+            artists.append({
+                'id': artist_id,
+                'name': artist_data.get('name', artist_id),
+                'description': artist_data.get('description', ''),
+                'signature': artist_data.get('signature', ''),
+                'best_for': artist_data.get('best_for', []),
+                'popularity': artist_data.get('popularity', 'medium'),
+                'has_technical': bool(artist_data.get('level4_technical')),
+                'has_specifics': bool(artist_data.get('level5_specifics'))
+            })
+
+        # Sort by popularity
+        artists.sort(key=lambda x: 0 if x['popularity'] == 'high' else 1)
+
+        logger.info(f"Returned {len(artists)} artists for {category_id}/{type_id}")
+
+        return jsonify({
+            'category_id': category_id,
+            'type_id': type_id,
+            'type_name': type_data.get('name', type_id),
+            'artists': artists
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting artists: {str(e)}")
+        return jsonify({
+            'error': 'Failed to load artists',
+            'message': str(e)
+        }), 500
+
+
+@app.route('/api/artists/<category_id>/<type_id>/<artist_id>/technical', methods=['GET'])
+def get_artist_technical(category_id, type_id, artist_id):
+    """
+    Get technical options for an artist (Level 4 of hierarchical presets).
+
+    Args:
+        category_id: ID of the category
+        type_id: ID of the type
+        artist_id: ID of the artist
+
+    Returns:
+        JSON: Technical options for this artist (camera, lighting, etc.)
+
+    Example:
+        GET /api/artists/photography/portrait/annie_leibovitz/technical
+        Returns: camera_lens, film_digital, aperture, lighting options
+    """
+    if not ENABLE_HIERARCHICAL_PRESETS:
+        return jsonify({'error': 'Hierarchical presets not enabled'}), 400
+
+    try:
+        presets = load_presets()
+
+        # Navigate to artist data
+        artist_data = (presets.get('categories', {})
+                      .get(category_id, {})
+                      .get('level2_types', {})
+                      .get(type_id, {})
+                      .get('level3_artists', {})
+                      .get(artist_id))
+
+        if not artist_data:
+            return jsonify({
+                'error': 'Artist not found',
+                'message': f"No artist '{artist_id}' in {category_id}/{type_id}"
+            }), 404
+
+        technical = artist_data.get('level4_technical', {})
+
+        logger.info(f"Returned technical options for {artist_id}")
+
+        return jsonify({
+            'category_id': category_id,
+            'type_id': type_id,
+            'artist_id': artist_id,
+            'artist_name': artist_data.get('name', artist_id),
+            'technical_options': technical
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting technical options: {str(e)}")
+        return jsonify({
+            'error': 'Failed to load technical options',
+            'message': str(e)
+        }), 500
+
+
+@app.route('/api/artists/<category_id>/<type_id>/<artist_id>/specifics', methods=['GET'])
+def get_artist_specifics(category_id, type_id, artist_id):
+    """
+    Get scene specifics for an artist (Level 5 of hierarchical presets).
+
+    Args:
+        category_id: ID of the category
+        type_id: ID of the type
+        artist_id: ID of the artist
+
+    Returns:
+        JSON: Scene-specific options for this artist
+
+    Example:
+        GET /api/artists/photography/portrait/annie_leibovitz/specifics
+        Returns: subject_type, pose_expression, wardrobe, environment, framing
+    """
+    if not ENABLE_HIERARCHICAL_PRESETS:
+        return jsonify({'error': 'Hierarchical presets not enabled'}), 400
+
+    try:
+        presets = load_presets()
+
+        # Navigate to artist data
+        artist_data = (presets.get('categories', {})
+                      .get(category_id, {})
+                      .get('level2_types', {})
+                      .get(type_id, {})
+                      .get('level3_artists', {})
+                      .get(artist_id))
+
+        if not artist_data:
+            return jsonify({
+                'error': 'Artist not found',
+                'message': f"No artist '{artist_id}' in {category_id}/{type_id}"
+            }), 404
+
+        specifics = artist_data.get('level5_specifics', {})
+
+        logger.info(f"Returned scene specifics for {artist_id}")
+
+        return jsonify({
+            'category_id': category_id,
+            'type_id': type_id,
+            'artist_id': artist_id,
+            'artist_name': artist_data.get('name', artist_id),
+            'scene_specifics': specifics
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting specifics: {str(e)}")
+        return jsonify({
+            'error': 'Failed to load specifics',
+            'message': str(e)
+        }), 500
+
+
+@app.route('/api/preset-packs', methods=['GET'])
+def get_preset_packs():
+    """
+    Get all preset packs for quick start.
+
+    Preset packs are pre-configured combinations of selections across all 5 levels.
+    Users can click a pack to instantly apply all selections and jump to generation.
+
+    Returns:
+        JSON: List of preset pack objects
+
+    Example Response:
+        {
+            "packs": [
+                {
+                    "name": "90s X-Men Comic",
+                    "icon": "🦸",
+                    "selections": {
+                        "level1": "comic_book",
+                        "level2": "marvel_style",
+                        "level3": "jim_lee",
+                        ...
+                    }
+                },
+                ...
+            ]
+        }
+    """
+    if not ENABLE_HIERARCHICAL_PRESETS:
+        return jsonify({'error': 'Hierarchical presets not enabled'}), 400
+
+    try:
+        presets = load_presets()
+        packs = presets.get('preset_packs', {}).get('packs', [])
+
+        logger.info(f"Returned {len(packs)} preset packs")
+
+        return jsonify({
+            'packs': packs
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting preset packs: {str(e)}")
+        return jsonify({
+            'error': 'Failed to load preset packs',
+            'message': str(e)
+        }), 500
+
+
+@app.route('/api/universal-options', methods=['GET'])
+def get_universal_options():
+    """
+    Get universal options (mood, lighting, time, weather, colors, camera effects).
+
+    Universal options are available across all categories and can be applied
+    in addition to the 5-level hierarchical selections.
+
+    Returns:
+        JSON: All universal option categories
+
+    Example Response:
+        {
+            "universal_options": {
+                "mood": {
+                    "core": [...],
+                    "by_category": {...}
+                },
+                "lighting": {...},
+                "time_of_day": {...},
+                "weather_atmosphere": {...},
+                "color_palettes": {...},
+                "camera_effects": {...},
+                "composition": {...}
+            }
+        }
+    """
+    if not ENABLE_HIERARCHICAL_PRESETS:
+        return jsonify({'error': 'Hierarchical presets not enabled'}), 400
+
+    try:
+        presets = load_presets()
+        universal = presets.get('universal_options', {})
+
+        logger.info(f"Returned universal options ({len(universal)} categories)")
+
+        return jsonify({
+            'universal_options': universal
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting universal options: {str(e)}")
+        return jsonify({
+            'error': 'Failed to load universal options',
+            'message': str(e)
+        }), 500
+
+
+# End of hierarchical preset API routes
+# ============================================================================
 
 
 @app.route('/admin/reload-prompts', methods=['POST'])
