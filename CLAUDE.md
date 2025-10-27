@@ -238,6 +238,138 @@ if (hierarchicalEnabled) {
 - `test_api_routes.py` - Validates all 7 hierarchical API routes
 - Run: `python test_api_routes.py` (requires `ENABLE_HIERARCHICAL_PRESETS=true`)
 
+### Persona System
+
+The application includes a **conversational AI persona system** that provides different conversation styles and approaches for prompt generation. Instead of using preset dropdowns, users can have natural conversations with specialized AI personalities.
+
+**Overview:**
+The persona system addresses choice paralysis from 80+ presets by providing guided conversational experiences. Each persona has its own personality, approach, and system prompt that shapes how it interacts with users.
+
+**Available Personas:**
+- 🎨 **Creative Vision Guide** - Patient step-by-step scene building for beginners
+- ⚙️ **Technical Prompt Engineer** - Advanced control with weights and emphasis syntax
+- 🎬 **Art Director** - Commercial/professional creative briefs
+- 📷 **Photography Expert** - Camera-centric with real lens/lighting terminology
+- 🧙 **Fantasy Storyteller** - Narrative-rich world-building
+- ⚡ **Quick Sketch Assistant** - Rapid 2-3 question generation
+- 💋 **NSFW/Boudoir Specialist** - Tasteful artistic adult content
+
+**File Structure:**
+```
+personas.json                  # Persona metadata (7 personas)
+personas/                      # System prompt files
+├── creative_vision_guide.txt  # 5.8KB - Beginner-friendly guided approach
+├── technical_engineer.txt     # 6.3KB - Advanced technical control
+├── art_director.txt           # 7.2KB - Commercial creative direction
+├── photography_expert.txt     # 8.1KB - Camera specifications
+├── fantasy_storyteller.txt    # 9.4KB - Narrative world-building
+├── quick_sketch.txt           # 9.0KB - Rapid iteration
+└── nsfw_specialist.txt        # 9.9KB - Artistic adult content
+```
+
+**Backend Functions** (`prompt_generator.py`):
+```python
+# Lines ~984-1072
+def load_personas():
+    """Load persona definitions from personas.json"""
+    # Returns: {persona_id: {name, description, icon, category, ...}}
+
+def load_persona_prompt(persona_id: str):
+    """Load detailed system prompt from personas/ directory"""
+    # Returns: Full system prompt string
+```
+
+**API Routes** (lines 2004-2534):
+```python
+GET  /api/personas              # List all personas with metadata
+GET  /api/personas/<id>         # Get specific persona + system prompt
+POST /persona-chat              # Non-streaming conversational mode
+POST /persona-chat-stream       # Streaming mode with SSE (recommended)
+POST /persona-reset             # Reset persona conversation history
+```
+
+**Session Management:**
+- `session['persona_conversation_id']` - Tracks persona conversation
+- `session['active_persona']` - Tracks current persona ID
+- Separate from regular chat sessions (`conversation_id`)
+- Automatic reset when switching personas
+
+**Key Features:**
+1. **Persona-Specific System Prompts**: Each persona loads its own detailed system prompt that defines personality, approach, and behavior
+2. **Preset Compatibility**: Some personas support presets (Technical Engineer, Art Director, Photography Expert, NSFW Specialist)
+3. **No-Preset Mode**: Guided personas (Creative Vision Guide, Fantasy Storyteller) work purely conversationally
+4. **Streaming Support**: All personas support real-time token-by-token streaming via SSE
+5. **History Tracking**: Conversations saved to database with `mode='persona-chat'` and persona metadata
+6. **Hot-Reloadable**: Personas can be added/modified without code changes
+
+**Request Payload Example:**
+```json
+{
+  "message": "I want to create an image of a cat",
+  "persona_id": "creative_vision_guide",
+  "model": "flux",                    // Optional: for presets if supported
+  "ollama_model": "qwen3:latest",     // Optional: override default
+  "style": "Cinematic",               // Optional: if persona supports presets
+  "artist": "Greg Rutkowski",         // Optional
+  "composition": "Portrait",          // Optional
+  "lighting": "Golden Hour"           // Optional
+}
+```
+
+**Response (Streaming SSE):**
+```
+data: {"token": "A"}
+data: {"token": " cat"}
+data: {"token": "!"}
+data: {"token": " A"}
+data: {"token": " perfect"}
+data: {"token": " subject"}
+data: {"token": "."}
+data: {"done": true}
+```
+
+**Adding New Personas:**
+1. Create system prompt file: `personas/my_new_persona.txt`
+2. Add entry to `personas.json` with metadata
+3. Test with `/api/personas/<id>` endpoint
+4. Document in `PERSONAS.md`
+5. See `PERSONAS_DEVELOPER.md` for detailed guide
+
+**Documentation:**
+- `PERSONAS.md` - User-facing documentation (which persona to choose, how to use)
+- `PERSONAS_DEVELOPER.md` - Developer guide (how to add new personas, API reference)
+- `test_persona_api.py` - Comprehensive test suite
+
+**Testing:**
+```bash
+# Test persona loading
+curl http://localhost:5000/api/personas | python3 -m json.tool
+
+# Test specific persona
+curl http://localhost:5000/api/personas/creative_vision_guide | python3 -m json.tool
+
+# Test conversation (requires Ollama)
+curl -X POST http://localhost:5000/persona-chat-stream \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Hello", "persona_id": "quick_sketch"}'
+
+# Run test suite
+python3 test_persona_api.py
+```
+
+**Design Philosophy:**
+- **Solves Choice Paralysis**: Conversational approach vs. 80+ dropdown presets
+- **Multiple Skill Levels**: Beginner-friendly to advanced technical control
+- **Specialized Workflows**: Photography, fantasy, commercial, NSFW
+- **Maintains Existing Features**: Works alongside Quick Generate & presets
+- **Hot-Swappable**: Switch personas mid-project
+- **Extensible**: Easy to add new personas via JSON + text files
+
+**Implementation Status:**
+- ✅ Phase 1: Core infrastructure (personas.json, system prompts)
+- ✅ Phase 2: Backend integration (API routes, session management, Ollama integration)
+- ⏳ Phase 3: Frontend UI (persona selector, active indicator, chat integration)
+
 ### Database System
 The application uses SQLite to persist prompt generation history:
 - **Database File**: `prompt_history.db` (auto-created in project root)
@@ -483,8 +615,17 @@ This skips the interactive Ollama connection prompt and allows the app to start 
 
 ```
 .
-├── prompt_generator.py      # Main Flask application (~2,098 lines)
+├── prompt_generator.py      # Main Flask application (~2,500+ lines)
 ├── presets.json            # Preset configurations (hot-reloadable)
+├── personas.json           # Persona metadata (7 personas)
+├── personas/               # Persona system prompts
+│   ├── creative_vision_guide.txt   # 5.8KB - Beginner-friendly
+│   ├── technical_engineer.txt      # 6.3KB - Advanced technical
+│   ├── art_director.txt            # 7.2KB - Commercial focus
+│   ├── photography_expert.txt      # 8.1KB - Camera specs
+│   ├── fantasy_storyteller.txt     # 9.4KB - Narrative building
+│   ├── quick_sketch.txt            # 9.0KB - Rapid iteration
+│   └── nsfw_specialist.txt         # 9.9KB - Artistic adult content
 ├── templates/
 │   └── index.html          # Single-page frontend
 ├── tests/
@@ -492,6 +633,7 @@ This skips the interactive Ollama connection prompt and allows the app to start 
 │   ├── conftest.py         # Pytest fixtures
 │   ├── test_app.py         # Route and functionality tests
 │   └── test_presets.py     # Preset validation tests
+├── test_persona_api.py     # Persona API test suite
 ├── requirements.txt         # Production dependencies
 ├── requirements-dev.txt     # Development dependencies (pytest, flake8)
 ├── .env.example            # Environment configuration template
@@ -499,6 +641,8 @@ This skips the interactive Ollama connection prompt and allows the app to start 
 ├── Makefile                # Development commands
 ├── README.md               # User-facing documentation
 ├── ARCHITECTURE.md         # Detailed technical architecture
+├── PERSONAS.md             # Persona user guide
+├── PERSONAS_DEVELOPER.md   # Persona developer guide
 └── logs/                   # Application logs (auto-created)
     └── app.log
 ```
