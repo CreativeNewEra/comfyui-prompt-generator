@@ -1,0 +1,121 @@
+{
+  "creative_vision_guide": {
+    "name": "Creative Vision Guide",
+    "description": "Patient, step-by-step scene building for users who feel overwhelmed by choices. Build your image idea together through simple questions.",
+    "icon": "🎨",
+    "category": "beginner",
+    "prompt_file": "creative_vision_guide.txt",
+    "features": [
+      "Guided questioning",
+      "Progressive scene summary",
+      "No multiple options",
+      "Warm and encouraging"
+    ],
+    "best_for": "Vague ideas, creative exploration, beginners",
+    "supports_presets": false,
+    "supports_quick_generate": false,
+    "supports_streaming": true
+  },
+  "technical_engineer": {
+    "name": "Technical Prompt Engineer",
+    "description": "Advanced technical control with prompt weights, emphasis syntax, and quality tags. For users who want precise control over generation parameters.",
+    "icon": "⚙️",
+    "category": "advanced",
+    "prompt_file": "technical_engineer.txt",
+    "features": [
+      "Negative prompts",
+      "Quality tags",
+      "Emphasis syntax (concept:1.2)",
+      "Technical terminology"
+    ],
+    "best_for": "Power users, specific technical requirements, fine-tuned control",
+    "supports_presets": true,
+    "supports_quick_generate": true,
+    "supports_streaming": true
+  },
+  "art_director": {
+    "name": "Art Director",
+    "description": "Professional commercial image creation focused on target audience, use case, and brand consistency. Thinks like a creative director.",
+    "icon": "🎬",
+    "category": "professional",
+    "prompt_file": "art_director.txt",
+    "features": [
+      "Commercial focus",
+      "Target audience analysis",
+      "Brand consistency",
+      "Professional brief output"
+    ],
+    "best_for": "Designers, marketers, professional projects, client work",
+    "supports_presets": true,
+    "supports_quick_generate": false,
+    "supports_streaming": true
+  },
+  "photography_expert": {
+    "name": "Photography Expert",
+    "description": "Photorealistic images using real camera terminology: focal length, aperture, ISO, lens type, and depth of field. Perfect for photography enthusiasts.",
+    "icon": "📷",
+    "category": "specialized",
+    "prompt_file": "photography_expert.txt",
+    "features": [
+      "Camera specifications",
+      "Lens terminology",
+      "Lighting setups",
+      "Photography techniques"
+    ],
+    "best_for": "Photorealistic renders, photography enthusiasts, technical accuracy",
+    "supports_presets": true,
+    "supports_quick_generate": true,
+    "supports_streaming": true
+  },
+  "fantasy_storyteller": {
+    "name": "Fantasy Storyteller",
+    "description": "Build narrative-rich fantasy and sci-fi scenes with character backstory, world context, and lore. Creates images that tell a story.",
+    "icon": "🧙",
+    "category": "creative",
+    "prompt_file": "fantasy_storyteller.txt",
+    "features": [
+      "World-building focus",
+      "Character backstory",
+      "Narrative context",
+      "Lore integration"
+    ],
+    "best_for": "Character art, book covers, RPG content, fantasy/sci-fi",
+    "supports_presets": false,
+    "supports_quick_generate": false,
+    "supports_streaming": true
+  },
+  "quick_sketch": {
+    "name": "Quick Sketch Assistant",
+    "description": "Rapid iteration and experimentation. Maximum 2-3 questions, immediate generation. Speed over perfection for fast prototyping.",
+    "icon": "⚡",
+    "category": "speed",
+    "prompt_file": "quick_sketch.txt",
+    "features": [
+      "Minimal questions",
+      "Fast generation",
+      "Quick refinements",
+      "Improv-style responses"
+    ],
+    "best_for": "Rapid prototyping, A/B testing, brainstorming, speed experiments",
+    "supports_presets": false,
+    "supports_quick_generate": true,
+    "supports_streaming": true
+  },
+  "nsfw_specialist": {
+    "name": "NSFW/Boudoir Specialist",
+    "description": "Tasteful adult content with artistic focus. Professional approach to boudoir, artistic nude, and sensual photography with respect and artistry.",
+    "icon": "💋",
+    "category": "adult",
+    "prompt_file": "nsfw_specialist.txt",
+    "features": [
+      "Artistic focus",
+      "Professional posing",
+      "Tasteful approach",
+      "Lighting mood emphasis"
+    ],
+    "best_for": "Adult content creators, artistic nude photography, boudoir sessions",
+    "supports_presets": true,
+    "supports_quick_generate": true,
+    "supports_streaming": true
+  }
+}

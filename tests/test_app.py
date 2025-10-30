@@ -72,8 +72,8 @@ class TestGenerateRoute:
         def mock_call_ollama(messages, model=None):
             return "Mocked prompt response"
 
-        import prompt_generator
-        monkeypatch.setattr(prompt_generator, 'call_ollama', mock_call_ollama)
+        import app.ollama_client
+        monkeypatch.setattr(app.ollama_client, 'call_ollama', mock_call_ollama)
 
         payload = {
             'input': 'a warrior in a forest',
@@ -136,7 +136,7 @@ class TestGenerateRoute:
 class TestChatRoute:
     """Test the /chat route"""
 
-    def test_chat_with_valid_message(self, client, monkeypatch):
+    def test_chat_with_valid_message(self, client, monkeypatch, flask_app):
         """Verify POST /chat with valid message"""
         # Mock the call_ollama function
         captured = {}
@@ -145,8 +145,8 @@ class TestChatRoute:
             captured['messages'] = messages
             return "Mocked chat response"
 
-        import prompt_generator
-        monkeypatch.setattr(prompt_generator, 'call_ollama', mock_call_ollama)
+        import app.ollama_client
+        monkeypatch.setattr(app.ollama_client, 'call_ollama', mock_call_ollama)
 
         payload = {
             'message': 'make it more dramatic',
@@ -174,14 +174,12 @@ class TestChatRoute:
             'NEVER output a single "PROMPT:"' in system_message
         )
 
-        import prompt_generator
-
         with client.session_transaction() as flask_session:
             assert 'conversation_id' in flask_session
             assert 'conversation' not in flask_session
             conversation_id = flask_session['conversation_id']
 
-        stored_conversation, stored_model = prompt_generator.conversation_store.get_conversation(conversation_id)
+        stored_conversation, stored_model = flask_app.conversation_store.get_conversation(conversation_id)
         assert stored_model == 'flux'
         assert any(message['role'] == 'assistant' for message in stored_conversation)
 
@@ -283,7 +281,10 @@ class TestHierarchicalSelections:
         }
 
     def test_generate_uses_hierarchical_prompt(self, client, monkeypatch):
-        import prompt_generator
+        import app.config
+        import app.presets
+        import app.ollama_client
+        from app.database import get_history
 
         selections = self._sample_selections()
         captured = {}
@@ -296,9 +297,9 @@ class TestHierarchicalSelections:
             captured['messages'] = messages
             return 'Mocked hierarchical response'
 
-        monkeypatch.setattr(prompt_generator, 'ENABLE_HIERARCHICAL_PRESETS', True)
-        monkeypatch.setattr(prompt_generator, 'load_presets', fake_load_presets)
-        monkeypatch.setattr(prompt_generator, 'call_ollama', fake_call_ollama)
+        monkeypatch.setattr(app.config.config, 'ENABLE_HIERARCHICAL_PRESETS', True)
+        monkeypatch.setattr(app.presets, 'load_presets', fake_load_presets)
+        monkeypatch.setattr(app.ollama_client, 'call_ollama', fake_call_ollama)
 
         payload = {
             'input': 'A heroic figure in the forest',
@@ -319,13 +320,16 @@ class TestHierarchicalSelections:
         assert 'Style: Photography > Portrait' in enhanced
         assert 'Mood: dramatic, elegant' in enhanced
 
-        history = prompt_generator.get_history(limit=10)
+        history = get_history(limit=10)
         matching = next((item for item in history if item['user_input'] == payload['input']), None)
         assert matching is not None
         assert matching['presets'].get('hierarchical') == selections
 
-    def test_chat_uses_hierarchical_prompt(self, client, monkeypatch):
-        import prompt_generator
+    def test_chat_uses_hierarchical_prompt(self, client, monkeypatch, flask_app):
+        import app.config
+        import app.presets
+        import app.ollama_client
+        from app.database import get_history
 
         selections = self._sample_selections()
         captured = {}
@@ -338,9 +342,9 @@ class TestHierarchicalSelections:
             captured['messages'] = messages
             return 'Mocked chat response'
 
-        monkeypatch.setattr(prompt_generator, 'ENABLE_HIERARCHICAL_PRESETS', True)
-        monkeypatch.setattr(prompt_generator, 'load_presets', fake_load_presets)
-        monkeypatch.setattr(prompt_generator, 'call_ollama', fake_call_ollama)
+        monkeypatch.setattr(app.config.config, 'ENABLE_HIERARCHICAL_PRESETS', True)
+        monkeypatch.setattr(app.presets, 'load_presets', fake_load_presets)
+        monkeypatch.setattr(app.ollama_client, 'call_ollama', fake_call_ollama)
 
         payload = {
             'message': 'Can you make it moodier?',
@@ -363,12 +367,12 @@ class TestHierarchicalSelections:
         with client.session_transaction() as flask_session:
             conversation_id = flask_session['conversation_id']
 
-        stored_conversation, stored_model = prompt_generator.conversation_store.get_conversation(conversation_id)
+        stored_conversation, stored_model = flask_app.conversation_store.get_conversation(conversation_id)
         assert stored_model == 'flux'
         user_messages = [msg['content'] for msg in stored_conversation if msg['role'] == 'user']
         assert any('Style: Photography > Portrait' in message for message in user_messages)
 
-        history = prompt_generator.get_history(limit=10)
+        history = get_history(limit=10)
         matching = next((item for item in history if item['user_input'] == payload['message']), None)
         assert matching is not None
         assert matching['presets'].get('hierarchical') == selections
@@ -377,10 +381,8 @@ class TestHierarchicalSelections:
 class TestConversationStore:
     """Direct tests for the server-side conversation storage."""
 
-    def test_conversation_store_trims_history(self):
-        import prompt_generator
-
-        store = prompt_generator.conversation_store
+    def test_conversation_store_trims_history(self, flask_app):
+        store = flask_app.conversation_store
         system_message = {"role": "system", "content": "System instructions"}
         messages = [system_message]
 
@@ -422,9 +424,9 @@ class TestAdminSecurity:
 
     def test_reload_prompts_rejects_unauthorized_request(self, client, monkeypatch):
         """Verify /admin/reload-prompts requires authentication"""
-        import prompt_generator
+        import app.config
 
-        monkeypatch.setattr(prompt_generator, 'ADMIN_API_KEY', 'super-secret-key')
+        monkeypatch.setattr(app.config.config, 'ADMIN_API_KEY', 'super-secret-key')
 
         response = client.post(
             '/admin/reload-prompts',

@@ -3,6 +3,7 @@ Tests for preset validation and structure
 """
 
 import pytest
+from app.presets import load_presets
 
 
 class TestPresetStructure:

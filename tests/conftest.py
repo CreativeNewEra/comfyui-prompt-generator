@@ -6,7 +6,7 @@ import pytest
 import sys
 import os
 
-# Add parent directory to path so we can import prompt_generator
+# Add parent directory to path so we can import app modules
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 
@@ -24,7 +24,8 @@ def setup_test_database(tmp_path_factory):
 
 
 # Import after setting DB_PATH to ensure test database is used
-from prompt_generator import app, PRESETS, conversation_store
+from app import create_app
+from app.presets import PRESETS
 
 
 @pytest.fixture
@@ -32,9 +33,10 @@ def flask_app():
     """
     Create and configure a Flask app instance for testing
     """
-    app.config['TESTING'] = True
-    app.config['SECRET_KEY'] = 'test-secret-key'
-    return app
+    test_app = create_app()
+    test_app.config['TESTING'] = True
+    test_app.config['SECRET_KEY'] = 'test-secret-key'
+    return test_app
 
 
 @pytest.fixture
@@ -54,11 +56,11 @@ def presets():
 
 
 @pytest.fixture(autouse=True)
-def cleanup_conversation_store():
+def cleanup_conversation_store(flask_app):
     """Ensure conversation store is cleared between tests."""
-    import prompt_generator
+    from app.database import init_db
 
-    prompt_generator.init_db()
-    conversation_store.clear_all()
+    init_db()
+    flask_app.conversation_store.clear_all()
     yield
-    conversation_store.clear_all()
+    flask_app.conversation_store.clear_all()

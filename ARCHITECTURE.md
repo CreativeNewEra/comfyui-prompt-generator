@@ -70,8 +70,48 @@ comfyui-prompt-generator/
 │   └── 📁 workflows/
 │       └── 📄 ci.yml                      # GitHub Actions CI/CD pipeline
 │
+├── 📁 app/                                # Main application package (REFACTORED)
+│   ├── 📄 __init__.py                     # Flask app factory (350 lines)
+│   ├── 📄 config.py                       # Configuration management (133 lines)
+│   ├── 📄 errors.py                       # Custom exceptions (62 lines)
+│   ├── 📄 database.py                     # Database operations (392 lines)
+│   ├── 📄 ollama_client.py                # Ollama API client (642 lines)
+│   ├── 📄 presets.py                      # Preset loading (127 lines)
+│   ├── 📄 personas.py                     # Persona functions (104 lines)
+│   ├── 📄 auth.py                         # Auth utilities (100 lines)
+│   ├── 📄 utils.py                        # Helper functions (364 lines)
+│   └── 📁 routes/                         # Blueprint-based routes (9 files)
+│       ├── 📄 __init__.py                 # Blueprint registration (52 lines)
+│       ├── 📄 main.py                     # Main page (23 lines)
+│       ├── 📄 generate.py                 # Quick Generate (271 lines)
+│       ├── 📄 chat.py                     # Chat & Refine (363 lines)
+│       ├── 📄 persona.py                  # Persona system (571 lines)
+│       ├── 📄 presets.py                  # Preset API (491 lines)
+│       ├── 📄 history.py                  # History management (118 lines)
+│       ├── 📄 models.py                   # Model management (105 lines)
+│       └── 📄 admin.py                    # Admin endpoints (97 lines)
+│
 ├── 📁 templates/
-│   └── 📄 index.html                      # Frontend SPA (~500+ lines)
+│   └── 📄 index.html                      # Frontend HTML (294 lines)
+│
+├── 📁 static/                             # Static assets (REFACTORED)
+│   ├── 📁 css/
+│   │   └── 📄 style.css                   # All application styles (1,217 lines)
+│   └── 📁 js/                             # Modular JavaScript (5 files)
+│       ├── 📄 api.js                      # API client (195 lines)
+│       ├── 📄 ui.js                       # UI helpers (255 lines)
+│       ├── 📄 presets.js                  # Preset logic (631 lines)
+│       ├── 📄 personas.js                 # Persona UI (200 lines)
+│       └── 📄 main.js                     # Main app (570 lines)
+│
+├── 📁 personas/                           # Persona system prompts
+│   ├── 📄 creative_vision_guide.txt       # 5.8KB - Beginner-friendly
+│   ├── 📄 technical_engineer.txt          # 6.3KB - Advanced technical
+│   ├── 📄 art_director.txt                # 7.2KB - Commercial focus
+│   ├── 📄 photography_expert.txt          # 8.1KB - Camera specs
+│   ├── 📄 fantasy_storyteller.txt         # 9.4KB - Narrative building
+│   ├── 📄 quick_sketch.txt                # 9.0KB - Rapid iteration
+│   └── 📄 nsfw_specialist.txt             # 9.9KB - Artistic adult content
 │
 ├── 📁 tests/
 │   ├── 📄 __init__.py
@@ -82,7 +122,10 @@ comfyui-prompt-generator/
 ├── 📁 logs/
 │   └── 📄 app.log                         # Application logs (auto-created)
 │
-├── 📄 prompt_generator.py                 # Flask backend (~1,760 lines)
+├── 📄 prompt_generator.py                 # Application entry point (56 lines)
+├── 📄 presets.json                        # Legacy preset configurations
+├── 📄 hierarchical_presets.json           # Hierarchical presets (v2.0)
+├── 📄 personas.json                       # Persona metadata (7 personas)
 ├── 📄 prompt_history.db                   # SQLite database (auto-created)
 ├── 📄 requirements.txt                    # Production dependencies
 ├── 📄 requirements-dev.txt                # Development dependencies
@@ -97,16 +140,24 @@ comfyui-prompt-generator/
 ├── 📄 ARCHITECTURE.md                     # This file
 ├── 📄 CONTRIBUTING.md                     # Contributor guide
 ├── 📄 CLAUDE.md                           # AI development guide
+├── 📄 PERSONAS.md                         # Persona user guide
+├── 📄 PERSONAS_DEVELOPER.md               # Persona developer guide
 ├── 📄 EXAMPLES.md                         # Usage examples
 ├── 📄 CHANGELOG.md                        # Version history
+├── 📄 REFACTORING_SUMMARY.md              # Refactoring documentation
 └── 📄 LICENSE                             # MIT License
 ```
 
 ### Component Breakdown
 
-**Application Code**: ~2,260 lines
-- `prompt_generator.py`: ~1,760 lines (Backend)
-- `templates/index.html`: ~500 lines (Frontend)
+**Application Code**: ~5,000+ lines (modular architecture)
+- `app/` package: ~3,200 lines (Backend modules)
+  - Core modules: ~1,910 lines (8 files)
+  - Route blueprints: ~2,093 lines (9 files)
+- `prompt_generator.py`: ~56 lines (Entry point)
+- `templates/index.html`: ~294 lines (Frontend HTML)
+- `static/js/`: ~1,851 lines (JavaScript modules)
+- `static/css/style.css`: ~1,217 lines (Styles)
 
 **Documentation**: ~5,000+ lines
 - README.md, ARCHITECTURE.md, EXAMPLES.md, CONTRIBUTING.md, CLAUDE.md, CHANGELOG.md
@@ -215,12 +266,19 @@ The application supports **two preset systems** (toggled via `ENABLE_HIERARCHICA
 
 | File | Lines | Purpose | Priority |
 |------|-------|---------|----------|
-| `prompt_generator.py` | ~1,760 | Core application logic | 🔴 Critical |
-| `templates/index.html` | ~500 | User interface | 🔴 Critical |
+| `prompt_generator.py` | ~56 | Application entry point | 🔴 Critical |
+| `app/__init__.py` | ~350 | Flask app factory | 🔴 Critical |
+| `app/routes/*` | ~2,093 | API endpoints (9 blueprints) | 🔴 Critical |
+| `app/ollama_client.py` | ~642 | Ollama API integration | 🔴 Critical |
+| `templates/index.html` | ~294 | User interface HTML | 🔴 Critical |
+| `static/js/main.js` | ~570 | Frontend application logic | 🔴 Critical |
+| `static/css/style.css` | ~1,217 | Application styling | 🔴 Critical |
 | `requirements.txt` | 4 | Production dependencies | 🔴 Critical |
+| `app/database.py` | ~392 | Database operations | 🟡 Important |
+| `app/config.py` | ~133 | Configuration management | 🟡 Important |
 | `prompt_history.db` | N/A | Prompt history storage | 🟡 Important |
 | `README.md` | 900+ | Main documentation | 🟡 Important |
-| `ARCHITECTURE.md` | 1,200+ | Technical docs (this file) | 🟢 Reference |
+| `ARCHITECTURE.md` | 1,500+ | Technical docs (this file) | 🟢 Reference |
 | `.env` | 10 | Local configuration | 🟡 Important |
 | `tests/` | Multiple | Quality assurance | 🟢 Development |
 | `Makefile` | 150+ | Development workflow | 🟢 Development |
@@ -231,20 +289,28 @@ The application supports **two preset systems** (toggled via `ENABLE_HIERARCHICA
 
 ### 1. Frontend (Single-Page Application)
 
-**Location**: `templates/index.html`
+**Location**: `templates/index.html` + `static/js/` + `static/css/`
 
 **Technology Stack**:
-- Vanilla JavaScript (ES6+)
+- Vanilla JavaScript (ES6+) - Modular architecture (5 files)
 - HTML5 with semantic markup
 - CSS3 with custom properties (gradients, animations)
+
+**Modular Structure** (NEW):
+- **`api.js`** (195 lines) - API client functions, fetch wrappers
+- **`ui.js`** (255 lines) - UI helpers, DOM manipulation
+- **`presets.js`** (631 lines) - Preset system logic and event handlers
+- **`personas.js`** (200 lines) - Persona system UI and interactions
+- **`main.js`** (570 lines) - Application initialization and coordination
 
 **Responsibilities**:
 - Render user interface
 - Handle user interactions
-- Manage UI state (mode switching, preset selection)
+- Manage UI state (mode switching, preset selection, persona selection)
 - Communicate with backend via fetch API
 - Display generated prompts with copy functionality
 - Maintain chat history display
+- Real-time streaming support (SSE)
 
 **Key Components**:
 
@@ -278,42 +344,64 @@ Frontend Architecture:
 
 ### 2. Backend (Flask Application)
 
-**Location**: `prompt_generator.py`
+**Location**: `app/` package (modular blueprint-based architecture)
 
 **Technology Stack**:
 - Flask 3.0.0 (lightweight WSGI framework)
 - Python 3.10+
 - Server-side sessions with signed cookies
 - python-dotenv for configuration
+- SQLite3 for database
 
-**Core Routes**:
+**Modular Structure** (NEW):
+- **`__init__.py`** (350 lines) - Flask app factory, blueprint registration
+- **`config.py`** (133 lines) - Centralized configuration management
+- **`errors.py`** (62 lines) - Custom exception classes
+- **`database.py`** (392 lines) - SQLite database operations + ConversationStore
+- **`ollama_client.py`** (642 lines) - Ollama API client with streaming
+- **`presets.py`** (127 lines) - Preset loading and management
+- **`personas.py`** (104 lines) - Persona system functions
+- **`auth.py`** (100 lines) - Authentication and authorization utilities
+- **`utils.py`** (364 lines) - Prompt building and helper functions
 
-| Route | Method | Purpose | Authentication |
-|-------|--------|---------|----------------|
-| `/` | GET | Serve main HTML page | None |
-| `/presets` | GET | Return preset configurations | None |
-| `/models` | GET | Return list of installed Ollama models | None |
-| `/generate` | POST | One-shot prompt generation | None |
-| `/generate-stream` | POST | One-shot generation with SSE streaming | None |
-| `/chat` | POST | Conversational refinement | Session-based |
-| `/chat-stream` | POST | Conversational mode with SSE streaming | Session-based |
-| `/reset` | POST | Clear chat history | Session-based |
-| `/history` | GET | Retrieve prompt history (with search) | None |
-| `/history/<id>` | DELETE | Delete specific history item | None |
+**Route Blueprints** (9 files, ~2,093 lines):
+- **`routes/main.py`** - Main page route (1 route)
+- **`routes/generate.py`** - Quick Generate endpoints (2 routes)
+- **`routes/chat.py`** - Chat & Refine endpoints (3 routes)
+- **`routes/persona.py`** - Persona system endpoints (5 routes)
+- **`routes/presets.py`** - Preset API endpoints (8 routes)
+- **`routes/history.py`** - History management (2 routes)
+- **`routes/models.py`** - Model management (1 route)
+- **`routes/admin.py`** - Admin endpoints (1 route)
 
-**Hierarchical Preset Routes** (when `ENABLE_HIERARCHICAL_PRESETS=true`):
+**Core Routes** (23 total across all blueprints):
 
-| Route | Method | Purpose | Authentication |
-|-------|--------|---------|----------------|
-| `/api/categories` | GET | Get all main categories (6 categories) | None |
-| `/api/categories/<id>/types` | GET | Get types for a category (Level 2) | None |
-| `/api/categories/<cat_id>/types/<type_id>/artists` | GET | Get artists for a type (Level 3) | None |
-| `/api/artists/<cat_id>/<type_id>/<artist_id>/technical` | GET | Get technical options (Level 4 - Future) | None |
-| `/api/artists/<cat_id>/<type_id>/<artist_id>/specifics` | GET | Get scene specifics (Level 5 - Future) | None |
-| `/api/preset-packs` | GET | Get quick-start preset combinations | None |
-| `/api/universal-options` | GET | Get universal options (mood, lighting, etc.) | None |
+| Route | Method | Purpose | Blueprint | Authentication |
+|-------|--------|---------|-----------|----------------|
+| `/` | GET | Serve main HTML page | main | None |
+| `/presets` | GET | Return preset configurations | presets | None |
+| `/models` | GET | Return list of Ollama models | models | None |
+| `/generate` | POST | One-shot prompt generation | generate | None |
+| `/generate-stream` | POST | One-shot with SSE streaming | generate | None |
+| `/chat` | POST | Conversational refinement | chat | Session-based |
+| `/chat-stream` | POST | Conversational with SSE | chat | Session-based |
+| `/reset` | POST | Clear chat history | chat | Session-based |
+| `/persona-chat` | POST | Persona conversational mode | persona | Session-based |
+| `/persona-chat-stream` | POST | Persona with SSE | persona | Session-based |
+| `/persona-reset` | POST | Reset persona conversation | persona | Session-based |
+| `/api/personas` | GET | List all personas | persona | None |
+| `/api/personas/<id>` | GET | Get specific persona | persona | None |
+| `/history` | GET | Retrieve prompt history | history | None |
+| `/history/<id>` | DELETE | Delete history item | history | None |
+| `/api/categories` | GET | Get hierarchical categories | presets | None |
+| `/api/categories/<id>/types` | GET | Get types for category | presets | None |
+| `/api/categories/<cat>/<type>/artists` | GET | Get artists for type | presets | None |
+| `/api/preset-packs` | GET | Get quick-start packs | presets | None |
+| `/api/universal-options` | GET | Get universal options | presets | None |
+| `/admin/reload-prompts` | POST | Hot-reload system prompts | admin | API Key/IP |
+| `/admin/health` | GET | Health check endpoint | admin | None |
 
-**Architecture Pattern**: RESTful API with Flask blueprints pattern (future enhancement)
+**Architecture Pattern**: RESTful API with modular Flask blueprints (fully implemented)
 
 ```
 Backend Architecture:

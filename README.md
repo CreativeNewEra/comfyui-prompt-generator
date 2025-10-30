@@ -95,9 +95,9 @@ Your complete project package includes:
 
 | Category | Files | Purpose |
 |----------|-------|---------|
-| **Core App** | `prompt_generator.py`, `templates/index.html` | The actual application |
+| **Core App** | `app/` package (modular), `prompt_generator.py`, `templates/`, `static/` | Modular Flask application |
 | **Setup** | `Makefile`, `setup.sh`, `setup.bat`, `requirements.txt` | Easy installation & development |
-| **Docs** | `README.md`, `ARCHITECTURE.md`, `QUICKSTART.md` | Complete guides |
+| **Docs** | `README.md`, `ARCHITECTURE.md`, `CLAUDE.md`, `PERSONAS.md` | Complete guides |
 | **Testing** | `tests/`, `.github/workflows/ci.yml`, `.flake8` | Quality assurance |
 | **Config** | `.env.example`, `.gitignore`, `LICENSE` | Configuration & legal |
 
@@ -302,11 +302,12 @@ Data Flow:
 ```
 
 **Key Components:**
-- **Frontend**: Single-page application (vanilla JavaScript)
-- **Backend**: Flask 3.0.0 with RESTful API design
+- **Frontend**: Modular single-page application (5 JavaScript modules, extracted CSS)
+- **Backend**: Flask 3.0.0 with modular blueprint architecture (9 route blueprints, 8 core modules)
 - **AI Engine**: Ollama for local LLM inference
+- **Database**: SQLite for history and conversation management
 - **Session Storage**: Server-side Flask sessions
-- **Communication**: JSON over HTTP
+- **Communication**: JSON over HTTP with SSE streaming support
 
 ## ⚡ Performance
 
