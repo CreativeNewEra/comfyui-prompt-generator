@@ -59,6 +59,44 @@
         }
       },
       {
+        "name": "Parametric Museum Dusk",
+        "icon": "🏗️",
+        "selections": {
+          "level1": "architectural_visualization",
+          "level2": "parametric_landmarks",
+          "level3": "zaha_hadid_studio",
+          "level4": {
+            "geometry_language": "fluid_ribbons",
+            "material_palette": "glass_steel",
+            "lighting_strategy": "sunset_uplighting"
+          },
+          "level5": {
+            "project_type": "cultural_center",
+            "camera_angle": "heroic_low_angle",
+            "environment_context": "waterfront_reflection"
+          }
+        }
+      },
+      {
+        "name": "Green Rooftop Sunrise",
+        "icon": "🌿",
+        "selections": {
+          "level1": "architectural_visualization",
+          "level2": "sustainable_masterplans",
+          "level3": "bjarke_ingels_group",
+          "level4": {
+            "design_principles": "terraced_green_roofs",
+            "material_palette": "timber_glass",
+            "lighting_strategy": "daylight_soft"
+          },
+          "level5": {
+            "program_mix": "mixed_use",
+            "landscape_features": "green_roofs",
+            "aerial_mood": "sunrise_fog"
+          }
+        }
+      },
+      {
         "name": "Epic Fantasy Battle",
         "icon": "🐉",
         "selections": {
@@ -2220,6 +2258,581 @@
           }
         }
       }
+    },
+
+    "architectural_visualization": {
+      "name": "Architectural Visualization",
+      "icon": "🏗️",
+      "description": "High-end renders showcasing visionary buildings and immersive spaces",
+      "best_for": ["buildings", "cityscapes", "concept design", "environment storytelling"],
+      "popularity": "medium",
+
+      "level2_types": {
+        "parametric_landmarks": {
+          "name": "Parametric Landmarks",
+          "description": "Fluid, sculptural architectural icons with futuristic forms",
+          "icon": "🏛️",
+          "popularity": "medium",
+
+          "level3_artists": {
+            "zaha_hadid_studio": {
+              "name": "Zaha Hadid Architects",
+              "description": "Sweeping curves, dynamic silhouettes, future-forward cultural spaces",
+              "signature": "Fluid parametric geometry, dramatic atriums, reflective surfaces",
+              "best_for": ["cultural centers", "museum concepts", "signature landmarks"],
+              "popularity": "high",
+
+              "level4_technical": {
+                "geometry_language": {
+                  "name": "Geometry Language",
+                  "options": [
+                    {
+                      "id": "fluid_ribbons",
+                      "name": "Fluid ribbons",
+                      "description": "Sweeping continuous curves that wrap the massing",
+                      "recommended": true
+                    },
+                    {
+                      "id": "interlocking_arcs",
+                      "name": "Interlocking arcs",
+                      "description": "Layered swoops and intersecting spans"
+                    },
+                    {
+                      "id": "sweeping_shells",
+                      "name": "Sweeping shells",
+                      "description": "Large sculpted roof shells and canopies"
+                    }
+                  ]
+                },
+                "material_palette": {
+                  "name": "Material Palette",
+                  "options": [
+                    {
+                      "id": "glass_steel",
+                      "name": "Glass & steel",
+                      "description": "High-gloss curtain walls with structural ribs",
+                      "recommended": true
+                    },
+                    {
+                      "id": "polished_concrete",
+                      "name": "Polished concrete",
+                      "description": "Smooth sculpted concrete volumes"
+                    },
+                    {
+                      "id": "composite_gloss",
+                      "name": "Composite gloss panels",
+                      "description": "White composite skins with soft reflections"
+                    }
+                  ]
+                },
+                "lighting_strategy": {
+                  "name": "Lighting Strategy",
+                  "options": [
+                    {
+                      "id": "sunset_uplighting",
+                      "name": "Sunset uplighting",
+                      "description": "Golden hour perimeter lights emphasize curves",
+                      "recommended": true
+                    },
+                    {
+                      "id": "interior_glow",
+                      "name": "Interior glow",
+                      "description": "Bright atriums radiate through glazing"
+                    },
+                    {
+                      "id": "dramatic_spotlights",
+                      "name": "Dramatic spotlights",
+                      "description": "Focused beams highlight facade ribs"
+                    }
+                  ]
+                }
+              },
+
+              "level5_specifics": {
+                "project_type": {
+                  "name": "Project Type",
+                  "options": [
+                    {
+                      "id": "cultural_center",
+                      "name": "Cultural center",
+                      "description": "Museums, performing arts venues"
+                    },
+                    {
+                      "id": "transport_hub",
+                      "name": "Transport hub",
+                      "description": "Airports or metro interchanges with flowing circulation"
+                    },
+                    {
+                      "id": "innovation_campus",
+                      "name": "Innovation campus",
+                      "description": "Futuristic research or exhibition complexes"
+                    }
+                  ]
+                },
+                "camera_angle": {
+                  "name": "Camera Angle",
+                  "options": [
+                    {
+                      "id": "heroic_low_angle",
+                      "name": "Heroic low angle",
+                      "description": "Looking up to dramatize the structure",
+                      "recommended": true
+                    },
+                    {
+                      "id": "sweeping_aerial",
+                      "name": "Sweeping aerial",
+                      "description": "High drone view revealing the full geometry"
+                    },
+                    {
+                      "id": "pedestrian_view",
+                      "name": "Pedestrian view",
+                      "description": "Eye-level perspective with human scale"
+                    }
+                  ]
+                },
+                "environment_context": {
+                  "name": "Environment Context",
+                  "options": [
+                    {
+                      "id": "waterfront_reflection",
+                      "name": "Waterfront reflection",
+                      "description": "Mirrored in calm water for double impact",
+                      "recommended": true
+                    },
+                    {
+                      "id": "urban_plaza",
+                      "name": "Urban plaza",
+                      "description": "Integrated public plaza with lighting details"
+                    },
+                    {
+                      "id": "desert_landscape",
+                      "name": "Desert landscape",
+                      "description": "Isolated landmark framed by arid terrain"
+                    },
+                    {
+                      "id": "night_city",
+                      "name": "Night city",
+                      "description": "Glowing skyline and dense city backdrop"
+                    }
+                  ]
+                }
+              }
+            },
+            "santiago_calatrava": {
+              "name": "Santiago Calatrava",
+              "description": "Structural expressionism with skeletal forms and kinetic inspiration",
+              "signature": "Elegant white ribs, organic bridges, dynamic civic spaces",
+              "best_for": ["transport hubs", "bridges", "civic monuments"],
+              "popularity": "medium",
+
+              "level4_technical": {
+                "geometry_language": {
+                  "name": "Geometry Language",
+                  "options": [
+                    {
+                      "id": "ribbed_structures",
+                      "name": "Ribbed structures",
+                      "description": "Repetitive skeletal frames inspired by nature",
+                      "recommended": true
+                    },
+                    {
+                      "id": "winged_forms",
+                      "name": "Winged forms",
+                      "description": "Cantilevered spans reminiscent of wings"
+                    },
+                    {
+                      "id": "kinetic_spines",
+                      "name": "Kinetic spines",
+                      "description": "Dynamic spine-like structures"
+                    }
+                  ]
+                },
+                "material_palette": {
+                  "name": "Material Palette",
+                  "options": [
+                    {
+                      "id": "white_concrete",
+                      "name": "White concrete",
+                      "description": "Smooth white concrete shells",
+                      "recommended": true
+                    },
+                    {
+                      "id": "steel_glass",
+                      "name": "Steel & glass",
+                      "description": "Slim steel members with glazed infill"
+                    },
+                    {
+                      "id": "cable_net",
+                      "name": "Cable net",
+                      "description": "Suspended cables and tensile elements"
+                    }
+                  ]
+                },
+                "lighting_strategy": {
+                  "name": "Lighting Strategy",
+                  "options": [
+                    {
+                      "id": "daylight_scoring",
+                      "name": "Daylight scoring",
+                      "description": "Architectural ribs casting rhythmic daylight shadows",
+                      "recommended": true
+                    },
+                    {
+                      "id": "sky_lightwells",
+                      "name": "Sky lightwells",
+                      "description": "Linear skylights flooding interiors"
+                    },
+                    {
+                      "id": "cool_evening",
+                      "name": "Cool evening",
+                      "description": "Blue-white illumination emphasizing structure"
+                    }
+                  ]
+                }
+              },
+
+              "level5_specifics": {
+                "project_type": {
+                  "name": "Project Type",
+                  "options": [
+                    {
+                      "id": "transport_terminal",
+                      "name": "Transport terminal",
+                      "description": "Rail, metro, or airport hubs"
+                    },
+                    {
+                      "id": "bridge_landmark",
+                      "name": "Bridge landmark",
+                      "description": "Signature pedestrian or vehicular bridge"
+                    },
+                    {
+                      "id": "cultural_pavilion",
+                      "name": "Cultural pavilion",
+                      "description": "Iconic civic gathering space"
+                    }
+                  ]
+                },
+                "camera_angle": {
+                  "name": "Camera Angle",
+                  "options": [
+                    {
+                      "id": "symmetry_on_axis",
+                      "name": "Symmetry on-axis",
+                      "description": "Centered view emphasizing structural rhythm",
+                      "recommended": true
+                    },
+                    {
+                      "id": "dramatic_diagonal",
+                      "name": "Dramatic diagonal",
+                      "description": "Dynamic diagonal framing across the structure"
+                    },
+                    {
+                      "id": "structural_detail",
+                      "name": "Structural detail",
+                      "description": "Close-up focus on ribbed joinery"
+                    }
+                  ]
+                },
+                "environment_context": {
+                  "name": "Environment Context",
+                  "options": [
+                    {
+                      "id": "riverfront",
+                      "name": "Riverfront",
+                      "description": "Bridges and stations beside water"
+                    },
+                    {
+                      "id": "urban_skyline",
+                      "name": "Urban skyline",
+                      "description": "Dense city backdrop with other towers"
+                    },
+                    {
+                      "id": "parkland",
+                      "name": "Parkland",
+                      "description": "Green civic park environment"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+
+        "sustainable_masterplans": {
+          "name": "Sustainable Masterplans",
+          "description": "Green, human-centered developments with integrated ecology",
+          "icon": "🌿",
+          "popularity": "medium",
+
+          "level3_artists": {
+            "bjarke_ingels_group": {
+              "name": "Bjarke Ingels Group",
+              "description": "Playful pragmatism blending ecology, community, and bold geometry",
+              "signature": "Layered terraces, green roofs, modular volumes",
+              "best_for": ["mixed-use hubs", "eco districts", "community campuses"],
+              "popularity": "medium",
+
+              "level4_technical": {
+                "design_principles": {
+                  "name": "Design Principles",
+                  "options": [
+                    {
+                      "id": "terraced_green_roofs",
+                      "name": "Terraced green roofs",
+                      "description": "Stepped volumes with lush rooftop parks",
+                      "recommended": true
+                    },
+                    {
+                      "id": "modular_blocks",
+                      "name": "Modular blocks",
+                      "description": "Stacked, shifting programmatic boxes"
+                    },
+                    {
+                      "id": "playful_geometry",
+                      "name": "Playful geometry",
+                      "description": "Unexpected shapes encouraging interaction"
+                    }
+                  ]
+                },
+                "material_palette": {
+                  "name": "Material Palette",
+                  "options": [
+                    {
+                      "id": "timber_glass",
+                      "name": "Timber & glass",
+                      "description": "Warm timber structure with transparent glazing",
+                      "recommended": true
+                    },
+                    {
+                      "id": "green_facade",
+                      "name": "Green facade",
+                      "description": "Living walls and planted balconies"
+                    },
+                    {
+                      "id": "color_accent_panels",
+                      "name": "Color accent panels",
+                      "description": "Bold panels highlighting program areas"
+                    }
+                  ]
+                },
+                "lighting_strategy": {
+                  "name": "Lighting Strategy",
+                  "options": [
+                    {
+                      "id": "daylight_soft",
+                      "name": "Daylight soft",
+                      "description": "Bright yet gentle daylight across terraces",
+                      "recommended": true
+                    },
+                    {
+                      "id": "evening_warm",
+                      "name": "Evening warm",
+                      "description": "Ambient warm glow highlighting community spaces"
+                    },
+                    {
+                      "id": "integrated_led",
+                      "name": "Integrated LED",
+                      "description": "Linear LEDs tracing building edges"
+                    }
+                  ]
+                }
+              },
+
+              "level5_specifics": {
+                "program_mix": {
+                  "name": "Program Mix",
+                  "options": [
+                    {
+                      "id": "mixed_use",
+                      "name": "Mixed-use",
+                      "description": "Retail, residential, and civic stacked together",
+                      "recommended": true
+                    },
+                    {
+                      "id": "residential_cluster",
+                      "name": "Residential cluster",
+                      "description": "Community-focused housing terraces"
+                    },
+                    {
+                      "id": "public_cultural",
+                      "name": "Public cultural",
+                      "description": "Libraries, learning hubs, and civic anchors"
+                    }
+                  ]
+                },
+                "landscape_features": {
+                  "name": "Landscape Features",
+                  "options": [
+                    {
+                      "id": "green_roofs",
+                      "name": "Green roofs",
+                      "description": "Lush rooftop parks and biodiversity",
+                      "recommended": true
+                    },
+                    {
+                      "id": "public_plaza",
+                      "name": "Public plaza",
+                      "description": "Ground-level gathering plazas with seating"
+                    },
+                    {
+                      "id": "water_features",
+                      "name": "Water features",
+                      "description": "Reflecting pools, canals, and mist gardens"
+                    }
+                  ]
+                },
+                "aerial_mood": {
+                  "name": "Aerial Mood",
+                  "options": [
+                    {
+                      "id": "sunrise_fog",
+                      "name": "Sunrise fog",
+                      "description": "Soft sunrise light with light mist",
+                      "recommended": true
+                    },
+                    {
+                      "id": "clear_day",
+                      "name": "Clear day",
+                      "description": "Bright clear skies showing urban context"
+                    },
+                    {
+                      "id": "blue_hour",
+                      "name": "Blue hour",
+                      "description": "Cool evening with illuminated public spaces"
+                    }
+                  ]
+                }
+              }
+            },
+            "heatherwick_studio": {
+              "name": "Heatherwick Studio",
+              "description": "Tactile, humanistic design with playful materiality and crafted detail",
+              "signature": "Woven textures, sculpted modules, immersive public realms",
+              "best_for": ["cultural districts", "adaptive reuse", "urban placemaking"],
+              "popularity": "medium",
+
+              "level4_technical": {
+                "form_language": {
+                  "name": "Form Language",
+                  "options": [
+                    {
+                      "id": "woven_textures",
+                      "name": "Woven textures",
+                      "description": "Bundled structural elements with crafted rhythm",
+                      "recommended": true
+                    },
+                    {
+                      "id": "sculpted_modules",
+                      "name": "Sculpted modules",
+                      "description": "Repeating carved modules forming the massing"
+                    },
+                    {
+                      "id": "organic_bundles",
+                      "name": "Organic bundles",
+                      "description": "Clustered organic forms with biomimicry"
+                    }
+                  ]
+                },
+                "material_palette": {
+                  "name": "Material Palette",
+                  "options": [
+                    {
+                      "id": "weathered_steel",
+                      "name": "Weathered steel",
+                      "description": "Rich corten patina and crafted details",
+                      "recommended": true
+                    },
+                    {
+                      "id": "timber_warmth",
+                      "name": "Timber warmth",
+                      "description": "Layered timber planks and joinery"
+                    },
+                    {
+                      "id": "glass_brick",
+                      "name": "Glass brick",
+                      "description": "Textured glass blocks diffusing light"
+                    }
+                  ]
+                },
+                "lighting_strategy": {
+                  "name": "Lighting Strategy",
+                  "options": [
+                    {
+                      "id": "warm_internal_glow",
+                      "name": "Warm internal glow",
+                      "description": "Inviting glow showcasing crafted interiors",
+                      "recommended": true
+                    },
+                    {
+                      "id": "spotlight_emphasis",
+                      "name": "Spotlight emphasis",
+                      "description": "Accent lights highlighting textures"
+                    },
+                    {
+                      "id": "daylight_filtering",
+                      "name": "Daylight filtering",
+                      "description": "Soft daylight filtering through patterned skins"
+                    }
+                  ]
+                }
+              },
+
+              "level5_specifics": {
+                "experience_focus": {
+                  "name": "Experience Focus",
+                  "options": [
+                    {
+                      "id": "interior_atrium",
+                      "name": "Interior atrium",
+                      "description": "Immersive atrium with sculpted columns"
+                    },
+                    {
+                      "id": "public_installation",
+                      "name": "Public installation",
+                      "description": "Interactive urban sculpture or pavilion",
+                      "recommended": true
+                    },
+                    {
+                      "id": "bridge_walk",
+                      "name": "Bridge walk",
+                      "description": "Pedestrian bridge with tactile materials"
+                    }
+                  ]
+                },
+                "human_scale_elements": {
+                  "name": "Human-Scale Elements",
+                  "options": [
+                    "lush_planters",
+                    "seating_steps",
+                    "interactive_art",
+                    "glowing_canopies"
+                  ]
+                },
+                "context_setting": {
+                  "name": "Context Setting",
+                  "options": [
+                    {
+                      "id": "adaptive_reuse",
+                      "name": "Adaptive reuse",
+                      "description": "Historic shell with contemporary insert"
+                    },
+                    {
+                      "id": "urban_waterfront",
+                      "name": "Urban waterfront",
+                      "description": "Boardwalks, piers, and river edges"
+                    },
+                    {
+                      "id": "city_plaza",
+                      "name": "City plaza",
+                      "description": "Active plaza with layered seating"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
 
@@ -2264,7 +2877,8 @@
         "horror": ["terrifying", "unsettling", "eerie", "grotesque", "dread_filled"],
         "scifi": ["futuristic", "dystopian", "optimistic", "industrial", "alien"],
         "comic_book": ["heroic", "action_packed", "gritty", "campy"],
-        "anime": ["kawaii", "epic", "emotional", "badass"]
+        "anime": ["kawaii", "epic", "emotional", "badass"],
+        "architectural_visualization": ["sleek_modern", "visionary", "urban_energy", "tranquil_minimal"]
       }
     },
 
@@ -2320,6 +2934,11 @@
           "id": "rim_lighting",
           "name": "Rim Lighting",
           "description": "Edges highlighted, dramatic separation"
+        },
+        {
+          "id": "architectural_uplighting",
+          "name": "Architectural Uplighting",
+          "description": "Ground-mounted lights washing building facades"
         },
         {
           "id": "chiaroscuro",
