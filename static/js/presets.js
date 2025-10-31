@@ -447,7 +447,7 @@ async function loadUniversalOptions() {
 
         // Mood
         const moodSelect = document.getElementById('moodSelect');
-        moodSelect.innerHTML = '';
+        moodSelect.innerHTML = '<option value="">None</option>';
         const moodOptions = Array.isArray(universal.mood?.core)
             ? universal.mood.core
             : [];
