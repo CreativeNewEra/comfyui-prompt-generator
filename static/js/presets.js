@@ -443,76 +443,91 @@ async function loadArtists(categoryId, typeId) {
 async function loadUniversalOptions() {
     try {
         const data = await fetchUniversalOptions();
-        const universal = data.universal_options;
+        const universal = data?.universal_options || {};
 
         // Mood
         const moodSelect = document.getElementById('moodSelect');
         moodSelect.innerHTML = '';
-        if (universal.mood && universal.mood.core) {
-            universal.mood.core.forEach(mood => {
-                const option = document.createElement('option');
-                option.value = mood.id || mood.name || mood;
-                option.textContent = mood.name || mood;
-                moodSelect.appendChild(option);
-            });
-        }
+        const moodOptions = Array.isArray(universal.mood?.core)
+            ? universal.mood.core
+            : [];
+        moodOptions.forEach(mood => {
+            const option = document.createElement('option');
+            option.value = mood.id || mood.name || mood;
+            option.textContent = mood.name || mood;
+            moodSelect.appendChild(option);
+        });
 
         // Time of Day
         const timeSelect = document.getElementById('timeOfDaySelect');
         timeSelect.innerHTML = '<option value="">None</option>';
-        if (universal.time_of_day && universal.time_of_day.options) {
-            universal.time_of_day.options.forEach(time => {
-                const option = document.createElement('option');
-                option.value = time.id || time.name || time;
-                option.textContent = time.name || time;
-                timeSelect.appendChild(option);
-            });
-        }
+        const timeOptions = Array.isArray(universal.time_of_day?.options)
+            ? universal.time_of_day.options
+            : [];
+        timeOptions.forEach(time => {
+            const option = document.createElement('option');
+            option.value = time.id || time.name || time;
+            option.textContent = time.name || time;
+            timeSelect.appendChild(option);
+        });
 
         // Lighting
         const lightingSelect = document.getElementById('universalLightingSelect');
         lightingSelect.innerHTML = '<option value="">None</option>';
-        if (universal.lighting && universal.lighting.core) {
-            universal.lighting.core.forEach(light => {
-                const option = document.createElement('option');
-                option.value = light.id || light.name || light;
-                option.textContent = light.name || light;
-                if (light.popularity === 'high') {
-                    option.textContent += ' 🔥';
-                }
-                lightingSelect.appendChild(option);
-            });
-        }
+        const lightingOptions = Array.isArray(universal.lighting?.core)
+            ? universal.lighting.core
+            : [];
+        lightingOptions.forEach(light => {
+            const option = document.createElement('option');
+            option.value = light.id || light.name || light;
+            option.textContent = light.name || light;
+            if (light.popularity === 'high') {
+                option.textContent += ' 🔥';
+            }
+            lightingSelect.appendChild(option);
+        });
 
         // Weather/Atmosphere
         const weatherSelect = document.getElementById('weatherSelect');
         weatherSelect.innerHTML = '<option value="">None</option>';
-        if (universal.weather_atmosphere && universal.weather_atmosphere.options) {
-            universal.weather_atmosphere.options.forEach(weather => {
-                const option = document.createElement('option');
-                option.value = weather.id || weather.name || weather;
-                option.textContent = weather.name || weather;
-                weatherSelect.appendChild(option);
-            });
-        }
+        const weatherOptions = Array.isArray(universal.weather_atmosphere?.options)
+            ? universal.weather_atmosphere.options
+            : [];
+        weatherOptions.forEach(weather => {
+            const option = document.createElement('option');
+            option.value = weather.id || weather.name || weather;
+            option.textContent = weather.name || weather;
+            weatherSelect.appendChild(option);
+        });
 
         // Color Palettes
         const colorSelect = document.getElementById('colorPaletteSelect');
         colorSelect.innerHTML = '<option value="">None</option>';
-        if (universal.color_palettes && universal.color_palettes.universal) {
-            universal.color_palettes.universal.forEach(color => {
-                const option = document.createElement('option');
-                option.value = color.id || color.name || color;
-                option.textContent = color.name || color;
-                colorSelect.appendChild(option);
-            });
-        }
+        const colorPaletteOptions = Array.isArray(universal.color_palettes?.universal)
+            ? universal.color_palettes.universal
+            : Array.isArray(universal.color_palettes?.options)
+                ? universal.color_palettes.options
+                : [];
+        colorPaletteOptions.forEach(color => {
+            const option = document.createElement('option');
+            option.value = color.id || color.name || color;
+            option.textContent = color.name || color;
+            colorSelect.appendChild(option);
+        });
 
         // Camera Effects
         const cameraSelect = document.getElementById('cameraEffectsSelect');
         cameraSelect.innerHTML = '';
-        if (universal.camera_effects && universal.camera_effects.options) {
-            universal.camera_effects.options.forEach(effect => {
+        const cameraOptions = Array.isArray(universal.camera_effects?.options)
+            ? universal.camera_effects.options
+            : [];
+        if (cameraOptions.length === 0) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'None';
+            cameraSelect.appendChild(option);
+        } else {
+            cameraOptions.forEach(effect => {
                 const option = document.createElement('option');
                 option.value = effect.id || effect.name || effect;
                 option.textContent = effect.name || effect;
@@ -533,23 +548,33 @@ async function loadUniversalOptions() {
 async function loadPresetPacks() {
     try {
         const data = await fetchPresetPacks();
+        const packs = Array.isArray(data?.packs) ? data.packs : [];
 
         const container = document.getElementById('presetPacksContainer');
         container.innerHTML = '';
 
-        data.packs.forEach(pack => {
-            const btn = document.createElement('button');
-            btn.className = 'preset-pack-btn';
-            btn.innerHTML = `
-                <div class="preset-pack-icon">${pack.icon}</div>
-                <div class="preset-pack-name">${pack.name}</div>
-            `;
-            btn.onclick = () => applyPresetPack(pack);
-            container.appendChild(btn);
-        });
+        if (packs.length === 0) {
+            const emptyState = document.createElement('div');
+            emptyState.className = 'preset-pack-empty';
+            emptyState.textContent = data?.error
+                ? 'Preset packs are unavailable. Enable hierarchical presets to view them.'
+                : 'No preset packs available yet.';
+            container.appendChild(emptyState);
+        } else {
+            packs.forEach(pack => {
+                const btn = document.createElement('button');
+                btn.className = 'preset-pack-btn';
+                btn.innerHTML = `
+                    <div class="preset-pack-icon">${pack.icon}</div>
+                    <div class="preset-pack-name">${pack.name}</div>
+                `;
+                btn.onclick = () => applyPresetPack(pack);
+                container.appendChild(btn);
+            });
+        }
 
         document.getElementById('presetPacksSection').style.display = 'block';
-        console.log(`Loaded ${data.packs.length} preset packs`);
+        console.log(`Loaded ${packs.length} preset packs`);
     } catch (error) {
         console.error('Failed to load preset packs:', error);
     }

@@ -637,6 +637,17 @@ body {
     margin-top: 15px;
 }
 
+.preset-pack-empty {
+    grid-column: 1 / -1;
+    padding: 16px;
+    border: 2px dashed var(--preset-border);
+    border-radius: 10px;
+    background: var(--preset-bg);
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.95em;
+}
+
 .preset-pack-btn {
     padding: 15px;
     border: 2px solid var(--preset-border);
