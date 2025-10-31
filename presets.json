@@ -13,6 +13,8 @@
     "Minimalist": "minimalist, clean, simple, modern, elegant",
     "Surreal": "surreal, dreamlike, abstract, unusual, imaginative",
     "Vintage": "vintage, retro, nostalgic, aged, classic",
+    "Impressionist": "impressionist painting, soft brushstrokes, luminous color, plein air",
+    "Synthwave": "synthwave aesthetic, neon grid, vaporwave, retro 1980s sci-fi",
     "3D Render": "3d render, octane render, unreal engine, ray tracing",
     "Pencil Sketch": "pencil sketch, graphite, hand drawn, detailed shading",
     "Boudoir": "boudoir photography, intimate, sensual, elegant, romantic lighting",
@@ -46,7 +48,9 @@
     "Rankin": "Rankin photography style, bold fashion, intimate portraits, contemporary edge",
     "David LaChapelle": "David LaChapelle style, surreal glamour, vibrant colors, pop art aesthetic",
     "Patrick Demarchelier": "Patrick Demarchelier style, elegant beauty, soft sophistication, timeless glamour",
-    "Luis Royo": "Luis Royo fantasy art style, sensual fantasy figures, dramatic poses, rich colors"
+    "Luis Royo": "Luis Royo fantasy art style, sensual fantasy figures, dramatic poses, rich colors",
+    "Beeple": "Beeple style digital surrealism, futuristic collage, vibrant lighting",
+    "Claude Monet": "Claude Monet impressionist painting style, luminous color, natural light"
   },
   "composition": {
     "None": "",
@@ -69,7 +73,9 @@
     "Over Shoulder": "over the shoulder view, intimate perspective, suggestive framing",
     "Back View": "back view composition, elegant spine and curves, artistic silhouette",
     "Figure Study": "classical figure study composition, artistic form, balanced pose",
-    "Intimate Close": "intimate close framing, sensual detail, personal space"
+    "Intimate Close": "intimate close framing, sensual detail, personal space",
+    "Panorama": "panoramic composition, sweeping wide view, cinematic scale",
+    "Macro Detail": "macro detail shot, extreme close focus, intricate texture"
   },
   "lighting": {
     "None": "",
@@ -92,6 +98,7 @@
     "Low Key Dramatic": "low key lighting, dramatic shadows, moody atmosphere, selective illumination",
     "Boudoir Soft": "soft boudoir lighting, warm and intimate, flattering shadows, romantic ambiance",
     "Rim Light Silhouette": "rim lighting, glowing edges, sensual silhouette, dramatic outline",
-    "Warm Amber Glow": "warm amber glow, sunset tones, intimate warmth, golden skin tones"
+    "Warm Amber Glow": "warm amber glow, sunset tones, intimate warmth, golden skin tones",
+    "Bioluminescent": "bioluminescent lighting, glowing organic light, ethereal radiance"
   }
 }

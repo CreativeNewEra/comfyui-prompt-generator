@@ -91,29 +91,29 @@ function initializeDefaultFavorites(availablePresets) {
 
     const defaultFavoritesConfig = [
         {
+            name: 'Synthwave Cityscape',
+            presets: {
+                style: 'Synthwave',
+                artist: 'Beeple',
+                composition: 'Panorama',
+                lighting: 'Neon Lighting'
+            }
+        },
+        {
+            name: 'Impressionist Dawn',
+            presets: {
+                style: 'Impressionist',
+                artist: 'Claude Monet',
+                composition: 'Rule of Thirds',
+                lighting: 'Soft Diffused'
+            }
+        },
+        {
             name: 'Ghibli Adventure',
             presets: {
                 style: 'Anime',
                 artist: 'Hayao Miyazaki',
                 composition: 'Wide Shot',
-                lighting: 'Volumetric Lighting'
-            }
-        },
-        {
-            name: 'Neon City Dreams',
-            presets: {
-                style: 'Cyberpunk',
-                artist: 'Simon Stålenhag',
-                composition: 'Low Angle',
-                lighting: 'Neon Lighting'
-            }
-        },
-        {
-            name: 'Epic Fantasy Vista',
-            presets: {
-                style: 'Fantasy Art',
-                artist: 'James Gurney',
-                composition: 'Leading Lines',
                 lighting: 'Volumetric Lighting'
             }
         },
