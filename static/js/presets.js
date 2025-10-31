@@ -564,10 +564,14 @@ async function loadPresetPacks() {
             packs.forEach(pack => {
                 const btn = document.createElement('button');
                 btn.className = 'preset-pack-btn';
-                btn.innerHTML = `
-                    <div class="preset-pack-icon">${pack.icon}</div>
-                    <div class="preset-pack-name">${pack.name}</div>
-                `;
+                const iconDiv = document.createElement('div');
+                iconDiv.className = 'preset-pack-icon';
+                iconDiv.textContent = pack.icon;
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'preset-pack-name';
+                nameDiv.textContent = pack.name;
+                btn.appendChild(iconDiv);
+                btn.appendChild(nameDiv);
                 btn.onclick = () => applyPresetPack(pack);
                 container.appendChild(btn);
             });
